@@ -1,0 +1,73 @@
+
+
+
+
+
+
+
+
+
+
+
+
+# 📅 JobwinResume — Daily Progress Log
+
+Update this file every single day. Even one line is enough.
+Format: Date → What you did → What's next → Any blockers
+
+---
+
+## Day 1 — [Fill in today's date]
+
+### ✅ Completed
+- [ ] Started the project
+- [ ] Downloaded this project folder
+
+### 🔄 In Progress
+- Setup: Installing Python, VS Code, Git
+
+### ❌ Blockers
+- None yet
+
+### 📝 Notes
+- First day. Starting fresh.
+
+---
+
+## Template for each new day (copy-paste this):
+
+```
+## Day X — [Date]
+
+### ✅ Completed
+-
+
+### 🔄 In Progress
+-
+
+### ❌ Blockers
+-
+
+### 📝 Notes
+-
+```
+
+---
+
+## Milestone Tracker
+
+| Milestone                          | Target Date | Done? |
+|------------------------------------|-------------|-------|
+| Computer setup complete            |             | ⬜    |
+| API keys collected                 |             | ⬜    |
+| First Python program runs          |             | ⬜    |
+| First real jobs fetched from API   |             | ⬜    |
+| AI summaries working               |             | ⬜    |
+| Backend API running locally        |             | ⬜    |
+| Frontend website running locally   |             | ⬜    |
+| Full product working on computer   |             | ⬜    |
+| Deployed to internet               |             | ⬜    |
+| First person uses it               |             | ⬜    |
+| First paying customer              |             | ⬜    |
+| 100 users                          |             | ⬜    |
+| 1,000 users 🎉                     |             | ⬜    |
