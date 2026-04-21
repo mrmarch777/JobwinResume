@@ -29,14 +29,14 @@ export default function Tracker() {
 
   const loadApplications = async (userId) => {
     // Load from localStorage first for speed
-    const saved = localStorage.getItem("resumeora_tracker");
+    const saved = localStorage.getItem("jobwin_tracker");
     if (saved) setApplications(JSON.parse(saved));
     // Then try Supabase
     try {
       const { data } = await supabase.from("applications").select("*").eq("user_id", userId).order("created_at", { ascending: false });
       if (data && data.length > 0) {
         setApplications(data);
-        localStorage.setItem("resumeora_tracker", JSON.stringify(data));
+        localStorage.setItem("jobwin_tracker", JSON.stringify(data));
       }
     } catch (err) {}
   };
@@ -51,7 +51,7 @@ export default function Tracker() {
 
   const saveApplications = (apps) => {
     setApplications(apps);
-    localStorage.setItem("resumeora_tracker", JSON.stringify(apps));
+    localStorage.setItem("jobwin_tracker", JSON.stringify(apps));
     if (user) {
       (async () => { try { await supabase.from("applications").upsert(apps.map(a => ({ ...a, user_id: user.id }))); } catch (_) {} })();
     }

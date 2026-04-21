@@ -143,7 +143,7 @@ export default function Pricing() {
   ];
 
   useEffect(() => {
-    const saved = localStorage.getItem("resumeora_theme");
+    const saved = localStorage.getItem("jobwin_theme");
     if (saved && themes[saved]) setTheme(saved);
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -197,7 +197,7 @@ export default function Pricing() {
           },
           theme: { color: "#6C63FF" },
           handler: async (response) => {
-            localStorage.setItem("resumeora_plan", plan.id);
+            localStorage.setItem("jobwin_plan", plan.id);
             try {
               const updateData = {
                 plan: plan.id,

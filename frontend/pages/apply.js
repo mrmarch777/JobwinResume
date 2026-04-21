@@ -39,7 +39,7 @@ export default function Apply() {
       setYourName(name);
     });
     // Load selected jobs from localStorage
-    const saved = localStorage.getItem("resumeora_selected_jobs");
+    const saved = localStorage.getItem("jobwin_selected_jobs");
     if (saved) {
       const jobs = JSON.parse(saved);
       setSelectedJobs(jobs);
@@ -55,7 +55,7 @@ export default function Apply() {
   const removeJob = (i) => {
     const updated = selectedJobs.filter((_, idx) => idx !== i);
     setSelectedJobs(updated);
-    localStorage.setItem("resumeora_selected_jobs", JSON.stringify(updated));
+    localStorage.setItem("jobwin_selected_jobs", JSON.stringify(updated));
     if (activeJob >= updated.length) setActiveJob(Math.max(0, updated.length - 1));
   };
 

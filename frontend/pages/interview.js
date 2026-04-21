@@ -74,7 +74,7 @@ export default function Interview() {
       setUser(session.user);
     });
     // Load contributions from localStorage
-    const saved = localStorage.getItem("resumeora_contributions");
+    const saved = localStorage.getItem("jobwin_contributions");
     if (saved) setContributions(JSON.parse(saved));
   }, []);
 
@@ -152,7 +152,7 @@ export default function Interview() {
     };
     const updated = [contrib, ...contributions];
     setContributions(updated);
-    localStorage.setItem("resumeora_contributions", JSON.stringify(updated));
+    localStorage.setItem("jobwin_contributions", JSON.stringify(updated));
     // Try to save to Supabase
     try {
       await supabase.from("interview_contributions").insert([contrib]);

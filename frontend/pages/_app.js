@@ -18,7 +18,7 @@ export default function App({ Component, pageProps }) {
 
   // Load saved theme on mount
   useEffect(() => {
-    const saved = localStorage.getItem("resumeora_theme");
+    const saved = localStorage.getItem("jobwin_theme");
     if (saved && THEMES[saved]) setThemeName(saved);
   }, []);
 
@@ -26,7 +26,7 @@ export default function App({ Component, pageProps }) {
   // Load user plan — Supabase is the AUTHORITATIVE source.
   const loadPlan = async () => {
     setLoadingPlan(true);
-    const cached = localStorage.getItem("resumeora_plan");
+    const cached = localStorage.getItem("jobwin_plan");
 
     // Show cached plan instantly while Supabase loads
     if (cached && PLAN_LIMITS[cached]) setPlan(cached);
@@ -37,7 +37,7 @@ export default function App({ Component, pageProps }) {
         setLoadingPlan(false);
         // If no session, reset plan to free
         setPlan("free");
-        localStorage.setItem("resumeora_plan", "free");
+        localStorage.setItem("jobwin_plan", "free");
         return; 
       }
       
@@ -50,11 +50,11 @@ export default function App({ Component, pageProps }) {
       
       if (data?.plan && PLAN_LIMITS[data.plan]) {
         setPlan(data.plan);
-        localStorage.setItem("resumeora_plan", data.plan);
+        localStorage.setItem("jobwin_plan", data.plan);
       } else {
         // NO PLAN FOUND in Supabase -> Force to FREE
         setPlan("free");
-        localStorage.setItem("resumeora_plan", "free");
+        localStorage.setItem("jobwin_plan", "free");
         
         // Optionally: Insert a "free" row if it's a first-time user
         // This ensures they are registered in the plan system
@@ -81,7 +81,7 @@ export default function App({ Component, pageProps }) {
   const setTheme = (name) => {
     if (!THEMES[name]) return;
     setThemeName(name);
-    localStorage.setItem("resumeora_theme", name);
+    localStorage.setItem("jobwin_theme", name);
   };
 
   const theme = THEMES[themeName];

@@ -65,7 +65,7 @@ export default function Jobs() {
   const isSelected = (job) => !!selectedJobs.find(j => j.company + j.title === job.company + job.title);
 
   const handleApply = () => {
-    localStorage.setItem("resumeora_selected_jobs", JSON.stringify(selectedJobs));
+    localStorage.setItem("jobwin_selected_jobs", JSON.stringify(selectedJobs));
     router.push("/apply");
   };
 

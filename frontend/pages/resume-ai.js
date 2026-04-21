@@ -75,7 +75,7 @@ export default function ResumeAI() {
   const chatRef = useRef(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("resumeora_theme");
+    const saved = localStorage.getItem("jobwin_theme");
     if (saved && THEMES[saved]) setTheme(saved);
   }, []);
 
@@ -83,7 +83,7 @@ export default function ResumeAI() {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [msgs, loading]);
 
-  const switchTheme = (t) => { setTheme(t); localStorage.setItem("resumeora_theme", t); };
+  const switchTheme = (t) => { setTheme(t); localStorage.setItem("jobwin_theme", t); };
   const addAI   = (text, extra) => setMsgs(prev => [...prev, { role: "ai", text, ...(extra || {}) }]);
   const addUser = (text)        => setMsgs(prev => [...prev, { role: "user", text }]);
   const upd     = (patch)       => setRd(prev => ({ ...prev, ...patch }));
@@ -583,9 +583,9 @@ export default function ResumeAI() {
         template: "modernist",
         updatedAt: new Date().toLocaleString(),
       };
-      const existing = JSON.parse(localStorage.getItem("resumeora_resumes") || "[]");
-      localStorage.setItem("resumeora_resumes", JSON.stringify([entry, ...existing]));
-      localStorage.setItem("resumeora_current_resume", JSON.stringify(entry));
+      const existing = JSON.parse(localStorage.getItem("jobwin_resumes") || "[]");
+      localStorage.setItem("jobwin_resumes", JSON.stringify([entry, ...existing]));
+      localStorage.setItem("jobwin_current_resume", JSON.stringify(entry));
     } catch (e) {}
 
     setLoading(false);

@@ -1,4 +1,4 @@
-# Resumora — AI-Powered Resume Builder
+# JobwinResume — AI-Powered Resume Builder
 
 > Build stunning, ATS-optimized resumes with Claude AI in minutes.
 
@@ -80,4 +80,4 @@ RAZORPAY_KEY_SECRET=your_secret
 
 ## 📄 License
 
-MIT — © 2026 Resumora
+MIT — © 2026 JobwinResume
