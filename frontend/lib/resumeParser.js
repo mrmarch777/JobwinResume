@@ -125,9 +125,20 @@ export async function extractTextFromPDF(file) {
   try {
     const pdfjsLib = await import("pdfjs-dist/build/pdf.mjs");
     
-    // Set worker with fallback to local
-    if (pdfjsLib.GlobalWorkerOptions?.workerSrc) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+    // Configure PDF.js worker - MUST be set before loading PDFs
+    try {
+      // Try multiple CDN sources for worker
+      const workerUrl = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+    } catch (e) {
+      console.warn("Could not set PDF worker from CDN, trying fallback:", e.message);
+      // Fallback: try unpkg with min version
+      try {
+        const workerUrl = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+      } catch (e2) {
+        console.error("Failed to set PDF worker:", e2.message);
+      }
     }
 
     const arrayBuffer = await file.arrayBuffer();
@@ -135,10 +146,21 @@ export async function extractTextFromPDF(file) {
       throw new Error("File is empty");
     }
 
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let pdf;
+    try {
+      pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    } catch (docErr) {
+      // If standard loading fails, try alternative approach
+      console.warn("Standard PDF loading failed, trying alternative method:", docErr.message);
+      try {
+        pdf = await pdfjsLib.getDocument({ data: arrayBuffer, useWorkerFetch: false }).promise;
+      } catch (altErr) {
+        throw new Error(`Could not load PDF: ${docErr.message}. This PDF might be corrupted or encrypted.`);
+      }
+    }
     
     if (!pdf || pdf.numPages === 0) {
-      throw new Error("PDF has no pages");
+      throw new Error("PDF has no pages or is invalid");
     }
 
     let fullText = "";
@@ -175,7 +197,7 @@ export async function extractTextFromPDF(file) {
     }
     
     if (!fullText || fullText.trim().length === 0) {
-      throw new Error("No text could be extracted from PDF");
+      throw new Error("No text could be extracted from PDF. Try a different PDF file.");
     }
     
     return fullText.trim();
