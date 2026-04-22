@@ -56,45 +56,81 @@ DIFFICULTY: [Easy / Medium / Competitive]
 
 
 async def calculate_ats_score(resume_text: str, job_description: str) -> dict:
-    prompt = f"""
-You are an ATS expert. Compare this resume against the job description and score the match.
+    """
+    Analyzes ATS match between resume and job description.
+    Returns: {score, missing_keywords, strengths, top_fix, error (optional)}
+    """
+    if not resume_text or not resume_text.strip():
+        return {"error": "Resume text is empty", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
+    
+    if not job_description or not job_description.strip():
+        return {"error": "Job description is empty", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
 
-RESUME:
+    prompt = f"""You are an ATS expert. Compare this resume against the job description and score the match.
+
+RESUME (first 2000 chars):
 {resume_text[:2000]}
 
-JOB DESCRIPTION:
+JOB DESCRIPTION (first 1500 chars):
 {job_description[:1500]}
 
-Return EXACTLY this format:
-SCORE: [number 0-100]
-MISSING_KEYWORDS: [comma-separated list of important keywords missing from resume]
-STRENGTHS: [what matches well, 1-2 sentences]
-TOP_FIX: [the single most important thing to add or change]
+Respond with ONLY valid JSON (no markdown, no explanation):
+{{
+  "score": <number 0-100>,
+  "missing_keywords": [<list of 3-5 important keywords missing from resume>],
+  "strengths": "<what matches well, 1-2 sentences>",
+  "top_fix": "<the single most important thing to add or change>"
+}}
 """
     try:
         response = await client.messages.create(
             model=MODEL,
-            max_tokens=400,
+            max_tokens=500,
             messages=[{"role": "user", "content": prompt}]
         )
-        raw = response.content[0].text
-        lines = raw.strip().split("\n")
-        result = {}
-        for line in lines:
-            if ":" in line:
-                key, value = line.split(":", 1)
-                result[key.strip()] = value.strip()
-
-        return {
-            "score": int(result.get("SCORE", 50)),
-            "missing_keywords": result.get("MISSING_KEYWORDS", "").split(", "),
-            "strengths": result.get("STRENGTHS", ""),
-            "top_fix": result.get("TOP_FIX", ""),
-        }
-
+        raw = response.content[0].text.strip()
+        
+        # Try to extract JSON from response (might have extra text)
+        import json
+        json_start = raw.find('{')
+        json_end = raw.rfind('}') + 1
+        if json_start >= 0 and json_end > json_start:
+            json_str = raw[json_start:json_end]
+            data = json.loads(json_str)
+            
+            # Validate and sanitize response
+            score = int(data.get("score", 50))
+            score = max(0, min(100, score))  # Clamp 0-100
+            
+            keywords = data.get("missing_keywords", [])
+            if isinstance(keywords, str):
+                keywords = [k.strip() for k in keywords.split(",") if k.strip()][:10]
+            elif not isinstance(keywords, list):
+                keywords = []
+            
+            return {
+                "score": score,
+                "missing_keywords": keywords[:10],  # Limit to 10
+                "strengths": str(data.get("strengths", ""))[:500],  # Limit length
+                "top_fix": str(data.get("top_fix", ""))[:500],
+                "success": True
+            }
+        else:
+            return {"error": "Invalid response format from AI", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
+            
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON parse error in ATS score: {e}")
+        print(f"Response was: {raw[:200]}")
+        return {"error": f"Failed to parse AI response: {str(e)[:100]}", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
     except Exception as e:
         print(f"❌ ATS score error: {e}")
-        return {"score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
+        error_msg = str(e)
+        if "429" in error_msg:
+            return {"error": "Rate limited. Please try again in a moment.", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
+        elif "401" in error_msg or "unauthorized" in error_msg.lower():
+            return {"error": "API key error. Please check backend configuration.", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
+        else:
+            return {"error": f"Analysis failed: {error_msg[:100]}", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
 
 
 async def tailor_resume(resume_text: str, job: dict) -> str:

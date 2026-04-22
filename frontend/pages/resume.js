@@ -1747,7 +1747,7 @@ export default function Resume() {
           {activeView === "ats-optimizer" && (() => {
             const runAtsOptimizer = async () => {
               if (!atsOptFile && !atsOptResumeText) { setAtsOptError("Please upload your resume first."); return; }
-              if (!atsOptJD.trim()) { setAtsOptError("Please paste the job description."); return; }
+              if (!atsOptJD.trim() || atsOptJD.trim().length < 50) { setAtsOptError("Please paste a detailed job description (at least 50 characters)."); return; }
               setAtsOptError("");
               setAtsOptLoading(true);
               setAtsOptResult(null);
@@ -1755,27 +1755,55 @@ export default function Resume() {
                 let resumeText = atsOptResumeText;
                 // Extract text from file if not already done
                 if (atsOptFile && !resumeText) {
-                  const ext = atsOptFile.name.toLowerCase().split(".").pop();
-                  if (ext === "pdf") {
-                    resumeText = await extractTextFromPDF(atsOptFile);
-                  } else if (ext === "docx" || ext === "doc") {
-                    resumeText = await extractTextFromDOCX(atsOptFile);
-                  } else {
-                    resumeText = await atsOptFile.text();
+                  try {
+                    const ext = atsOptFile.name.toLowerCase().split(".").pop();
+                    if (ext === "pdf") {
+                      resumeText = await extractTextFromPDF(atsOptFile);
+                    } else if (ext === "docx" || ext === "doc") {
+                      resumeText = await extractTextFromDOCX(atsOptFile);
+                    } else {
+                      resumeText = await atsOptFile.text();
+                    }
+                  } catch (extractErr) {
+                    throw new Error(`Failed to read file: ${extractErr.message}`);
                   }
-                  if (!resumeText || resumeText.trim().length < 30) throw new Error("Could not extract text from resume. Try a different file.");
+                  if (!resumeText || resumeText.trim().length < 50) {
+                    throw new Error("Resume file appears empty or too short. Please use a valid resume file (minimum 50 characters).");
+                  }
                   setAtsOptResumeText(resumeText);
                 }
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ats-score`, {
+                
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+                if (!apiUrl) {
+                  throw new Error("Backend API not configured. Contact support.");
+                }
+                
+                const res = await fetch(`${apiUrl}/ats-score`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ resume_text: resumeText, job_description: atsOptJD }),
                 });
-                if (!res.ok) throw new Error("Backend error " + res.status);
+                
+                if (!res.ok) {
+                  const errorText = await res.text();
+                  throw new Error(`Backend error ${res.status}: ${errorText || "Unknown error"}`);
+                }
+                
                 const data = await res.json();
+                
+                // Validate response has required fields
+                if (data.error) {
+                  throw new Error(data.error);
+                }
+                if (typeof data.score !== "number" || data.score < 0 || data.score > 100) {
+                  throw new Error("Invalid score received from server. Please try again.");
+                }
+                
                 setAtsOptResult(data);
               } catch (err) {
-                setAtsOptError("Analysis failed: " + err.message);
+                console.error("ATS Optimizer error:", err);
+                const errorMsg = err.message || "Analysis failed. Please try again.";
+                setAtsOptError(errorMsg);
               }
               setAtsOptLoading(false);
             };

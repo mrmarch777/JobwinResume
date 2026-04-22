@@ -122,65 +122,121 @@ export function validateAndCleanResume(resumeData) {
 // ── TEXT EXTRACTION ──────────────────────────────────────────────────────────
 
 export async function extractTextFromPDF(file) {
-  const pdfjsLib = await import("pdfjs-dist/build/pdf.mjs");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-  let fullText = "";
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    // Sort by Y position (top to bottom), then X (left to right)
-    const items = content.items.slice().sort((a, b) => {
-      const yDiff = b.transform[5] - a.transform[5];
-      if (Math.abs(yDiff) > 5) return yDiff;
-      return a.transform[4] - b.transform[4];
-    });
-    let lastY = null;
-    for (const item of items) {
-      const y = Math.round(item.transform[5]);
-      if (lastY !== null && Math.abs(y - lastY) > 5) fullText += "\n";
-      else if (lastY !== null) fullText += " ";
-      fullText += item.str;
-      lastY = y;
+  try {
+    const pdfjsLib = await import("pdfjs-dist/build/pdf.mjs");
+    
+    // Set worker with fallback to local
+    if (pdfjsLib.GlobalWorkerOptions?.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
     }
-    fullText += "\n\n";
+
+    const arrayBuffer = await file.arrayBuffer();
+    if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+      throw new Error("File is empty");
+    }
+
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    
+    if (!pdf || pdf.numPages === 0) {
+      throw new Error("PDF has no pages");
+    }
+
+    let fullText = "";
+    const maxPages = Math.min(pdf.numPages, 50); // Limit to 50 pages
+    
+    for (let i = 1; i <= maxPages; i++) {
+      try {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        
+        if (!content || !content.items) continue;
+        
+        // Sort by Y position (top to bottom), then X (left to right)
+        const items = content.items.slice().sort((a, b) => {
+          const yDiff = b.transform[5] - a.transform[5];
+          if (Math.abs(yDiff) > 5) return yDiff;
+          return a.transform[4] - b.transform[4];
+        });
+        
+        let lastY = null;
+        for (const item of items) {
+          if (!item.str) continue;
+          const y = Math.round(item.transform[5]);
+          if (lastY !== null && Math.abs(y - lastY) > 5) fullText += "\n";
+          else if (lastY !== null) fullText += " ";
+          fullText += item.str;
+          lastY = y;
+        }
+        fullText += "\n\n";
+      } catch (pageErr) {
+        console.warn(`Warning: Could not read page ${i}:`, pageErr.message);
+        continue;
+      }
+    }
+    
+    if (!fullText || fullText.trim().length === 0) {
+      throw new Error("No text could be extracted from PDF");
+    }
+    
+    return fullText.trim();
+  } catch (err) {
+    console.error("PDF extraction error:", err);
+    throw new Error(`PDF reading failed: ${err.message}`);
   }
-  return fullText;
 }
 
 export async function extractTextFromDOCX(file) {
-  const mammoth = await import("mammoth");
-  const arrayBuffer = await file.arrayBuffer();
-
-  // convertToHtml preserves heading tags and list items — far better section detection
   try {
-    const html = await mammoth.convertToHtml({ arrayBuffer });
-    // Strip HTML tags but preserve newlines for h1/h2/h3/p/li
-    const text = html.value
-      .replace(/<h[1-3][^>]*>/gi, "\n\n")
-      .replace(/<\/h[1-3]>/gi, "\n")
-      .replace(/<p[^>]*>/gi, "\n")
-      .replace(/<\/p>/gi, "\n")
-      .replace(/<li[^>]*>/gi, "\n• ")
-      .replace(/<\/li>/gi, "")
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&nbsp;/g, " ")
-      .replace(/&quot;/g, '"')
-      .replace(/[ \t]+/g, " ")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
-    return text;
-  } catch {
-    // Fallback: raw text extraction
-    const result = await mammoth.extractRawText({ arrayBuffer });
-    return result.value;
+    const mammoth = await import("mammoth");
+    const arrayBuffer = await file.arrayBuffer();
+
+    if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+      throw new Error("File is empty");
+    }
+
+    // convertToHtml preserves heading tags and list items — far better section detection
+    try {
+      const html = await mammoth.convertToHtml({ arrayBuffer });
+      if (!html.value) {
+        throw new Error("No content in document");
+      }
+      
+      // Strip HTML tags but preserve newlines for h1/h2/h3/p/li
+      const text = html.value
+        .replace(/<h[1-3][^>]*>/gi, "\n\n")
+        .replace(/<\/h[1-3]>/gi, "\n")
+        .replace(/<p[^>]*>/gi, "\n")
+        .replace(/<\/p>/gi, "\n")
+        .replace(/<li[^>]*>/gi, "\n• ")
+        .replace(/<\/li>/gi, "")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&quot;/g, '"')
+        .replace(/[ \t]+/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+      
+      if (!text || text.length === 0) {
+        throw new Error("Document appears to be empty");
+      }
+      
+      return text;
+    } catch (htmlErr) {
+      // Fallback: raw text extraction
+      console.warn("HTML conversion failed, trying raw text extraction");
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      if (!result.value) {
+        throw new Error("Could not extract text from document");
+      }
+      return result.value;
+    }
+  } catch (err) {
+    console.error("DOCX extraction error:", err);
+    throw new Error(`Document reading failed: ${err.message}`);
   }
 }
 
