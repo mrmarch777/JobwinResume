@@ -120,8 +120,8 @@ async def get_jobs(role: str, city: str, num_results: int = 20, plan: str = "fre
     }
 
 @app.post("/ats-score")
-def get_ats_score(request: ATSRequest):
-    return calculate_ats_score(request.resume_text, request.job_description)
+async def get_ats_score(request: ATSRequest):
+    return await calculate_ats_score(request.resume_text, request.job_description)
 
 @app.post("/tailor-resume")
 async def get_tailored_resume(request: ResumeRequest):
@@ -160,7 +160,7 @@ async def get_interview_prep(request: InterviewPrepRequest):
     return {"count": len(questions), "questions": questions}
 
 @app.post("/generate-resume")
-def generate_resume(request: ResumeGenerateRequest):
+async def generate_resume(request: ResumeGenerateRequest):
     prompt = f"""
 You are a professional resume writer. Create a complete, ATS-friendly resume.
 
@@ -196,7 +196,7 @@ Make it ATS-friendly, professional, and impressive.
 Use clean formatting with clear section headers.
 """
     try:
-        response = client.messages.create(
+        response = await client.messages.create(
             model=MODEL,
             max_tokens=2000,
             messages=[{"role": "user", "content": prompt}]
@@ -860,12 +860,16 @@ HOBBIES: {req.hobbies or "Not specified"}
 {jd_section}
 
 INSTRUCTIONS:
-1. SUMMARY: 2-3 compelling sentences tailored to role/JD. Start with experience + domain, add key strength, end with value.
-2. EXPERIENCE: 4-5 bullets per role. responsibilities[] = key duties. bullets[] = quantified achievements. Action verbs. JD-keyword aligned.
-3. SKILLS: 8-15 skills ordered by JD relevance. Rating 2-5 (5=Expert).
-4. Parse certifications/achievements/hobbies into structured arrays.
-5. Keep personal details EXACTLY as provided.
-6. Return ONLY valid JSON — no markdown, no explanation.
+1. SUMMARY: 2-3 compelling sentences tailored to role/JD. Fix all spelling/grammar. Start with years of experience + domain, add key strength, end with clear value proposition.
+2. EXPERIENCE: 4-5 bullets per role. responsibilities[] = 3-4 key duties (action verb + what you did). bullets[] = 3-4 quantified achievements (action verb + metric/outcome). Remove vague filler. Add numbers where logical.
+3. SKILLS: 8-15 skills ordered by JD relevance. Remove duplicates. Rating 2-5 (5=Expert). MUST be an array of objects [{{"id":200,"name":"Skill","rating":4}}] — NEVER a string.
+4. CERTIFICATIONS: Array of objects [{{"id":400,"name":"...","issuer":"...","year":"..."}}] — NEVER a string.
+5. ACHIEVEMENTS: Array of objects [{{"id":500,"text":"..."}}] — NEVER a string.
+6. HOBBIES: Array of objects [{{"id":600,"name":"...","icon":"🎯"}}] — NEVER a string. Use relevant emojis.
+7. Fix ALL spelling mistakes and grammar errors in every field.
+8. Remove irrelevant or redundant information. Keep only what strengthens the resume.
+9. Keep personal details (name, email, phone, location, linkedin) EXACTLY as provided — do not change them.
+10. Return ONLY valid JSON — no markdown, no code fences, no explanation. Start with {{ and end with }}.
 
 JSON STRUCTURE:
 {{
@@ -899,7 +903,7 @@ JSON STRUCTURE:
 }}"""
 
     try:
-        response = client.messages.create(
+        response = await client.messages.create(
             model=MODEL,
             max_tokens=4000,
             messages=[{"role": "user", "content": prompt}]

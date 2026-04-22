@@ -21,6 +21,7 @@ export default function Apply() {
   const [activeJob, setActiveJob] = useState(null);
   const [yourName, setYourName] = useState("");
   const [yourRole, setYourRole] = useState("");
+  const [resumeData, setResumeData] = useState(null);
   const navItems = [
     { id: "home", icon: "⊞", label: "Home", href: "/dashboard" },
     { id: "jobs", icon: "🔍", label: "Find Job", href: "/find-job" },
@@ -45,6 +46,16 @@ export default function Apply() {
       setSelectedJobs(jobs);
       if (jobs.length > 0) setActiveJob(0);
     }
+    // Load resume data for AI context
+    try {
+      const resumes = JSON.parse(localStorage.getItem("jobwin_resumes") || "[]");
+      if (resumes.length > 0) {
+        const r = resumes[0];
+        setResumeData(r);
+        if (r.name) setYourName(r.name);
+        if (r.title) setYourRole(r.title);
+      }
+    } catch (e) {}
   }, []);
 
   const handleTheme = (name) => setTheme(name);
@@ -60,25 +71,47 @@ export default function Apply() {
   };
 
   const generateCoverLetter = async (job, index) => {
-    setGenerating({ ...generating, [index]: true });
+    setGenerating(prev => ({ ...prev, [index]: true }));
     try {
+      // Build experience summary from resume data if available
+      const expSummary = resumeData
+        ? (resumeData.experience || []).map(e =>
+            `${e.role || ""} at ${e.company || ""} (${e.duration || ""}): ${e.bullets?.join(", ") || e.description || ""}`
+          ).join("\n") || resumeData.summary || yourRole || "Experienced professional"
+        : yourRole || "Experienced professional";
+
+      const skillsSummary = resumeData
+        ? (resumeData.skills || []).map(s => s.name || s).join(", ") || "Various technical and soft skills"
+        : "Various technical and soft skills";
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cover-letter`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          job_title: job.title,
-          company: job.company,
-          job_description: job.ai_summary || job.description || "",
-          candidate_name: yourName,
-          candidate_role: yourRole || job.title,
+          user_name: yourName || "Candidate",
+          user_experience: expSummary,
+          user_skills: skillsSummary,
+          job_title: job.title || "the position",
+          job_company: job.company || "the company",
+          job_description: job.ai_summary || job.description || job.title || "",
+          hr_name: "Hiring Manager",
         }),
       });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Backend error ${res.status}: ${errText}`);
+      }
+
       const data = await res.json();
-      setCoverLetters({ ...coverLetters, [index]: data.cover_letter || data.letter || "Cover letter generated!" });
+      const letter = data.cover_letter || data.letter || "";
+      if (!letter) throw new Error("Empty response from AI");
+      setCoverLetters(prev => ({ ...prev, [index]: letter }));
     } catch (err) {
-      setCoverLetters({ ...coverLetters, [index]: "Could not generate cover letter. Please try again." });
+      console.error("Cover letter error:", err);
+      setCoverLetters(prev => ({ ...prev, [index]: `Error: ${err.message}. Make sure the backend is running at ${process.env.NEXT_PUBLIC_API_URL}` }));
     }
-    setGenerating({ ...generating, [index]: false });
+    setGenerating(prev => ({ ...prev, [index]: false }));
   };
 
   const generateAllCoverLetters = async () => {

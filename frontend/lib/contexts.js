@@ -41,22 +41,23 @@ export const THEMES = {
 };
 
 // ── PLAN LIMITS ───────────────────────────────────────────────────────────────
+// 🚧 DEV MODE: All features unlocked — restore per-plan limits before launch
 export const PLAN_LIMITS = {
-  free:     { resumes: Infinity,  searches: 10,       templates: 5,  apply: false, interview: false, atsOptimise: false, hrFinder: false, label: "Free" },
-  basic:    { resumes: Infinity,  searches: 20,       templates: 10, apply: true,  interview: false, atsOptimise: false, hrFinder: false, label: "Basic" },
-  standard: { resumes: Infinity,  searches: Infinity, templates: 20, apply: true,  interview: true,  atsOptimise: true,  hrFinder: false, label: "Standard" },
-  pro:      { resumes: Infinity,  searches: Infinity, templates: Infinity, apply: true,  interview: true,  atsOptimise: true,  hrFinder: true,  label: "Pro" },
+  free:     { resumes: Infinity, searches: Infinity, templates: Infinity, apply: true, interview: true, atsOptimise: true, hrFinder: true, label: "Pro" },
+  basic:    { resumes: Infinity, searches: Infinity, templates: Infinity, apply: true, interview: true, atsOptimise: true, hrFinder: true, label: "Basic" },
+  standard: { resumes: Infinity, searches: Infinity, templates: Infinity, apply: true, interview: true, atsOptimise: true, hrFinder: true, label: "Standard" },
+  pro:      { resumes: Infinity, searches: Infinity, templates: Infinity, apply: true, interview: true, atsOptimise: true, hrFinder: true, label: "Pro" },
 };
 
 // Feature keys users can check against
 export const FEATURES = {
-  interview: p => PLAN_LIMITS[p]?.interview ?? false,
-  apply:     p => PLAN_LIMITS[p]?.apply     ?? false,
-  atsOptimise: p => PLAN_LIMITS[p]?.atsOptimise ?? false,
-  hrFinder:  p => PLAN_LIMITS[p]?.hrFinder  ?? false,
-  resumeCount: p => PLAN_LIMITS[p]?.resumes  ?? 1,
-  searchCount: p => PLAN_LIMITS[p]?.searches ?? 3,
-  templateCount: p => PLAN_LIMITS[p]?.templates ?? 3,
+  interview:    p => PLAN_LIMITS[p]?.interview    ?? true,
+  apply:        p => PLAN_LIMITS[p]?.apply        ?? true,
+  atsOptimise:  p => PLAN_LIMITS[p]?.atsOptimise  ?? true,
+  hrFinder:     p => PLAN_LIMITS[p]?.hrFinder     ?? true,
+  resumeCount:  p => PLAN_LIMITS[p]?.resumes      ?? Infinity,
+  searchCount:  p => PLAN_LIMITS[p]?.searches     ?? Infinity,
+  templateCount:p => PLAN_LIMITS[p]?.templates    ?? Infinity,
 };
 
 // ── CONTEXTS ──────────────────────────────────────────────────────────────────
