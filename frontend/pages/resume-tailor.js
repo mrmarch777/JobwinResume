@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabase";
+import { extractTextFromPDF, extractTextFromDOCX } from "../lib/resumeParser";
 
 export default function ResumeTailor() {
   const router = useRouter();
@@ -11,160 +12,139 @@ export default function ResumeTailor() {
   const [jobCompany, setJobCompany] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const [atsScore, setAtsScore] = useState(null);
+  const [atsAnalysis, setAtsAnalysis] = useState(null);
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.push("/login"); return; }
-      setUser(session.user);
+      if (!session) router.push("/login");
+      else setUser(session.user);
     });
-
-    // Check if job was passed from search results
     const params = new URLSearchParams(window.location.search);
     if (params.get("job_title")) setJobTitle(params.get("job_title"));
     if (params.get("job_company")) setJobCompany(params.get("job_company"));
     if (params.get("job_description")) setJobDescription(decodeURIComponent(params.get("job_description")));
   }, []);
 
-  const checkATS = async () => {
-    if (!resumeText || !jobDescription) {
-      alert("Please paste both your resume and the job description!");
-      return;
-    }
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError("");
+    setStatus("Reading file...");
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ats-score`, {
+      let text = file.name.endsWith(".pdf") ? await extractTextFromPDF(file) : await extractTextFromDOCX(file);
+      setResumeText(text);
+      setStatus("Resume loaded!");
+      setTimeout(() => setStatus(""), 2000);
+    } catch (err) {
+      setError(err.message);
+    }
+    setLoading(false);
+  };
+
+  const checkATS = async () => {
+    if (!resumeText || !jobDescription) { alert("Fill in both fields!"); return; }
+    setLoading(true);
+    setStatus("Analyzing...");
+    try {
+      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comprehensive-ats-analysis`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resume_text: resumeText, job_description: jobDescription }),
       });
-      const data = await response.json();
-      setAtsScore(data);
+      const data = await resp.json();
+      setAtsAnalysis(data);
+      setStatus("Analysis complete!");
+      setTimeout(() => setStatus(""), 2000);
     } catch (err) {
-      alert("Error checking ATS score. Make sure backend is running!");
+      setError("Analysis failed. Backend running?");
     }
     setLoading(false);
   };
 
-  const tailorResume = async () => {
-    if (!resumeText || !jobDescription) {
-      alert("Please paste both your resume and the job description!");
-      return;
-    }
+  const tailor = async () => {
+    if (!resumeText || !jobDescription) { alert("Fill in both fields!"); return; }
     setLoading(true);
+    setStatus("Tailoring...");
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tailor-resume`, {
+      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tailor-resume`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           resume_text: resumeText,
-          job_title: jobTitle || "the position",
-          job_company: jobCompany || "the company",
+          job_title: jobTitle || "role",
+          job_company: jobCompany || "company",
           job_description: jobDescription,
         }),
       });
-      const data = await response.json();
+      const data = await resp.json();
       setResult(data.tailored_resume);
+      setStatus("Done!");
+      setTimeout(() => setStatus(""), 2000);
     } catch (err) {
-      alert("Error tailoring resume. Make sure backend is running!");
+      setError("Tailor failed.");
     }
     setLoading(false);
-  };
-
-  const downloadResume = () => {
-    const blob = new Blob([result], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Tailored_Resume_${jobCompany || "Job"}.txt`;
-    a.click();
   };
 
   if (!user) return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}><div style={{ color: "white" }}>Loading...</div></div>;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f5f5", fontFamily: "Arial" }}>
-
-      {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", padding: "20px 40px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h1 onClick={() => router.push("/resume")} style={{ color: "white", margin: 0, fontSize: "24px", cursor: "pointer" }}>🚀 JobwinResume</h1>
-        <span style={{ color: "rgba(255,255,255,0.8)", fontSize: "14px" }}>🎯 Tailor Resume to Job</span>
+    <div style={{ minHeight: "100vh", background: "#f5f5f5" }}>
+      <div style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", padding: "20px 40px" }}>
+        <h1 onClick={() => router.push("/")} style={{ color: "white", margin: 0, fontSize: "24px", cursor: "pointer" }}>🚀 JobwinResume</h1>
       </div>
 
-      <div style={{ maxWidth: "900px", margin: "0 auto", padding: "40px 20px" }}>
-        <h2 style={{ color: "#1a1a2e", marginBottom: "8px" }}>🎯 Tailor Your Resume</h2>
-        <p style={{ color: "#666", marginBottom: "30px" }}>Paste your resume and a job description — AI rewrites your resume to match the job perfectly</p>
+      <div style={{ maxWidth: "900px", margin: "0 auto", padding: "30px 20px" }}>
+        <h2>🎯 ATS Analyzer & Resume Tailor</h2>
 
-        {/* Job details */}
-        <div style={{ background: "white", borderRadius: "16px", padding: "24px", marginBottom: "20px", boxShadow: "0 2px 15px rgba(0,0,0,0.06)" }}>
-          <h3 style={{ color: "#1a1a2e", marginBottom: "16px" }}>Job Details</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-            <div>
-              <label style={{ display: "block", fontSize: "13px", color: "#555", marginBottom: "6px", fontWeight: "bold" }}>Job Title</label>
-              <input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g. Data Analyst" style={{ width: "100%", padding: "12px 14px", border: "2px solid #e0e0e0", borderRadius: "8px", fontSize: "14px", boxSizing: "border-box", outline: "none" }} />
-            </div>
-            <div>
-              <label style={{ display: "block", fontSize: "13px", color: "#555", marginBottom: "6px", fontWeight: "bold" }}>Company Name</label>
-              <input value={jobCompany} onChange={e => setJobCompany(e.target.value)} placeholder="e.g. Infosys" style={{ width: "100%", padding: "12px 14px", border: "2px solid #e0e0e0", borderRadius: "8px", fontSize: "14px", boxSizing: "border-box", outline: "none" }} />
-            </div>
-          </div>
-          <div>
-            <label style={{ display: "block", fontSize: "13px", color: "#555", marginBottom: "6px", fontWeight: "bold" }}>Job Description *</label>
-            <textarea value={jobDescription} onChange={e => setJobDescription(e.target.value)} placeholder="Paste the full job description here..." style={{ width: "100%", padding: "12px 14px", border: "2px solid #e0e0e0", borderRadius: "8px", fontSize: "14px", boxSizing: "border-box", height: "120px", resize: "vertical", outline: "none" }} />
-          </div>
+        {error && <div style={{ background: "#FFE5E5", padding: "12px", borderRadius: "6px", marginBottom: "15px", color: "#991B1B" }}>❌ {error}</div>}
+        {status && <div style={{ background: "#E0E7FF", padding: "12px", borderRadius: "6px", marginBottom: "15px", color: "#5B21B6", textAlign: "center" }}>{status}</div>}
+
+        <div style={{ background: "white", borderRadius: "8px", padding: "15px", marginBottom: "15px" }}>
+          <h3>📋 Job</h3>
+          <input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="Job Title" style={{ width: "100%", padding: "8px", marginBottom: "10px", border: "1px solid #ddd", borderRadius: "4px", boxSizing: "border-box" }} />
+          <input value={jobCompany} onChange={e => setJobCompany(e.target.value)} placeholder="Company" style={{ width: "100%", padding: "8px", marginBottom: "10px", border: "1px solid #ddd", borderRadius: "4px", boxSizing: "border-box" }} />
+          <textarea value={jobDescription} onChange={e => setJobDescription(e.target.value)} placeholder="Job description" style={{ width: "100%", padding: "8px", border: "1px solid #ddd", borderRadius: "4px", height: "80px", boxSizing: "border-box" }} />
         </div>
 
-        {/* Resume input */}
-        <div style={{ background: "white", borderRadius: "16px", padding: "24px", marginBottom: "20px", boxShadow: "0 2px 15px rgba(0,0,0,0.06)" }}>
-          <h3 style={{ color: "#1a1a2e", marginBottom: "8px" }}>Your Current Resume</h3>
-          <p style={{ color: "#999", fontSize: "13px", marginBottom: "16px" }}>Paste your existing resume text here</p>
-          <textarea value={resumeText} onChange={e => setResumeText(e.target.value)} placeholder="Paste your resume here..." style={{ width: "100%", padding: "12px 14px", border: "2px solid #e0e0e0", borderRadius: "8px", fontSize: "14px", boxSizing: "border-box", height: "200px", resize: "vertical", outline: "none" }} />
+        <div style={{ background: "white", borderRadius: "8px", padding: "15px", marginBottom: "15px" }}>
+          <h3>📄 Resume</h3>
+          <div style={{ marginBottom: "10px", border: "2px dashed #667eea", padding: "15px", textAlign: "center", borderRadius: "4px" }}>
+            <input type="file" accept=".pdf,.docx" onChange={handleFileUpload} disabled={loading} style={{ display: "none" }} id="file" />
+            <label htmlFor="file" style={{ cursor: "pointer", color: "#667eea", fontWeight: "bold" }}>📤 Upload PDF/DOCX</label>
+          </div>
+          <textarea value={resumeText} onChange={e => setResumeText(e.target.value)} placeholder="Or paste resume" style={{ width: "100%", padding: "8px", border: "1px solid #ddd", borderRadius: "4px", height: "100px", boxSizing: "border-box" }} />
         </div>
 
-        {/* ATS Score */}
-        {atsScore && (
-          <div style={{ background: "white", borderRadius: "16px", padding: "24px", marginBottom: "20px", boxShadow: "0 2px 15px rgba(0,0,0,0.06)", borderLeft: `4px solid ${atsScore.score >= 70 ? "#0B7B3E" : atsScore.score >= 40 ? "#B45309" : "#B91C1C"}` }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
-              <div style={{ fontSize: "48px", fontWeight: "bold", color: atsScore.score >= 70 ? "#0B7B3E" : atsScore.score >= 40 ? "#B45309" : "#B91C1C" }}>{atsScore.score}%</div>
-              <div>
-                <div style={{ fontWeight: "bold", fontSize: "18px", color: "#1a1a2e" }}>ATS Match Score</div>
-                <div style={{ color: "#666", fontSize: "14px" }}>{atsScore.score >= 70 ? "Great match! ✅" : atsScore.score >= 40 ? "Needs improvement ⚠️" : "Poor match ❌ — tailor your resume"}</div>
-              </div>
-            </div>
-            {atsScore.missing_keywords?.length > 0 && (
-              <div style={{ marginBottom: "12px" }}>
-                <strong style={{ fontSize: "13px", color: "#555" }}>Missing keywords:</strong>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
-                  {atsScore.missing_keywords.map((kw, i) => <span key={i} style={{ background: "#FCEBEB", color: "#B91C1C", padding: "3px 10px", borderRadius: "12px", fontSize: "12px" }}>{kw}</span>)}
-                </div>
-              </div>
+        <div style={{ display: "flex", gap: "10px", marginBottom: "15px" }}>
+          <button onClick={checkATS} disabled={loading || !resumeText || !jobDescription} style={{ flex: 1, padding: "10px", background: "#667eea", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>📊 Check ATS</button>
+          <button onClick={tailor} disabled={loading || !resumeText || !jobDescription} style={{ flex: 1, padding: "10px", background: "#667eea", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>✨ Tailor</button>
+        </div>
+
+        {atsAnalysis && atsAnalysis.overall_score !== undefined && (
+          <div style={{ background: "white", borderRadius: "8px", padding: "15px", marginBottom: "15px" }}>
+            <div style={{ fontSize: "32px", fontWeight: "bold", color: atsAnalysis.overall_score >= 70 ? "#0B7B3E" : "#B91C1C" }}>{atsAnalysis.overall_score}% Match</div>
+            <p><strong>Strengths:</strong> {atsAnalysis.strengths}</p>
+            <p><strong>Weaknesses:</strong> {atsAnalysis.weaknesses}</p>
+            {atsAnalysis.missing_hard_skills?.length > 0 && (
+              <div><strong>Missing:</strong> {atsAnalysis.missing_hard_skills.join(", ")}</div>
             )}
-            {atsScore.top_fix && <div style={{ background: "#EBF3FF", color: "#185FA5", padding: "10px 14px", borderRadius: "8px", fontSize: "13px" }}>💡 Top fix: {atsScore.top_fix}</div>}
+            {atsAnalysis.top_3_improvements?.map((imp, i) => (
+              <div key={i} style={{ fontSize: "12px", marginTop: "6px", padding: "6px", background: "#F3F4F6" }}>{i+1}. {imp.action}</div>
+            ))}
           </div>
         )}
 
-        {/* Generated resume */}
         {result && (
-          <div style={{ background: "white", borderRadius: "16px", padding: "24px", marginBottom: "20px", boxShadow: "0 2px 15px rgba(0,0,0,0.06)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <h3 style={{ color: "#0B7B3E", margin: 0 }}>✅ Tailored Resume Ready!</h3>
-              <button onClick={downloadResume} style={{ background: "#0B7B3E", color: "white", border: "none", padding: "10px 20px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>📥 Download</button>
-            </div>
-            <div style={{ background: "#f8f9ff", borderRadius: "8px", padding: "20px", fontFamily: "Georgia, serif", fontSize: "13px", lineHeight: "1.8", whiteSpace: "pre-wrap", maxHeight: "400px", overflowY: "auto", border: "1px solid #e0e0e0" }}>
-              {result}
-            </div>
+          <div style={{ background: "white", borderRadius: "8px", padding: "15px" }}>
+            <h3>✅ Tailored Resume</h3>
+            <button onClick={() => { const blob = new Blob([result], { type: "text/plain" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "resume.txt"; a.click(); }} style={{ marginBottom: "10px", padding: "8px 16px", background: "#0B7B3E", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>📥 Download</button>
+            <textarea value={result} readOnly style={{ width: "100%", padding: "8px", border: "1px solid #ddd", borderRadius: "4px", height: "150px", fontFamily: "monospace", fontSize: "11px", boxSizing: "border-box" }} />
           </div>
         )}
-
-        {/* Action buttons */}
-        <div style={{ display: "flex", gap: "12px" }}>
-          <button onClick={checkATS} disabled={loading} style={{ flex: 1, padding: "15px", background: loading ? "#ccc" : "#185FA5", color: "white", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: "bold", cursor: loading ? "not-allowed" : "pointer" }}>
-            {loading ? "Checking..." : "📊 Check ATS Score"}
-          </button>
-          <button onClick={tailorResume} disabled={loading} style={{ flex: 2, padding: "15px", background: loading ? "#ccc" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", color: "white", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: "bold", cursor: loading ? "not-allowed" : "pointer" }}>
-            {loading ? "🤖 AI is tailoring your resume..." : "🎯 Tailor My Resume with AI"}
-          </button>
-        </div>
       </div>
     </div>
   );

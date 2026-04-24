@@ -349,6 +349,7 @@ export default function Resume() {
   const [atsOptResult, setAtsOptResult] = useState(null);
   const [atsOptError, setAtsOptError] = useState("");
   const [atsOptResumeText, setAtsOptResumeText] = useState("");
+  const [atsTextPreview, setAtsTextPreview] = useState(false);
   const atsOptFileRef = useRef(null);
   const [jobDesc, setJobDesc] = useState("");
   const [atsScore, setAtsScore] = useState(null);
@@ -716,16 +717,30 @@ export default function Resume() {
 
 
   const checkAts = async () => {
-    if (!jobDesc) { alert("Paste a job description!"); return; }
+    if (!jobDesc.trim() || jobDesc.trim().length < 30) {
+      alert("Please paste a job description (at least 30 characters) to check ATS match.");
+      return;
+    }
     setAtsLoading(true);
+    setAtsScore(null);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ats-score`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resume_text: JSON.stringify(resume), job_description: jobDesc }),
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      // Use the resume builder endpoint — sends full structured resume JSON for accurate analysis
+      const res = await fetch(`${apiUrl}/ats-score-from-resume-builder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resume_json: resume, job_description: jobDesc }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
       const data = await res.json();
+      if (data.error) throw new Error(data.error);
       setAtsScore(data);
-    } catch (e) { setAtsScore({ score: 72, feedback: "Could not connect to AI.", keywords: [] }); }
+    } catch (e) {
+      setAtsScore({ error: e.message || "Could not connect to AI. Make sure the backend is running.", overall_score: 0 });
+    }
     setAtsLoading(false);
   };
 
@@ -1745,72 +1760,97 @@ export default function Resume() {
 
           {/* ── ATS OPTIMIZER VIEW ── */}
           {activeView === "ats-optimizer" && (() => {
+
             const runAtsOptimizer = async () => {
-              if (!atsOptFile && !atsOptResumeText) { setAtsOptError("Please upload your resume first."); return; }
+              // Validate inputs
+              if (!atsOptFile && !atsOptResumeText) { setAtsOptError("Please upload your resume or use your current resume."); return; }
               if (!atsOptJD.trim() || atsOptJD.trim().length < 50) { setAtsOptError("Please paste a detailed job description (at least 50 characters)."); return; }
+              if (atsOptFile && atsOptFile.size > 10 * 1024 * 1024) { setAtsOptError("File too large. Max 10MB."); return; }
+
               setAtsOptError("");
               setAtsOptLoading(true);
               setAtsOptResult(null);
+
               try {
                 let resumeText = atsOptResumeText;
-                // Extract text from file if not already done
+
+                // Extract text from uploaded file
                 if (atsOptFile && !resumeText) {
                   try {
                     const ext = atsOptFile.name.toLowerCase().split(".").pop();
+                    console.log(`🔄 [ATS] Extracting ${ext} file...`);
                     if (ext === "pdf") {
                       resumeText = await extractTextFromPDF(atsOptFile);
                     } else if (ext === "docx" || ext === "doc") {
                       resumeText = await extractTextFromDOCX(atsOptFile);
-                    } else {
+                    } else if (ext === "txt") {
                       resumeText = await atsOptFile.text();
+                    } else {
+                      throw new Error(`Unsupported file type: .${ext}. Please use PDF, DOCX, or TXT.`);
                     }
+                    console.log(`✅ [ATS] Extracted: ${resumeText.length} chars`);
                   } catch (extractErr) {
-                    throw new Error(`Failed to read file: ${extractErr.message}`);
+                    throw new Error(`File reading failed: ${extractErr.message || "Unknown error"}`);
                   }
+
                   if (!resumeText || resumeText.trim().length < 50) {
-                    throw new Error("Resume file appears empty or too short. Please use a valid resume file (minimum 50 characters).");
+                    throw new Error("Resume appears empty or too short. Try a different file format or paste the text manually.");
                   }
                   setAtsOptResumeText(resumeText);
                 }
-                
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-                if (!apiUrl) {
-                  throw new Error("Backend API not configured. Contact support.");
-                }
-                
-                const res = await fetch(`${apiUrl}/ats-score`, {
+
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+                console.log(`🔄 [ATS] Sending to ${apiUrl}/comprehensive-ats-analysis | Resume: ${resumeText.length} chars | JD: ${atsOptJD.length} chars`);
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+                // Use comprehensive analysis — NO truncation on frontend, backend handles limits
+                const res = await fetch(`${apiUrl}/comprehensive-ats-analysis`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ resume_text: resumeText, job_description: atsOptJD }),
+                  body: JSON.stringify({
+                    resume_text: resumeText,  // Full text — no truncation
+                    job_description: atsOptJD  // Full JD — no truncation
+                  }),
+                  signal: controller.signal,
                 });
-                
+
+                clearTimeout(timeoutId);
+
                 if (!res.ok) {
-                  const errorText = await res.text();
-                  throw new Error(`Backend error ${res.status}: ${errorText || "Unknown error"}`);
+                  const errData = await res.json().catch(() => ({}));
+                  throw new Error(errData.detail || errData.error || `HTTP ${res.status}`);
                 }
-                
+
                 const data = await res.json();
-                
-                // Validate response has required fields
-                if (data.error) {
-                  throw new Error(data.error);
+                console.log(`✅ [ATS] Response:`, data);
+
+                if (data.error) throw new Error(data.error);
+
+                // comprehensive endpoint uses overall_score
+                if (data.overall_score === undefined && data.overall_score !== 0) {
+                  throw new Error("Incomplete analysis response. Please try again.");
                 }
-                if (typeof data.score !== "number" || data.score < 0 || data.score > 100) {
-                  throw new Error("Invalid score received from server. Please try again.");
-                }
-                
+
+                console.log(`🎉 [ATS] Score: ${data.overall_score}%`);
                 setAtsOptResult(data);
+
               } catch (err) {
-                console.error("ATS Optimizer error:", err);
-                const errorMsg = err.message || "Analysis failed. Please try again.";
-                setAtsOptError(errorMsg);
+                if (err.name === "AbortError") {
+                  setAtsOptError("Analysis timed out. Please try again with a shorter resume.");
+                } else {
+                  setAtsOptError(err.message || "Analysis failed. Please try again.");
+                }
+                setAtsOptResult(null);
+              } finally {
+                setAtsOptLoading(false);
               }
-              setAtsOptLoading(false);
             };
 
-            const scoreColor = !atsOptResult ? t.accent
-              : atsOptResult.score >= 80 ? "#43D9A2"
-              : atsOptResult.score >= 60 ? "#FFB347" : "#FF6584";
+            const score = atsOptResult?.overall_score ?? 0;
+            const scoreColor = !atsOptResult ? t.accent : score >= 80 ? "#43D9A2" : score >= 60 ? "#FFB347" : "#FF6584";
+
 
             return (
               <div style={{ maxWidth: "860px", margin: "0 auto", padding: "32px 20px" }}>
@@ -1823,31 +1863,68 @@ export default function Resume() {
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
-                  {/* Upload Resume */}
-                  <div style={{ background: t.card, border: `2px dashed ${atsOptFile ? t.accent : t.border}`, borderRadius: "16px", padding: "28px", textAlign: "center", cursor: "pointer", transition: "all 0.2s" }}
-                    onClick={() => atsOptFileRef.current?.click()}
-                    onDragOver={e => e.preventDefault()}
-                    onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) { setAtsOptFile(f); setAtsOptResumeText(""); setAtsOptResult(null); } }}>
-                    <input ref={atsOptFileRef} type="file" accept=".pdf,.docx,.doc,.txt" style={{ display: "none" }}
-                      onChange={e => { const f = e.target.files[0]; if (f) { setAtsOptFile(f); setAtsOptResumeText(""); setAtsOptResult(null); } }} />
-                    <div style={{ fontSize: "40px", marginBottom: "12px" }}>{atsOptFile ? "✅" : "📄"}</div>
-                    <h3 style={{ fontFamily: "'Noto Serif',serif", fontSize: "16px", fontWeight: "600", color: atsOptFile ? t.accent : t.text, marginBottom: "6px" }}>
-                      {atsOptFile ? atsOptFile.name : "Upload Resume"}
-                    </h3>
-                    <p style={{ color: t.muted, fontSize: "12px", marginBottom: "10px" }}>{atsOptFile ? "Click to change file" : "Drag & drop or click — PDF, DOCX, TXT"}</p>
-                    {!atsOptFile && <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap" }}>
-                      {["PDF", "DOCX", "TXT"].map(f => <span key={f} style={{ background: t.inputBg, color: t.muted, padding: "3px 10px", borderRadius: "4px", fontSize: "11px" }}>{f}</span>)}
-                    </div>}
+                  <div>
+                    <div style={{ background: t.card, border: `2px dashed ${(atsOptFile || atsOptResumeText) ? t.accent : t.border}`, borderRadius: "16px", padding: "24px", textAlign: "center", cursor: "pointer", transition: "all 0.2s" }}
+                      onClick={() => atsOptFileRef.current?.click()}
+                      onDragOver={e => e.preventDefault()}
+                      onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) { setAtsOptFile(f); setAtsOptResumeText(""); setAtsOptResult(null); } }}>
+                      <input ref={atsOptFileRef} type="file" accept=".pdf,.docx,.doc,.txt" style={{ display: "none" }}
+                        onChange={e => { const f = e.target.files[0]; if (f) { setAtsOptFile(f); setAtsOptResumeText(""); setAtsOptResult(null); } }} />
+                      <div style={{ fontSize: "36px", marginBottom: "10px" }}>{(atsOptFile || atsOptResumeText) ? "✅" : "📄"}</div>
+                      <h3 style={{ fontFamily: "'Noto Serif',serif", fontSize: "15px", fontWeight: "600", color: (atsOptFile || atsOptResumeText) ? t.accent : t.text, marginBottom: "5px" }}>
+                        {atsOptFile ? atsOptFile.name : atsOptResumeText ? "Resume text ready" : "Upload Resume"}
+                      </h3>
+                      <p style={{ color: t.muted, fontSize: "11px", marginBottom: "8px" }}>{(atsOptFile || atsOptResumeText) ? "Click to change file" : "Drag & drop or click — PDF, DOCX, TXT"}</p>
+                      {!atsOptFile && !atsOptResumeText && <div style={{ display: "flex", gap: "5px", justifyContent: "center", flexWrap: "wrap" }}>
+                        {["PDF", "DOCX", "TXT"].map(f => <span key={f} style={{ background: t.inputBg, color: t.muted, padding: "2px 8px", borderRadius: "4px", fontSize: "10px" }}>{f}</span>)}
+                      </div>}
+                    </div>
+                    {resume?.name && !atsOptFile && !atsOptResumeText && (
+                      <button onClick={() => {
+                        const r = resume;
+                        const lines = [];
+                        if (r.name) lines.push(r.name);
+                        if (r.title) lines.push(r.title);
+                        const contact = [r.email, r.phone, r.location, r.linkedin].filter(Boolean).join(" | ");
+                        if (contact) lines.push(contact);
+                        if (r.summary) { lines.push(""); lines.push("PROFESSIONAL SUMMARY"); lines.push(r.summary); }
+                        if (r.experience?.length) {
+                          lines.push(""); lines.push("WORK EXPERIENCE");
+                          r.experience.forEach(exp => {
+                            lines.push(`${exp.role||""} — ${exp.company||""} (${exp.from||""}-${exp.to||"Present"})`);
+                            (exp.responsibilities||[]).forEach(b => b && lines.push(`  • ${b}`));
+                            (exp.bullets||[]).forEach(b => b && lines.push(`  • ${b}`));
+                          });
+                        }
+                        if (r.skills?.length) { lines.push(""); lines.push("SKILLS"); lines.push(r.skills.map(s=>s.name).filter(Boolean).join(", ")); }
+                        if (r.education?.length) { lines.push(""); lines.push("EDUCATION"); r.education.forEach(edu => lines.push(`${edu.degree||""} ${edu.field||""} — ${edu.institution||""} (${edu.year||""})`)); }
+                        if (r.certifications?.length) { lines.push(""); lines.push("CERTIFICATIONS"); r.certifications.forEach(c => c.name && lines.push(`  • ${c.name}`)); }
+                        setAtsOptResumeText(lines.join("\n"));
+                        setAtsOptFile(null);
+                        setAtsOptResult(null);
+                      }}
+                        style={{ width: "100%", marginTop: "10px", padding: "10px", background: `${t.accent}12`, color: t.accent, border: `1px solid ${t.accent}30`, borderRadius: "10px", cursor: "pointer", fontSize: "12px", fontWeight: "700" }}>
+                        ⚡ Use My Current Resume ({resume.name})
+                      </button>
+                    )}
                   </div>
 
                   {/* Job Description */}
                   <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column" }}>
-                    <label style={{ color: t.muted, fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "10px", display: "block" }}>📋 Job Description</label>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                      <label style={{ color: t.muted, fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px" }}>📋 Job Description</label>
+                      {aiWizardData?.jobDescription?.trim() && !atsOptJD.trim() && (
+                        <button onClick={() => setAtsOptJD(aiWizardData.jobDescription)}
+                          style={{ fontSize: "10px", padding: "3px 8px", background: `${t.accent}15`, color: t.accent, border: `1px solid ${t.accent}40`, borderRadius: "5px", cursor: "pointer", fontWeight: "700" }}>
+                          📋 Use from Wizard
+                        </button>
+                      )}
+                    </div>
                     <textarea
                       value={atsOptJD}
                       onChange={e => { setAtsOptJD(e.target.value); setAtsOptResult(null); }}
-                      placeholder="Paste the full job description here...&#10;&#10;Include required skills, responsibilities, qualifications — the more detail, the better the analysis."
-                      style={{ flex: 1, width: "100%", padding: "12px", background: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "8px", fontSize: "12px", color: t.text, outline: "none", resize: "none", fontFamily: "'DM Sans',sans-serif", lineHeight: "1.6", minHeight: "160px" }}
+                      placeholder={"Paste the full job description here...\n\nInclude required skills, responsibilities, qualifications — the more detail, the better the analysis."}
+                      style={{ flex: 1, width: "100%", padding: "12px", background: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "8px", fontSize: "12px", color: t.text, outline: "none", resize: "none", fontFamily: "'DM Sans',sans-serif", lineHeight: "1.6", minHeight: "160px", boxSizing: "border-box" }}
                     />
                   </div>
                 </div>
@@ -1869,23 +1946,48 @@ export default function Resume() {
                 {atsOptResult && (
                   <div style={{ animation: "fadeIn 0.4s ease" }}>
                     {/* Score Hero */}
-                    <div style={{ background: `${scoreColor}10`, border: `2px solid ${scoreColor}30`, borderRadius: "20px", padding: "32px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "28px", flexWrap: "wrap" }}>
-                      <div style={{ textAlign: "center" }}>
-                        <div style={{ fontFamily: "'Noto Serif',serif", fontSize: "64px", fontWeight: "800", color: scoreColor, lineHeight: 1 }}>{atsOptResult.score}%</div>
-                        <div style={{ color: t.muted, fontSize: "12px", fontWeight: "600", letterSpacing: "1px", marginTop: "4px" }}>ATS MATCH SCORE</div>
+                    <div style={{ background: `${scoreColor}10`, border: `2px solid ${scoreColor}30`, borderRadius: "20px", padding: "28px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap" }}>
+                      <div style={{ textAlign: "center", minWidth: "100px" }}>
+                        <div style={{ fontFamily: "'Noto Serif',serif", fontSize: "60px", fontWeight: "800", color: scoreColor, lineHeight: 1 }}>{score}%</div>
+                        <div style={{ color: t.muted, fontSize: "11px", fontWeight: "700", letterSpacing: "1px", marginTop: "4px" }}>ATS MATCH SCORE</div>
+                        {atsOptResult.estimated_interview_chance && (
+                          <div style={{ marginTop: "8px", background: `${scoreColor}20`, borderRadius: "8px", padding: "4px 10px", fontSize: "11px", color: scoreColor, fontWeight: "700" }}>
+                            🎯 {atsOptResult.estimated_interview_chance} interview chance
+                          </div>
+                        )}
                       </div>
                       <div style={{ flex: 1, minWidth: "200px" }}>
                         <div style={{ fontFamily: "'Noto Serif',serif", fontSize: "20px", fontWeight: "700", color: t.text, marginBottom: "8px" }}>
-                          {atsOptResult.score >= 80 ? "🟢 Excellent Match!" : atsOptResult.score >= 60 ? "🟡 Good Match" : "🔴 Needs Improvement"}
+                          {score >= 80 ? "🟢 Excellent Match!" : score >= 60 ? "🟡 Good Match" : "🔴 Needs Improvement"}
                         </div>
                         <div style={{ background: t.border, borderRadius: "6px", height: "10px", overflow: "hidden", marginBottom: "10px" }}>
-                          <div style={{ height: "100%", width: `${atsOptResult.score}%`, background: `linear-gradient(90deg, ${scoreColor}, ${scoreColor}99)`, borderRadius: "6px", transition: "width 1.2s ease" }} />
+                          <div style={{ height: "100%", width: `${score}%`, background: `linear-gradient(90deg, ${scoreColor}, ${scoreColor}99)`, borderRadius: "6px", transition: "width 1.2s ease" }} />
                         </div>
-                        <p style={{ color: t.muted, fontSize: "13px" }}>
-                          {atsOptResult.score >= 80 ? "Your resume is well-optimised for this role. Strong chance of passing ATS screening." : atsOptResult.score >= 60 ? "Your resume partially matches. A few targeted improvements will significantly boost your score." : "Your resume needs significant optimisation for this role. Focus on the improvements below."}
+                        <p style={{ color: t.muted, fontSize: "13px", margin: 0 }}>
+                          {score >= 80 ? "Your resume is well-optimised for this role. Strong chance of passing ATS screening." : score >= 60 ? "Your resume partially matches. A few targeted improvements will significantly boost your score." : "Your resume needs significant optimisation for this role. Focus on the improvements below."}
                         </p>
                       </div>
                     </div>
+
+                    {/* Category Score Breakdown */}
+                    {[["Skills Match", atsOptResult.skills_match_score], ["Keywords", atsOptResult.keywords_match_score], ["Experience", atsOptResult.experience_match_score], ["Education", atsOptResult.education_match_score]].filter(([,v]) => v !== undefined).length > 0 && (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px,1fr))", gap: "10px", marginBottom: "16px" }}>
+                        {[["🔧 Skills Match", atsOptResult.skills_match_score], ["🔍 Keywords", atsOptResult.keywords_match_score], ["💼 Experience", atsOptResult.experience_match_score], ["🎓 Education", atsOptResult.education_match_score], ["📄 Formatting", atsOptResult.formatting_score]].filter(([,v]) => v !== undefined).map(([label, val]) => {
+                          const c = val >= 70 ? "#43D9A2" : val >= 50 ? "#FFB347" : "#FF6584";
+                          return (
+                            <div key={label} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: "12px", padding: "14px" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                                <span style={{ fontSize: "11px", color: t.muted, fontWeight: "600" }}>{label}</span>
+                                <span style={{ fontSize: "13px", color: c, fontWeight: "800" }}>{val}%</span>
+                              </div>
+                              <div style={{ height: "6px", background: t.border, borderRadius: "3px", overflow: "hidden" }}>
+                                <div style={{ height: "100%", width: `${val}%`, background: `linear-gradient(90deg,${c},${c}99)`, borderRadius: "3px", transition: "width 1.2s ease" }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
 
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
                       {/* Strengths */}
@@ -1895,24 +1997,65 @@ export default function Resume() {
                           <p style={{ color: t.text, fontSize: "13px", lineHeight: "1.7", margin: 0 }}>{atsOptResult.strengths}</p>
                         </div>
                       )}
-                      {/* Top Fix */}
-                      {atsOptResult.top_fix && (
+                      {/* Weaknesses */}
+                      {atsOptResult.weaknesses && (
                         <div style={{ background: "rgba(255,101,132,0.06)", border: "1px solid rgba(255,101,132,0.2)", borderRadius: "14px", padding: "20px" }}>
-                          <div style={{ color: "#FF6584", fontSize: "12px", fontWeight: "700", letterSpacing: "1px", marginBottom: "10px" }}>🔧 TOP PRIORITY FIX</div>
-                          <p style={{ color: t.text, fontSize: "13px", lineHeight: "1.7", margin: 0 }}>{atsOptResult.top_fix}</p>
+                          <div style={{ color: "#FF6584", fontSize: "12px", fontWeight: "700", letterSpacing: "1px", marginBottom: "10px" }}>⚠️ KEY GAPS</div>
+                          <p style={{ color: t.text, fontSize: "13px", lineHeight: "1.7", margin: 0 }}>{atsOptResult.weaknesses}</p>
                         </div>
                       )}
                     </div>
 
-                    {/* Missing Keywords */}
-                    {(atsOptResult.missing_keywords || []).filter(Boolean).length > 0 && (
-                      <div style={{ background: "rgba(255,179,71,0.06)", border: "1px solid rgba(255,179,71,0.2)", borderRadius: "14px", padding: "20px", marginBottom: "16px" }}>
-                        <div style={{ color: "#FFB347", fontSize: "12px", fontWeight: "700", letterSpacing: "1px", marginBottom: "12px" }}>🔍 MISSING KEYWORDS — Add these to your resume to boost your score:</div>
-                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                          {(atsOptResult.missing_keywords || []).filter(Boolean).map((kw, i) => (
-                            <span key={i} style={{ background: "rgba(255,179,71,0.12)", color: "#FFB347", padding: "5px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", border: "1px solid rgba(255,179,71,0.2)" }}>{kw}</span>
-                          ))}
+                    {/* Top 3 Improvements */}
+                    {(atsOptResult.top_3_improvements || []).length > 0 && (
+                      <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: "14px", padding: "20px", marginBottom: "16px" }}>
+                        <div style={{ color: "#FF6584", fontSize: "12px", fontWeight: "700", letterSpacing: "1px", marginBottom: "14px" }}>🚀 TOP 3 PRIORITY IMPROVEMENTS</div>
+                        {(atsOptResult.top_3_improvements || []).slice(0,3).map((imp, i) => (
+                          <div key={i} style={{ display: "flex", gap: "14px", padding: "12px 0", borderBottom: i < 2 ? `1px solid ${t.border}60` : "none" }}>
+                            <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: i === 0 ? "#FF6584" : i === 1 ? "#FFB347" : "#6C63FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "800", color: "white", flexShrink: 0 }}>{i+1}</div>
+                            <div style={{ flex: 1 }}>
+                              <p style={{ color: t.text, fontSize: "13px", fontWeight: "600", margin: "0 0 3px" }}>{imp.action}</p>
+                              {imp.impact && <p style={{ color: "#FFB347", fontSize: "12px", margin: 0, fontWeight: "600" }}>↑ {imp.impact}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Keyword Analysis */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                      {(atsOptResult.missing_keywords || []).filter(Boolean).length > 0 && (
+                        <div style={{ background: "rgba(255,179,71,0.06)", border: "1px solid rgba(255,179,71,0.2)", borderRadius: "14px", padding: "20px" }}>
+                          <div style={{ color: "#FFB347", fontSize: "12px", fontWeight: "700", letterSpacing: "1px", marginBottom: "12px" }}>🔍 MISSING KEYWORDS</div>
+                          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                            {(atsOptResult.missing_keywords || []).filter(Boolean).map((kw, i) => (
+                              <span key={i} style={{ background: "rgba(255,179,71,0.12)", color: "#FFB347", padding: "4px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", border: "1px solid rgba(255,179,71,0.2)" }}>{kw}</span>
+                            ))}
+                          </div>
                         </div>
+                      )}
+                      {(atsOptResult.matched_keywords || []).filter(Boolean).length > 0 && (
+                        <div style={{ background: "rgba(67,217,162,0.06)", border: "1px solid rgba(67,217,162,0.2)", borderRadius: "14px", padding: "20px" }}>
+                          <div style={{ color: "#43D9A2", fontSize: "12px", fontWeight: "700", letterSpacing: "1px", marginBottom: "12px" }}>✓ MATCHED KEYWORDS</div>
+                          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                            {(atsOptResult.matched_keywords || []).filter(Boolean).map((kw, i) => (
+                              <span key={i} style={{ background: "rgba(67,217,162,0.1)", color: "#43D9A2", padding: "4px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", border: "1px solid rgba(67,217,162,0.2)" }}>{kw}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Next Steps */}
+                    {(atsOptResult.next_steps || []).length > 0 && (
+                      <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: "14px", padding: "18px 20px", marginBottom: "16px" }}>
+                        <div style={{ color: t.text, fontSize: "12px", fontWeight: "700", letterSpacing: "1px", marginBottom: "12px" }}>📋 NEXT STEPS</div>
+                        {(atsOptResult.next_steps || []).map((step, i) => (
+                          <div key={i} style={{ display: "flex", gap: "10px", marginBottom: i < atsOptResult.next_steps.length - 1 ? "8px" : 0 }}>
+                            <span style={{ color: t.accent, fontWeight: "700", fontSize: "12px", minWidth: "16px" }}>→</span>
+                            <span style={{ color: t.muted, fontSize: "13px", lineHeight: "1.6" }}>{step}</span>
+                          </div>
+                        ))}
                       </div>
                     )}
 
@@ -1922,7 +2065,7 @@ export default function Resume() {
                         style={{ padding: "12px 24px", background: t.card, color: t.muted, border: `1px solid ${t.border}`, borderRadius: "10px", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>
                         🔄 Check Another Resume
                       </button>
-                      <button onClick={() => setActiveView("dashboard")}
+                      <button onClick={() => setActiveView("editor")}
                         style={{ flex: 1, padding: "12px 24px", background: "linear-gradient(135deg,#6C63FF,#FF6584)", color: "white", border: "none", borderRadius: "10px", cursor: "pointer", fontSize: "13px", fontWeight: "700", boxShadow: "0 4px 16px rgba(108,99,255,0.35)" }}>
                         ✏️ Edit My Resume to Improve Score →
                       </button>
@@ -1933,66 +2076,143 @@ export default function Resume() {
             );
           })()}
 
-
           {/* ── EDITOR ── */}
           {activeView === "editor" && (
             <div>
               {/* ATS */}
-              {showAts && (
-                <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: "14px", padding: "18px 22px", marginBottom: "18px" }}>
-                  <h3 style={{ fontFamily: "'Noto Serif',serif", fontSize: "15px", fontWeight: "600", color: t.text, marginBottom: "12px" }}>📊 ATS Score Checker</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "10px", alignItems: "end" }}>
-                    <textarea value={jobDesc} onChange={e => setJobDesc(e.target.value)} placeholder="Paste job description to check ATS match score..." rows={3} style={{ width: "100%", padding: "10px 12px", background: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "8px", fontSize: "12px", color: t.text, outline: "none", resize: "none", fontFamily: "'DM Sans',sans-serif" }} />
-                    <button onClick={checkAts} disabled={atsLoading} style={{ padding: "10px 18px", background: "linear-gradient(135deg,#6C63FF,#FF6584)", color: "white", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: "600", cursor: "pointer", whiteSpace: "nowrap" }}>
-                      {atsLoading ? "Checking..." : "✨ Check ATS"}
-                    </button>
-                  </div>
-                  {atsScore && (
-                    <div style={{ marginTop: "14px" }}>
-                      {/* Score bar */}
-                      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "14px" }}>
-                        <div style={{ background: `${atsScore.score >= 80 ? "#43D9A2" : atsScore.score >= 60 ? "#FFB347" : "#FF6584"}18`, borderRadius: "12px", padding: "14px 20px", textAlign: "center", minWidth: "80px" }}>
-                          <div style={{ fontFamily: "'Noto Serif',serif", fontSize: "30px", fontWeight: "700", color: atsScore.score >= 80 ? "#43D9A2" : atsScore.score >= 60 ? "#FFB347" : "#FF6584" }}>{atsScore.score}%</div>
-                          <div style={{ color: t.muted, fontSize: "10px", fontWeight: "600" }}>ATS MATCH</div>
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ height: "8px", background: t.border, borderRadius: "4px", overflow: "hidden", marginBottom: "6px" }}>
-                            <div style={{ height: "100%", width: `${atsScore.score}%`, background: atsScore.score >= 80 ? "#43D9A2" : atsScore.score >= 60 ? "#FFB347" : "#FF6584", borderRadius: "4px", transition: "width 1s ease" }} />
-                          </div>
-                          <p style={{ color: t.muted, fontSize: "11px" }}>
-                            {atsScore.score >= 80 ? "🟢 Excellent match — you're well positioned for this role!" : atsScore.score >= 60 ? "🟡 Good match — a few tweaks can boost your chances significantly." : "🔴 Low match — your resume needs key improvements for this role."}
-                          </p>
-                        </div>
-                      </div>
-                      {/* Strengths */}
-                      {atsScore.strengths && (
-                        <div style={{ background: "rgba(67,217,162,0.06)", border: "1px solid rgba(67,217,162,0.15)", borderRadius: "8px", padding: "10px 14px", marginBottom: "10px" }}>
-                          <div style={{ color: "#43D9A2", fontSize: "11px", fontWeight: "700", marginBottom: "4px" }}>✅ STRENGTHS</div>
-                          <p style={{ color: t.text, fontSize: "12px", lineHeight: "1.6", margin: 0 }}>{atsScore.strengths}</p>
-                        </div>
-                      )}
-                      {/* Top fix */}
-                      {atsScore.top_fix && (
-                        <div style={{ background: "rgba(255,101,132,0.06)", border: "1px solid rgba(255,101,132,0.15)", borderRadius: "8px", padding: "10px 14px", marginBottom: "10px" }}>
-                          <div style={{ color: "#FF6584", fontSize: "11px", fontWeight: "700", marginBottom: "4px" }}>🔧 TOP IMPROVEMENT</div>
-                          <p style={{ color: t.text, fontSize: "12px", lineHeight: "1.6", margin: 0 }}>{atsScore.top_fix}</p>
-                        </div>
-                      )}
-                      {/* Missing keywords */}
-                      {(atsScore.missing_keywords || []).filter(Boolean).length > 0 && (
-                        <div style={{ background: "rgba(255,179,71,0.06)", border: "1px solid rgba(255,179,71,0.15)", borderRadius: "8px", padding: "10px 14px" }}>
-                          <div style={{ color: "#FFB347", fontSize: "11px", fontWeight: "700", marginBottom: "8px" }}>🔍 MISSING KEYWORDS — Add these to your resume:</div>
-                          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                            {(atsScore.missing_keywords || []).filter(Boolean).map((kw, i) => (
-                              <span key={i} style={{ background: "rgba(255,179,71,0.1)", color: "#FFB347", padding: "3px 10px", borderRadius: "4px", fontSize: "11px", fontWeight: "500" }}>{kw}</span>
-                            ))}
-                          </div>
-                        </div>
+              {showAts && (() => {
+                const sc = atsScore;
+                const score = sc?.overall_score ?? sc?.score ?? 0;
+                const scoreColor = score >= 80 ? "#43D9A2" : score >= 60 ? "#FFB347" : "#FF6584";
+                const cats = sc ? [
+                  { label: "Skills", val: sc.skills_match_score },
+                  { label: "Keywords", val: sc.keywords_match_score },
+                  { label: "Experience", val: sc.experience_match_score },
+                  { label: "Education", val: sc.education_match_score },
+                ].filter(c => c.val !== undefined) : [];
+                return (
+                  <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: "14px", padding: "18px 22px", marginBottom: "18px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                      <h3 style={{ fontFamily: "'Noto Serif',serif", fontSize: "15px", fontWeight: "600", color: t.text, margin: 0 }}>📊 ATS Score Checker</h3>
+                      {aiWizardData?.jobDescription?.trim() && !jobDesc.trim() && (
+                        <button onClick={() => setJobDesc(aiWizardData.jobDescription)}
+                          style={{ fontSize: "11px", padding: "4px 10px", background: `${t.accent}15`, color: t.accent, border: `1px solid ${t.accent}40`, borderRadius: "6px", cursor: "pointer", fontWeight: "600" }}>
+                          📋 Use JD from AI Wizard
+                        </button>
                       )}
                     </div>
-                  )}
-                </div>
-              )}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "10px", alignItems: "end" }}>
+                      <textarea value={jobDesc} onChange={e => { setJobDesc(e.target.value); setAtsScore(null); }}
+                        placeholder="Paste the job description here — AI will check your current resume against it and show a detailed score breakdown..." rows={3}
+                        style={{ width: "100%", padding: "10px 12px", background: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "8px", fontSize: "12px", color: t.text, outline: "none", resize: "none", fontFamily: "'DM Sans',sans-serif", boxSizing: "border-box" }} />
+                      <button onClick={checkAts} disabled={atsLoading}
+                        style={{ padding: "10px 18px", background: atsLoading ? t.border : "linear-gradient(135deg,#6C63FF,#FF6584)", color: atsLoading ? t.muted : "white", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: "600", cursor: atsLoading ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}>
+                        {atsLoading ? "⏳ Checking..." : "✨ Check ATS"}
+                      </button>
+                    </div>
+                    {atsLoading && (
+                      <div style={{ marginTop: "12px", background: `${t.accent}08`, border: `1px solid ${t.accent}25`, borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: t.muted }}>
+                        🔍 AI is analyzing your resume against this specific job description... (~15 seconds)
+                      </div>
+                    )}
+                    {sc && !atsLoading && (
+                      <div style={{ marginTop: "14px" }}>
+                        {sc.error ? (
+                          <div style={{ background: "rgba(255,101,132,0.08)", border: "1px solid rgba(255,101,132,0.2)", borderRadius: "8px", padding: "10px 14px", color: "#FF6584", fontSize: "12px" }}>
+                            ⚠️ {sc.error}
+                          </div>
+                        ) : (
+                          <>
+                            {/* Score + bar */}
+                            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "12px" }}>
+                              <div style={{ background: `${scoreColor}18`, borderRadius: "10px", padding: "12px 16px", textAlign: "center", minWidth: "74px" }}>
+                                <div style={{ fontFamily: "'Noto Serif',serif", fontSize: "28px", fontWeight: "700", color: scoreColor }}>{score}%</div>
+                                <div style={{ color: t.muted, fontSize: "9px", fontWeight: "600", marginTop: "2px" }}>ATS MATCH</div>
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ height: "8px", background: t.border, borderRadius: "4px", overflow: "hidden", marginBottom: "5px" }}>
+                                  <div style={{ height: "100%", width: `${score}%`, background: `linear-gradient(90deg,${scoreColor},${scoreColor}99)`, borderRadius: "4px", transition: "width 1s ease" }} />
+                                </div>
+                                <p style={{ color: t.muted, fontSize: "11px", margin: 0 }}>
+                                  {score >= 80 ? "🟢 Excellent match — strong chance of passing ATS!" : score >= 60 ? "🟡 Good match — targeted improvements will boost your score." : "🔴 Needs improvement — use the suggestions below to boost your score."}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Category scores */}
+                            {cats.length > 0 && (
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "6px", marginBottom: "10px" }}>
+                                {cats.map(({ label, val }) => {
+                                  const c = val >= 70 ? "#43D9A2" : val >= 50 ? "#FFB347" : "#FF6584";
+                                  return (
+                                    <div key={label} style={{ background: t.inputBg, borderRadius: "8px", padding: "8px 10px" }}>
+                                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                                        <span style={{ fontSize: "10px", color: t.muted, fontWeight: "600" }}>{label}</span>
+                                        <span style={{ fontSize: "11px", color: c, fontWeight: "700" }}>{val}%</span>
+                                      </div>
+                                      <div style={{ height: "4px", background: t.border, borderRadius: "2px", overflow: "hidden" }}>
+                                        <div style={{ height: "100%", width: `${val}%`, background: c, borderRadius: "2px", transition: "width 1s" }} />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {/* Strengths */}
+                            {sc.strengths && (
+                              <div style={{ background: "rgba(67,217,162,0.06)", border: "1px solid rgba(67,217,162,0.15)", borderRadius: "8px", padding: "9px 12px", marginBottom: "8px" }}>
+                                <div style={{ color: "#43D9A2", fontSize: "10px", fontWeight: "700", marginBottom: "3px" }}>✅ WHAT'S WORKING</div>
+                                <p style={{ color: t.text, fontSize: "11px", lineHeight: "1.6", margin: 0 }}>{sc.strengths}</p>
+                              </div>
+                            )}
+
+                            {/* Top 3 improvements */}
+                            {(sc.top_3_improvements || []).length > 0 && (
+                              <div style={{ background: "rgba(255,101,132,0.05)", border: "1px solid rgba(255,101,132,0.15)", borderRadius: "8px", padding: "9px 12px", marginBottom: "8px" }}>
+                                <div style={{ color: "#FF6584", fontSize: "10px", fontWeight: "700", marginBottom: "6px" }}>🔧 TOP IMPROVEMENTS</div>
+                                {sc.top_3_improvements.slice(0,3).map((imp, i) => (
+                                  <div key={i} style={{ display: "flex", gap: "8px", marginBottom: i < 2 ? "5px" : 0 }}>
+                                    <span style={{ minWidth: "16px", height: "16px", borderRadius: "50%", background: "#FF658420", color: "#FF6584", fontSize: "9px", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px" }}>{i+1}</span>
+                                    <div>
+                                      <span style={{ color: t.text, fontSize: "11px", lineHeight: "1.5" }}>{imp.action}</span>
+                                      {imp.impact && <span style={{ color: "#FFB347", fontSize: "10px", marginLeft: "6px" }}>({imp.impact})</span>}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Missing keywords */}
+                            {(sc.missing_keywords || []).filter(Boolean).length > 0 && (
+                              <div style={{ background: "rgba(255,179,71,0.05)", border: "1px solid rgba(255,179,71,0.15)", borderRadius: "8px", padding: "9px 12px", marginBottom: "8px" }}>
+                                <div style={{ color: "#FFB347", fontSize: "10px", fontWeight: "700", marginBottom: "6px" }}>🔍 MISSING KEYWORDS — Add to your resume:</div>
+                                <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+                                  {(sc.missing_keywords || []).filter(Boolean).slice(0,8).map((kw, i) => (
+                                    <span key={i} style={{ background: "rgba(255,179,71,0.1)", color: "#FFB347", padding: "2px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "600", border: "1px solid rgba(255,179,71,0.2)" }}>{kw}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Matched keywords */}
+                            {(sc.matched_keywords || []).filter(Boolean).length > 0 && (
+                              <div style={{ background: "rgba(67,217,162,0.04)", border: "1px solid rgba(67,217,162,0.12)", borderRadius: "8px", padding: "9px 12px" }}>
+                                <div style={{ color: "#43D9A2", fontSize: "10px", fontWeight: "700", marginBottom: "6px" }}>✓ KEYWORDS ALREADY IN YOUR RESUME:</div>
+                                <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+                                  {(sc.matched_keywords || []).filter(Boolean).map((kw, i) => (
+                                    <span key={i} style={{ background: "rgba(67,217,162,0.08)", color: "#43D9A2", padding: "2px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "600", border: "1px solid rgba(67,217,162,0.2)" }}>{kw}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Templates Section */}
               <div style={{ marginBottom: "32px" }}>

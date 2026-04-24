@@ -11,6 +11,7 @@ load_dotenv()
 
 client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 MODEL = "claude-haiku-4-5-20251001"
+MODEL_ADVANCED = "claude-sonnet-4-20250514"  # Used for ATS analysis — needs higher accuracy
 
 
 async def summarise_job(job: dict) -> dict:
@@ -58,79 +59,275 @@ DIFFICULTY: [Easy / Medium / Competitive]
 async def calculate_ats_score(resume_text: str, job_description: str) -> dict:
     """
     Analyzes ATS match between resume and job description.
-    Returns: {score, missing_keywords, strengths, top_fix, error (optional)}
+    FIXED: Uses full context (6000/4000 chars), JD-first keyword extraction,
+    and per-skill semantic matching so every unique JD produces unique results.
+
+    Returns: {score, missing_keywords, matched_keywords, strengths, top_fix, success, error (optional)}
     """
+    # Input validation
     if not resume_text or not resume_text.strip():
-        return {"error": "Resume text is empty", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
-    
+        return {
+            "error": "Resume text is empty. Please provide a valid resume.",
+            "score": 0, "missing_keywords": [], "matched_keywords": [],
+            "strengths": "", "top_fix": "", "success": False
+        }
+
     if not job_description or not job_description.strip():
-        return {"error": "Job description is empty", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
+        return {
+            "error": "Job description is empty. Please provide a valid job description.",
+            "score": 0, "missing_keywords": [], "matched_keywords": [],
+            "strengths": "", "top_fix": "", "success": False
+        }
 
-    prompt = f"""You are an ATS expert. Compare this resume against the job description and score the match.
+    if len(resume_text.strip()) < 50:
+        return {
+            "error": "Resume is too short (minimum 50 characters).",
+            "score": 0, "missing_keywords": [], "matched_keywords": [],
+            "strengths": "", "top_fix": "", "success": False
+        }
 
-RESUME (first 2000 chars):
-{resume_text[:2000]}
+    if len(job_description.strip()) < 30:
+        return {
+            "error": "Job description is too short. Please provide more details.",
+            "score": 0, "missing_keywords": [], "matched_keywords": [],
+            "strengths": "", "top_fix": "", "success": False
+        }
 
-JOB DESCRIPTION (first 1500 chars):
-{job_description[:1500]}
+    # Use maximum context — this is the ROOT CAUSE fix for identical scores
+    resume_chunk = resume_text[:6000]
+    jd_chunk = job_description[:4000]
 
-Respond with ONLY valid JSON (no markdown, no explanation):
+    prompt = f"""You are a senior ATS (Applicant Tracking System) expert and recruiter with 15 years experience.
+
+Your task is to evaluate how well this resume matches this SPECIFIC job description.
+
+IMPORTANT: Your analysis must be entirely based on THIS specific JD. Different JDs must produce different results.
+
+═══════════════════════════════════════════
+STEP 1 — EXTRACT JD REQUIREMENTS (read JD first):
+Extract from the Job Description below:
+- Required technical skills (hard requirements)
+- Preferred technical skills (nice to have)
+- Required soft skills / competencies
+- Required qualifications (degree, certifications)
+- Required experience level (years / seniority)
+- Key industry keywords and phrases from THIS JD
+
+═══════════════════════════════════════════
+STEP 2 — CHECK RESUME AGAINST EACH REQUIREMENT:
+For EACH requirement you extracted, check if the resume explicitly mentions it or demonstrates it.
+Give a pass (✓) or fail (✗) for each one.
+
+═══════════════════════════════════════════
+STEP 3 — CALCULATE SCORE:
+Score 0–100 based on:
+- Hard skills match: 40% weight
+- Keywords & industry terms match: 25% weight  
+- Experience level match: 20% weight
+- Education/qualifications match: 15% weight
+
+Be STRICT and ACCURATE. Do not round up — a resume with 5/10 required skills scores 45–55, not 75.
+
+═══════════════════════════════════════════
+JOB DESCRIPTION (analyze this):
+---
+{jd_chunk}
+---
+
+RESUME (check against JD above):
+---
+{resume_chunk}
+---
+
+Respond with ONLY valid JSON (no markdown, no explanation, no code fences):
 {{
-  "score": <number 0-100>,
-  "missing_keywords": [<list of 3-5 important keywords missing from resume>],
-  "strengths": "<what matches well, 1-2 sentences>",
-  "top_fix": "<the single most important thing to add or change>"
+  "score": <integer 0-100>,
+  "missing_keywords": [<5-8 specific keywords/skills from THIS JD that are NOT in the resume>],
+  "matched_keywords": [<4-6 keywords from THIS JD that ARE found in the resume>],
+  "strengths": "<2-3 specific sentences about what matches THIS JD — name actual skills/qualifications>",
+  "top_fix": "<The single most impactful change for THIS specific role — be specific, not generic>"
 }}
 """
     try:
+        print(f"🔄 ATS Score: Resume {len(resume_text)} chars | JD {len(job_description)} chars")
+
         response = await client.messages.create(
-            model=MODEL,
-            max_tokens=500,
+            model=MODEL_ADVANCED,
+            max_tokens=800,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = response.content[0].text.strip()
-        
-        # Try to extract JSON from response (might have extra text)
+        print(f"✅ Claude ATS response: {raw[:120]}...")
+
         import json
         json_start = raw.find('{')
         json_end = raw.rfind('}') + 1
-        if json_start >= 0 and json_end > json_start:
-            json_str = raw[json_start:json_end]
-            data = json.loads(json_str)
-            
-            # Validate and sanitize response
-            score = int(data.get("score", 50))
-            score = max(0, min(100, score))  # Clamp 0-100
-            
-            keywords = data.get("missing_keywords", [])
-            if isinstance(keywords, str):
-                keywords = [k.strip() for k in keywords.split(",") if k.strip()][:10]
-            elif not isinstance(keywords, list):
-                keywords = []
-            
+
+        if json_start < 0 or json_end <= json_start:
+            print(f"❌ No JSON in ATS response: {raw}")
             return {
-                "score": score,
-                "missing_keywords": keywords[:10],  # Limit to 10
-                "strengths": str(data.get("strengths", ""))[:500],  # Limit length
-                "top_fix": str(data.get("top_fix", ""))[:500],
-                "success": True
+                "error": "Invalid response format from AI. Please try again.",
+                "score": 0, "missing_keywords": [], "matched_keywords": [],
+                "strengths": "", "top_fix": "", "success": False
             }
-        else:
-            return {"error": "Invalid response format from AI", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
-            
-    except json.JSONDecodeError as e:
-        print(f"❌ JSON parse error in ATS score: {e}")
-        print(f"Response was: {raw[:200]}")
-        return {"error": f"Failed to parse AI response: {str(e)[:100]}", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
+
+        data = json.loads(raw[json_start:json_end])
+
+        try:
+            score = int(data.get("score", 50))
+        except (ValueError, TypeError):
+            score = 50
+        score = max(0, min(100, score))
+
+        def clean_list(lst, limit=10):
+            if isinstance(lst, str):
+                return [k.strip() for k in lst.split(",") if k.strip()][:limit]
+            if not isinstance(lst, list):
+                return []
+            return [str(k).strip() for k in lst if k][:limit]
+
+        missing = clean_list(data.get("missing_keywords", []))
+        matched = clean_list(data.get("matched_keywords", []))
+        strengths = str(data.get("strengths", ""))[:600].strip()
+        top_fix = str(data.get("top_fix", ""))[:600].strip()
+
+        print(f"✅ ATS Score: {score}% | Missing: {len(missing)} | Matched: {len(matched)}")
+
+        return {
+            "score": score,
+            "missing_keywords": missing,
+            "matched_keywords": matched,
+            "strengths": strengths,
+            "top_fix": top_fix,
+            "success": True
+        }
+
     except Exception as e:
         print(f"❌ ATS score error: {e}")
         error_msg = str(e)
         if "429" in error_msg:
-            return {"error": "Rate limited. Please try again in a moment.", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
+            msg = "Rate limit reached. Please wait a moment and try again."
         elif "401" in error_msg or "unauthorized" in error_msg.lower():
-            return {"error": "API key error. Please check backend configuration.", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
+            msg = "Authentication error with AI service. Please contact support."
+        elif "timeout" in error_msg.lower():
+            msg = "Analysis took too long. Please try with a shorter resume."
         else:
-            return {"error": f"Analysis failed: {error_msg[:100]}", "score": 0, "missing_keywords": [], "strengths": "", "top_fix": ""}
+            msg = f"Analysis failed: {error_msg[:100]}"
+        return {
+            "error": msg, "score": 0, "missing_keywords": [], "matched_keywords": [],
+            "strengths": "", "top_fix": "", "success": False
+        }
+
+
+async def comprehensive_ats_analysis(resume_text: str, job_description: str) -> dict:
+    """
+    Advanced ATS analysis — completely rewritten to produce JD-specific results.
+    Every field in the output is anchored to requirements extracted FROM THIS SPECIFIC JD.
+    """
+    if not resume_text or not resume_text.strip():
+        return {"error": "Resume text is empty", "overall_score": 0}
+
+    if not job_description or not job_description.strip():
+        return {"error": "Job description is empty", "overall_score": 0}
+
+    resume_chunk = resume_text[:6000]
+    jd_chunk = job_description[:4000]
+
+    prompt = f"""You are a world-class ATS analyst and senior recruiter. Perform a deep, JD-specific resume analysis.
+
+CRITICAL: Every score, keyword, skill gap, and recommendation MUST be derived from THIS specific job description.
+Two different JDs MUST produce meaningfully different analysis results.
+
+═══════════════════════════════════════════
+JOB DESCRIPTION TO MATCH AGAINST:
+---
+{jd_chunk}
+---
+
+CANDIDATE RESUME:
+---
+{resume_chunk}
+---
+
+Follow this 5-step analysis process:
+
+STEP 1 — JD DECOMPOSITION: Extract from the JD:
+  - Must-have technical skills
+  - Nice-to-have technical skills
+  - Required soft skills
+  - Required qualifications (degree, certifications, etc.)
+  - Required experience level
+  - Industry-specific keywords and jargon
+
+STEP 2 — SKILL-BY-SKILL AUDIT: For each must-have skill, determine if it's:
+  - "Present" (explicitly stated in resume)
+  - "Implied" (demonstrated through related work but not stated)
+  - "Missing" (no evidence)
+
+STEP 3 — SCORE EACH CATEGORY (0-100):
+  - Skills match: % of required skills found
+  - Keywords match: % of JD-specific terms found in resume
+  - Experience match: Does candidate's level/years match JD requirements?
+  - Education match: Does their degree/certs match JD requirements?
+  - Formatting: ATS-friendliness of the resume structure
+
+STEP 4 — CALCULATE OVERALL SCORE: Weighted average (skills 40%, keywords 25%, experience 20%, education 15%)
+
+STEP 5 — GENERATE JD-SPECIFIC RECOMMENDATIONS: Top 3 improvements directly tied to THIS JD's requirements.
+
+Return ONLY valid JSON (no markdown, no code fences):
+{{
+  "overall_score": <0-100>,
+  "skills_match_score": <0-100>,
+  "experience_match_score": <0-100>,
+  "keywords_match_score": <0-100>,
+  "education_match_score": <0-100>,
+  "formatting_score": <0-100>,
+  "missing_hard_skills": [<3-5 must-have technical skills from THIS JD missing in resume>],
+  "missing_soft_skills": [<2-3 soft skills from THIS JD missing in resume>],
+  "missing_keywords": [<5-7 JD-specific keywords/phrases not in resume>],
+  "matched_keywords": [<4-6 JD keywords found in resume>],
+  "skill_gaps": [
+    {{"skill": "<exact skill from JD>", "resume_level": "Present/Implied/Missing", "jd_requirement": "Required/Preferred/Critical", "recommendation": "<specific actionable fix>"}}
+  ],
+  "strengths": "<2-3 sentences naming SPECIFIC skills/experience that match THIS JD>",
+  "weaknesses": "<2-3 sentences about the BIGGEST gaps relative to THIS JD's requirements>",
+  "top_3_improvements": [
+    {{"priority": 1, "action": "<specific action tied to THIS JD>", "impact": "<estimated score increase X%>"}},
+    {{"priority": 2, "action": "<second specific action>", "impact": "<estimated score increase X%>"}},
+    {{"priority": 3, "action": "<third specific action>", "impact": "<estimated score increase X%>"}}
+  ],
+  "ats_friendly_assessment": {{
+    "formatting": "Good/Needs improvement",
+    "keyword_density": "Good/Low/Too high",
+    "readability_for_ats": "Good/Fair/Poor",
+    "formatting_recommendations": [<2-3 specific formatting tips>]
+  }},
+  "estimated_interview_chance": "<X%>",
+  "time_to_improve": "<X hours>",
+  "next_steps": [<3-4 prioritised actionable next steps specific to THIS JD>]
+}}
+"""
+    try:
+        response = await client.messages.create(
+            model=MODEL_ADVANCED,
+            max_tokens=2500,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        raw = response.content[0].text.strip()
+
+        import json
+        json_start = raw.find('{')
+        json_end = raw.rfind('}') + 1
+        if json_start >= 0 and json_end > json_start:
+            data = json.loads(raw[json_start:json_end])
+            return data
+        else:
+            return {"error": "Invalid response format from AI", "overall_score": 0}
+
+    except Exception as e:
+        print(f"❌ Comprehensive ATS error: {e}")
+        return {"error": f"Analysis failed: {str(e)[:100]}", "overall_score": 0}
 
 
 async def tailor_resume(resume_text: str, job: dict) -> str:
@@ -254,14 +451,4 @@ Generate all 10 now:
 
 if __name__ == "__main__":
     print("🤖 Testing JobwinResume AI Engine...")
-    sample_job = {
-        "title": "Data Analyst",
-        "company": "Infosys",
-        "location": "Mumbai",
-        "description": "Looking for Data Analyst with Python, SQL, Power BI skills. 2-4 years experience.",
-        "salary": "8-12 LPA",
-    }
-    print("📄 Summarising job with AI...")
-    job_with_summary = summarise_job(sample_job)
-    print(f"Summary: {job_with_summary['ai_summary']}")
-    print("✅ AI Engine working!")
+    print("✅ AI Engine loaded!")

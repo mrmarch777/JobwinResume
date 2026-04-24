@@ -1,7 +1,7 @@
 """
 JobwinResume — Main API Server
 File: main.py
-To run: uvicorn main:app --port 8001
+To run: uvicorn main:app --port 8000
 """
 
 import os
@@ -14,11 +14,13 @@ from job_search import search_jobs
 from ai_engine import (
     summarise_job,
     calculate_ats_score,
+    comprehensive_ats_analysis,
     tailor_resume,
     write_cover_letter,
     generate_interview_prep,
     client,
     MODEL,
+    MODEL_ADVANCED,
 )
 
 load_dotenv()
@@ -37,6 +39,12 @@ app.add_middleware(
 
 class ATSRequest(BaseModel):
     resume_text: str
+    job_description: str
+
+class ATSBuilderRequest(BaseModel):
+    """Accepts a full resume JSON object (from the resume builder) + a job description.
+    Serializes the structured resume into rich text before running ATS analysis."""
+    resume_json: dict
     job_description: str
 
 class ResumeRequest(BaseModel):
@@ -122,6 +130,104 @@ async def get_jobs(role: str, city: str, num_results: int = 20, plan: str = "fre
 @app.post("/ats-score")
 async def get_ats_score(request: ATSRequest):
     return await calculate_ats_score(request.resume_text, request.job_description)
+
+@app.post("/comprehensive-ats-analysis")
+async def get_comprehensive_ats_analysis(request: ATSRequest):
+    """
+    Advanced ATS analysis endpoint with detailed breakdown including:
+    - Overall match score and category scores
+    - Skill gaps and missing keywords
+    - Specific recommendations to improve score
+    - Estimated interview chances
+    """
+    return await comprehensive_ats_analysis(request.resume_text, request.job_description)
+
+
+def serialize_resume_to_text(r: dict) -> str:
+    """Converts a structured resume JSON (from the resume builder) to rich text for ATS analysis."""
+    lines = []
+
+    # Header
+    if r.get("name"): lines.append(r["name"])
+    if r.get("title"): lines.append(r["title"])
+    contact = " | ".join(filter(None, [r.get("email",""), r.get("phone",""), r.get("location",""), r.get("linkedin","")]))
+    if contact: lines.append(contact)
+    lines.append("")
+
+    # Summary
+    if r.get("summary"):
+        lines.append("PROFESSIONAL SUMMARY")
+        lines.append(r["summary"])
+        lines.append("")
+
+    # Experience
+    if r.get("experience"):
+        lines.append("WORK EXPERIENCE")
+        for exp in r["experience"]:
+            lines.append(f"{exp.get('role','')} — {exp.get('company','')} ({exp.get('from','')}–{exp.get('to','Present')})")
+            for b in (exp.get("responsibilities") or []):
+                if b: lines.append(f"  • {b}")
+            for b in (exp.get("bullets") or []):
+                if b: lines.append(f"  • {b}")
+        lines.append("")
+
+    # Skills
+    if r.get("skills"):
+        skill_names = [s.get("name","") for s in r["skills"] if s.get("name")]
+        if skill_names:
+            lines.append("SKILLS")
+            lines.append(", ".join(skill_names))
+            lines.append("")
+
+    # Education
+    if r.get("education"):
+        lines.append("EDUCATION")
+        for edu in r["education"]:
+            lines.append(f"{edu.get('degree','')} {edu.get('field','')} — {edu.get('institution','')} ({edu.get('year','')})")
+            if edu.get("grade"): lines.append(f"  Grade: {edu['grade']}")
+        lines.append("")
+
+    # Certifications
+    if r.get("certifications"):
+        lines.append("CERTIFICATIONS")
+        for cert in r["certifications"]:
+            lines.append(f"  • {cert.get('name','')} — {cert.get('issuer','')} ({cert.get('year','')})")
+        lines.append("")
+
+    # Projects
+    if r.get("projects"):
+        lines.append("PROJECTS")
+        for proj in r["projects"]:
+            lines.append(f"  {proj.get('name','')}: {proj.get('description','')} | Tech: {proj.get('tech','')}")
+        lines.append("")
+
+    # Achievements
+    if r.get("achievements"):
+        lines.append("ACHIEVEMENTS")
+        for ach in r["achievements"]:
+            lines.append(f"  • {ach.get('text','')}")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+@app.post("/ats-score-from-resume-builder")
+async def ats_score_from_resume_builder(request: ATSBuilderRequest):
+    """
+    ATS analysis endpoint that accepts a full resume JSON object from the resume builder.
+    Serializes the structured resume data into rich text and runs comprehensive analysis.
+    """
+    if not request.resume_json:
+        raise HTTPException(status_code=400, detail="resume_json is required")
+    if not request.job_description or not request.job_description.strip():
+        raise HTTPException(status_code=400, detail="job_description is required")
+
+    resume_text = serialize_resume_to_text(request.resume_json)
+    if not resume_text or len(resume_text.strip()) < 50:
+        raise HTTPException(status_code=400, detail="Resume appears to be empty. Please fill in your resume details first.")
+
+    print(f"🔄 Builder ATS: Serialized resume = {len(resume_text)} chars | JD = {len(request.job_description)} chars")
+    return await comprehensive_ats_analysis(resume_text, request.job_description)
 
 @app.post("/tailor-resume")
 async def get_tailored_resume(request: ResumeRequest):

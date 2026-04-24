@@ -123,22 +123,31 @@ export function validateAndCleanResume(resumeData) {
 
 export async function extractTextFromPDF(file) {
   try {
+    console.log(`📄 [PDF] Starting extraction from ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+
     const pdfjsLib = await import("pdfjs-dist/build/pdf.mjs");
-    
-    // Configure PDF.js worker - MUST be set before loading PDFs
-    try {
-      // Try multiple CDN sources for worker
-      const workerUrl = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-    } catch (e) {
-      console.warn("Could not set PDF worker from CDN, trying fallback:", e.message);
-      // Fallback: try unpkg with min version
+
+    // Configure PDF.js worker with multiple fallback CDNs
+    const cdnUrls = [
+      `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`,
+      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`,
+      `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`,
+    ];
+
+    let workerSet = false;
+    for (const url of cdnUrls) {
       try {
-        const workerUrl = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-        pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-      } catch (e2) {
-        console.error("Failed to set PDF worker:", e2.message);
+        pdfjsLib.GlobalWorkerOptions.workerSrc = url;
+        workerSet = true;
+        console.log(`✅ [PDF] Worker configured: ${url.substring(0, 50)}...`);
+        break;
+      } catch (e) {
+        console.warn(`⚠️ [PDF] Worker URL failed: ${url.substring(0, 50)}...`);
       }
+    }
+
+    if (!workerSet) {
+      console.warn("⚠️ [PDF] Could not set PDF worker from CDN, attempting inline...");
     }
 
     const arrayBuffer = await file.arrayBuffer();
@@ -147,68 +156,164 @@ export async function extractTextFromPDF(file) {
     }
 
     let pdf;
-    try {
-      pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    } catch (docErr) {
-      // If standard loading fails, try alternative approach
-      console.warn("Standard PDF loading failed, trying alternative method:", docErr.message);
+    const loadOptions = [
+      { data: arrayBuffer },
+      { data: arrayBuffer, useWorkerFetch: false },
+      { data: arrayBuffer, withCredentials: false },
+    ];
+
+    let lastError;
+    for (const options of loadOptions) {
       try {
-        pdf = await pdfjsLib.getDocument({ data: arrayBuffer, useWorkerFetch: false }).promise;
-      } catch (altErr) {
-        throw new Error(`Could not load PDF: ${docErr.message}. This PDF might be corrupted or encrypted.`);
+        pdf = await pdfjsLib.getDocument(options).promise;
+        console.log(`✅ [PDF] Loaded. Total pages: ${pdf.numPages}`);
+        break;
+      } catch (err) {
+        lastError = err;
+        console.warn(`⚠️ [PDF] Load attempt failed:`, err.message);
       }
     }
-    
+
     if (!pdf || pdf.numPages === 0) {
-      throw new Error("PDF has no pages or is invalid");
+      throw new Error(`Could not load PDF. Error: ${lastError?.message || "Unknown"}`);
     }
 
     let fullText = "";
-    const maxPages = Math.min(pdf.numPages, 50); // Limit to 50 pages
-    
+    let pageCount = 0;
+    let skippedPages = 0;
+    const maxPages = Math.min(pdf.numPages, 50);
+
+    console.log(`📄 [PDF] Processing up to ${maxPages} pages...`);
+
     for (let i = 1; i <= maxPages; i++) {
       try {
         const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        
-        if (!content || !content.items) continue;
-        
-        // Sort by Y position (top to bottom), then X (left to right)
-        const items = content.items.slice().sort((a, b) => {
-          const yDiff = b.transform[5] - a.transform[5];
-          if (Math.abs(yDiff) > 5) return yDiff;
-          return a.transform[4] - b.transform[4];
-        });
-        
-        let lastY = null;
-        for (const item of items) {
-          if (!item.str) continue;
-          const y = Math.round(item.transform[5]);
-          if (lastY !== null && Math.abs(y - lastY) > 5) fullText += "\n";
-          else if (lastY !== null) fullText += " ";
-          fullText += item.str;
-          lastY = y;
+        const content = await page.getTextContent({ normalizeWhitespace: true });
+        const viewport = page.getViewport({ scale: 1 });
+        const pageWidth = viewport.width;
+
+        if (!content || !content.items || content.items.length === 0) {
+          console.warn(`⚠️ [PDF] Page ${i}: No text (possibly scanned image)`);
+          skippedPages++;
+          continue;
         }
-        fullText += "\n\n";
+
+        // ── Dynamic line threshold based on median font size ──────────────
+        const fontSizes = content.items
+          .map(item => item.height || 0)
+          .filter(h => h > 0)
+          .sort((a, b) => a - b);
+        const medianFontSize = fontSizes.length > 0
+          ? fontSizes[Math.floor(fontSizes.length / 2)]
+          : 10;
+        // A new line is detected when Y changes by more than half the font size
+        const lineThreshold = Math.max(medianFontSize * 0.6, 3);
+
+        // ── Two-column layout detection ───────────────────────────────────
+        // If items cluster into two X-bands, it's a two-column layout
+        const xPositions = content.items.map(item => item.transform?.[4] || 0);
+        const midX = pageWidth / 2;
+        const leftItems = xPositions.filter(x => x < midX * 0.7).length;
+        const rightItems = xPositions.filter(x => x > midX * 0.7).length;
+        const isTwoColumn = leftItems > 5 && rightItems > 5 && (leftItems / Math.max(rightItems, 1)) < 4;
+
+        let pageText = "";
+
+        if (isTwoColumn) {
+          console.log(`📄 [PDF] Page ${i}: Two-column layout detected`);
+          // Process left column first, then right column
+          const leftCol = content.items.filter(item => (item.transform?.[4] || 0) < midX * 0.85);
+          const rightCol = content.items.filter(item => (item.transform?.[4] || 0) >= midX * 0.85);
+
+          const colToText = (items) => {
+            const sorted = items.slice().sort((a, b) => {
+              const yDiff = (b.transform?.[5] || 0) - (a.transform?.[5] || 0);
+              if (Math.abs(yDiff) > lineThreshold) return yDiff;
+              return (a.transform?.[4] || 0) - (b.transform?.[4] || 0);
+            });
+            let text = "";
+            let lastY = null;
+            for (const item of sorted) {
+              if (!item.str || item.str.trim().length === 0) continue;
+              const y = item.transform?.[5] || 0;
+              if (lastY !== null && Math.abs(y - lastY) > lineThreshold) {
+                text += "\n";
+              } else if (lastY !== null && text.length > 0 && !text.endsWith(" ")) {
+                text += " ";
+              }
+              text += item.str.trim();
+              lastY = y;
+            }
+            return text.trim();
+          };
+
+          const leftText = colToText(leftCol);
+          const rightText = colToText(rightCol);
+          // Merge: left column first, then right column with separator
+          pageText = leftText + (rightText ? "\n\n" + rightText : "");
+        } else {
+          // ── Single column — sort by Y (top→bottom), then X (left→right) ─
+          const items = content.items.slice().sort((a, b) => {
+            const yDiff = (b.transform?.[5] || 0) - (a.transform?.[5] || 0);
+            if (Math.abs(yDiff) > lineThreshold) return yDiff;
+            return (a.transform?.[4] || 0) - (b.transform?.[4] || 0);
+          });
+
+          let lastY = null;
+          for (const item of items) {
+            if (!item.str || item.str.trim().length === 0) continue;
+            const y = item.transform?.[5] || 0;
+            if (lastY !== null && Math.abs(y - lastY) > lineThreshold) {
+              pageText += "\n";
+            } else if (lastY !== null && pageText.length > 0 && !pageText.endsWith(" ")) {
+              pageText += " ";
+            }
+            pageText += item.str.trim();
+            lastY = y;
+          }
+        }
+
+        // ── Clean up the extracted text ────────────────────────────────────
+        pageText = pageText
+          .replace(/[ \t]+/g, " ")          // collapse horizontal whitespace
+          .replace(/\n{3,}/g, "\n\n")        // max 2 consecutive newlines
+          .trim();
+
+        if (pageText.length > 0) {
+          fullText += pageText + "\n\n";
+          pageCount++;
+          console.log(`✅ [PDF] Page ${i}: ${pageText.length} chars | lineThreshold=${lineThreshold.toFixed(1)}px | twoCol=${isTwoColumn}`);
+        }
       } catch (pageErr) {
-        console.warn(`Warning: Could not read page ${i}:`, pageErr.message);
+        console.warn(`⚠️ [PDF] Page ${i} error: ${pageErr.message}`);
+        skippedPages++;
         continue;
       }
     }
-    
+
     if (!fullText || fullText.trim().length === 0) {
-      throw new Error("No text could be extracted from PDF. Try a different PDF file.");
+      throw new Error(
+        "No text could be extracted from this PDF. This might be because:\n" +
+        "• The PDF is a scanned image (requires OCR)\n" +
+        "• The PDF is encrypted or password-protected\n" +
+        "• The PDF is corrupted\n\n" +
+        "Try: 1) Converting the PDF using an online tool, 2) Using a Word (.DOCX) file instead, or 3) Pasting your resume text manually."
+      );
     }
-    
+
+    console.log(`✅ [PDF] Complete: ${fullText.length} chars from ${pageCount} pages (${skippedPages} skipped)`);
     return fullText.trim();
   } catch (err) {
-    console.error("PDF extraction error:", err);
-    throw new Error(`PDF reading failed: ${err.message}`);
+    console.error("❌ [PDF] Extraction error:", err);
+    throw err;
   }
 }
 
 export async function extractTextFromDOCX(file) {
+
   try {
+    console.log(`📄 [DOCX] Starting extraction from ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+    
     const mammoth = await import("mammoth");
     const arrayBuffer = await file.arrayBuffer();
 
@@ -218,10 +323,13 @@ export async function extractTextFromDOCX(file) {
 
     // convertToHtml preserves heading tags and list items — far better section detection
     try {
+      console.log(`🔄 [DOCX] Attempting HTML conversion...`);
       const html = await mammoth.convertToHtml({ arrayBuffer });
       if (!html.value) {
         throw new Error("No content in document");
       }
+      
+      console.log(`✅ [DOCX] HTML conversion successful: ${html.value.length} characters`);
       
       // Strip HTML tags but preserve newlines for h1/h2/h3/p/li
       const text = html.value
@@ -246,18 +354,20 @@ export async function extractTextFromDOCX(file) {
         throw new Error("Document appears to be empty");
       }
       
+      console.log(`✅ [DOCX] Extraction complete: ${text.length} characters`);
       return text;
     } catch (htmlErr) {
       // Fallback: raw text extraction
-      console.warn("HTML conversion failed, trying raw text extraction");
+      console.warn(`⚠️ [DOCX] HTML conversion failed: ${htmlErr.message}. Trying raw text extraction...`);
       const result = await mammoth.extractRawText({ arrayBuffer });
       if (!result.value) {
         throw new Error("Could not extract text from document");
       }
+      console.log(`✅ [DOCX] Raw text extraction successful: ${result.value.length} characters`);
       return result.value;
     }
   } catch (err) {
-    console.error("DOCX extraction error:", err);
+    console.error("❌ [DOCX] Extraction error:", err);
     throw new Error(`Document reading failed: ${err.message}`);
   }
 }
