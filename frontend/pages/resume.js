@@ -7,6 +7,10 @@ import Sidebar from "../components/Sidebar";
 import { processResumeFile, extractTextFromPDF, extractTextFromDOCX } from "../lib/resumeParser";
 import { Template6, Template7, Template11, Template12, Template13, Template15, Template16 } from "../lib/claudeTemplates";
 
+// ── Centralised API URL \u2014 set NEXT_PUBLIC_API_URL in your environment.
+// Local dev: http://localhost:8000   Production: your deployed backend URL
+const getApiUrl = () => process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 const TEMPLATES = [
   // ── ATS FRIENDLY ──────────────────────────────────────────────────────────
   { id: "ats_clean",         name: "ATS Classic",      accent: "#1a1a2e",  tag: "ATS ✓",     layout: "ats",             category: "ATS Friendly" },
@@ -590,7 +594,7 @@ export default function Resume() {
       alert("Please write some content first before using AI Improve.");
       return;
     }
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+    const apiUrl = getApiUrl();
     setImproving(prev => ({ ...prev, [section]: true }));
     try {
       const res = await fetch(`${apiUrl}/improve-section`, {
@@ -622,7 +626,7 @@ export default function Resume() {
   // ── Generate summary from context (called when summary is empty) ──
   const generateSummaryFromContext = async () => {
     setSummaryCtxLoading(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+    const apiUrl = getApiUrl();
     try {
       const res = await fetch(`${apiUrl}/generate-summary-from-context`, {
         method: "POST",
@@ -649,7 +653,7 @@ export default function Resume() {
 
   // ── Grammar & Spell Checker ──
   const runGrammarCheck = async () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+    const apiUrl = getApiUrl();
     setGrammarLoading(true);
     try {
       const res = await fetch(`${apiUrl}/check-spelling-grammar`, {
@@ -672,7 +676,7 @@ export default function Resume() {
 
   const applyGrammarCorrection = (correction) => {
     const field = correction.field;
-    if (field === "summary" || field === "title" || field === "languages" || field === "interests" || field === "other") {
+    if (field === "name" || field === "summary" || field === "title" || field === "languages" || field === "interests" || field === "other") {
       updateResume(field, correction.corrected);
     } else if (field.startsWith("experience_")) {
       const idx = parseInt(field.replace("experience_", ""));
@@ -724,7 +728,7 @@ export default function Resume() {
     setAtsLoading(true);
     setAtsScore(null);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = getApiUrl();
       // Use the resume builder endpoint — sends full structured resume JSON for accurate analysis
       const res = await fetch(`${apiUrl}/ats-score-from-resume-builder`, {
         method: "POST",
@@ -913,7 +917,7 @@ export default function Resume() {
 
   const runAiSpellCheck = async () => {
     setAiSpellLoading(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+    const apiUrl = getApiUrl();
     try {
       const res = await fetch(`${apiUrl}/check-spelling-grammar`, {
         method: "POST",
@@ -948,7 +952,7 @@ export default function Resume() {
     setAiWizardError("");
     setAiWizardStep(3); // loading step
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+      const apiUrl = getApiUrl();
       const body = {
         name: aiWizardData.name, email: aiWizardData.email, phone: aiWizardData.phone,
         location: aiWizardData.location, linkedin: aiWizardData.linkedin,
@@ -1090,8 +1094,14 @@ export default function Resume() {
     setPdfLoading(true);
     let container = null;
     try {
-      const mod = await import("html2pdf.js");
-      const html2pdf = mod.default || mod;
+      // Dynamically import both libraries
+      const [html2canvasMod, jsPDFMod] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+      const html2canvas = html2canvasMod.default || html2canvasMod;
+      const jsPDF = jsPDFMod.jsPDF || jsPDFMod.default?.jsPDF || jsPDFMod.default;
+
       const personName = (resume.name || "").replace(/\s+/g, "_") || (resumeName || "").replace(/\s+/g, "_") || "Resume";
       const filename = `Resume_${personName}.pdf`;
 
@@ -1100,7 +1110,7 @@ export default function Resume() {
       const bgColor = (computedBg && computedBg !== "rgba(0, 0, 0, 0)" && computedBg !== "transparent")
         ? computedBg : "#ffffff";
 
-      // Build off-screen container
+      // Build off-screen container — must be in the DOM for html2canvas to measure correctly
       container = document.createElement("div");
       container.style.cssText = [
         "position:fixed",
@@ -1114,11 +1124,8 @@ export default function Resume() {
       ].join(";");
 
       const clone = el.cloneNode(true);
-      // ── FIX 1: Change ID so CSS `#resume-preview { min-height:1123px !important }` does NOT apply ──
-      // Without this, the forced min-height pads the page and creates a blank page 2.
+      // Remove #resume-preview id so the CSS min-height rule doesn't force extra blank space
       clone.id = "resume-pdf-export";
-
-      // ── FIX 2: Only override layout props; keep ALL template visual styles intact ──
       clone.style.transform = "none";
       clone.style.boxShadow = "none";
       clone.style.borderRadius = "0";
@@ -1127,53 +1134,76 @@ export default function Resume() {
       clone.style.width = "794px";
       clone.style.minWidth = "794px";
       clone.style.maxWidth = "794px";
-      clone.style.minHeight = "1123px"; // A4 height — ensures template background fills the full PDF page
-      clone.style.height = "auto";      // still expands for long resumes (multi-page)
-      clone.style.overflow = "visible"; // no right-side clipping
+      // Let content dictate height — no forced min-height so no blank second page for short resumes
+      clone.style.minHeight = "1123px";
+      clone.style.height = "auto";
+      clone.style.overflow = "visible";
+
+      // Ensure flex-children in two-column layouts fill full height
+      Array.from(clone.children).forEach(child => {
+        if (child.style && (child.style.flexShrink === "0" || child.style.width)) {
+          child.style.minHeight = "1123px";
+          child.style.alignSelf = "stretch";
+        }
+      });
 
       container.appendChild(clone);
       document.body.appendChild(container);
 
-      // Wait for layout reflow + font load
-      await new Promise(r => setTimeout(r, 800));
+      // Wait for layout reflow + font rendering
+      await new Promise(r => setTimeout(r, 900));
 
-      // ── FIX 3: margin:0 so template fills FULL A4 width ──
-      // The template's own internal padding provides visual breathing room.
-      // With any outer margin, the image gets scaled down and right-side content is clipped.
-      const pdfBlob = await html2pdf().set({
-        margin: 0,
-        filename,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          backgroundColor: bgColor,
-          width: 794,         // explicit canvas width = A4 at 96dpi, prevents right-side clipping
-          windowWidth: 794,
-          imageTimeout: 0,
-        },
-        jsPDF: {
-          unit: "mm",
-          format: "a4",
-          orientation: "portrait",
-          compress: true,
-        },
-        pagebreak: {
-          mode: ["css", "legacy"],
-          avoid: [".exp-item", ".edu-item"],
-        },
-      }).from(clone).output("blob");
+      // ── Canvas-slice approach: capture entire resume as ONE tall canvas ──
+      // Then slice it into A4 pages. This way every page retains full template
+      // background, sidebar colours, margins — NO blank/unstyled continuation pages.
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: bgColor,
+        width: 794,
+        windowWidth: 794,
+        imageTimeout: 0,
+      });
 
-      // Reliable cross-browser download via Blob URL
-      const url = URL.createObjectURL(pdfBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+      // A4 dimensions at 72dpi in jsPDF default unit (mm)
+      const A4_W_MM = 210;
+      const A4_H_MM = 297;
+
+      // Scale factor: canvas px → mm on A4 width
+      const pxToMm = A4_W_MM / canvas.width;
+      const totalHeightMm = canvas.height * pxToMm;
+      const totalPages = Math.ceil(totalHeightMm / A4_H_MM);
+
+      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
+
+      for (let page = 0; page < totalPages; page++) {
+        if (page > 0) pdf.addPage();
+
+        // Source slice in canvas pixels
+        const srcY   = Math.round((page * A4_H_MM) / pxToMm);
+        const srcH   = Math.round(Math.min(A4_H_MM / pxToMm, canvas.height - srcY));
+        if (srcH <= 0) break;
+
+        // Draw the slice onto a temp canvas
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width  = canvas.width;
+        pageCanvas.height = srcH;
+        const ctx = pageCanvas.getContext("2d");
+
+        // Fill page background (important for dark/coloured templates)
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+
+        const imgData = pageCanvas.toDataURL("image/jpeg", 0.97);
+        const sliceHeightMm = srcH * pxToMm;
+        pdf.addImage(imgData, "JPEG", 0, 0, A4_W_MM, sliceHeightMm);
+      }
+
+      // Download
+      pdf.save(filename);
 
     } catch (err) {
       console.error("PDF generation failed:", err);
@@ -1246,10 +1276,16 @@ export default function Resume() {
         /* ── Fix 5: Hide scrollbar on section tabs (all 10 tabs always reachable) ── */
         .section-tabs-bar::-webkit-scrollbar { display: none; }
         .section-tabs-bar { -ms-overflow-style: none; scrollbar-width: none; }
-        /* Ensure sidebar columns in flex templates fill full height */
+        /* Ensure sidebar columns in flex/grid templates fill full A4 height */
         #resume-preview > div[style*="flex-shrink: 0"],
         #resume-preview > div[style*="flexShrink: 0"] {
           align-self: stretch;
+          min-height: 1123px;
+        }
+        /* Also cover grid-based two-column layouts (col 1 / col 2) */
+        #resume-preview > div:first-child,
+        #resume-preview > div:last-child {
+          min-height: inherit;
         }
         /* Page-break control for multi-section resumes */
         .exp-item  { page-break-inside: avoid; break-inside: avoid; }
@@ -1799,7 +1835,7 @@ export default function Resume() {
                   setAtsOptResumeText(resumeText);
                 }
 
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+                const apiUrl = getApiUrl();
                 console.log(`🔄 [ATS] Sending to ${apiUrl}/comprehensive-ats-analysis | Resume: ${resumeText.length} chars | JD: ${atsOptJD.length} chars`);
 
                 const controller = new AbortController();
@@ -3413,33 +3449,51 @@ export default function Resume() {
   );
 }
 
-// ── SCALED PREVIEW — fits any width without horizontal scroll ──
-// Fix 2 & 4: Removed fixed height clipping — content is no longer cut off in preview or PDF
+// ── SCALED PREVIEW — fits any width without horizontal scroll, shows ALL pages ──
 function ScaledPreview({ resume, template }) {
-  const ref = React.useRef(null);
-  const [scale, setScale] = React.useState(0.5);
+  const containerRef = React.useRef(null);
+  const contentRef   = React.useRef(null);
+  const [scale, setScale]           = React.useState(0.5);
+  const [contentHeight, setContentHeight] = React.useState(1123);
   const A4_W = 794; // px at 96dpi
 
+  // Update scale whenever the container resizes
   React.useEffect(() => {
-    if (!ref.current) return;
-    const update = () => {
-      const w = ref.current.offsetWidth;
+    if (!containerRef.current) return;
+    const updateScale = () => {
+      const w = containerRef.current.offsetWidth;
       setScale(w / A4_W);
     };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(ref.current);
+    updateScale();
+    const ro = new ResizeObserver(updateScale);
+    ro.observe(containerRef.current);
     return () => ro.disconnect();
   }, []);
 
-  // Compute scaled content height so the outer div grows to match — prevents clipping
-  const scaledH = Math.round(1123 * scale);
+  // Measure actual rendered height of the resume content (may be >1123px for multi-page)
+  React.useEffect(() => {
+    if (!contentRef.current) return;
+    const updateHeight = () => {
+      const h = contentRef.current.scrollHeight || contentRef.current.offsetHeight;
+      if (h > 0) setContentHeight(h);
+    };
+    // Give React a tick to finish rendering, then measure
+    const timer = setTimeout(updateHeight, 100);
+    const ro = new ResizeObserver(updateHeight);
+    ro.observe(contentRef.current);
+    return () => { clearTimeout(timer); ro.disconnect(); };
+  }, [resume, template]);
+
+  const scaledH = Math.round(contentHeight * scale);
 
   return (
-    <div ref={ref} style={{ width: "100%", overflow: "visible", borderRadius: "4px" }}>
-      {/* Use paddingBottom trick so container expands to match scaled content */}
+    <div ref={containerRef} style={{ width: "100%", overflow: "visible", borderRadius: "4px" }}>
+      {/* Outer div height matches scaled content so nothing is clipped */}
       <div style={{ position: "relative", height: scaledH, overflow: "visible" }}>
-        <div style={{ width: A4_W + "px", transform: `scale(${scale})`, transformOrigin: "top left", background: "white" }}>
+        <div
+          ref={contentRef}
+          style={{ width: A4_W + "px", transform: `scale(${scale})`, transformOrigin: "top left", background: "white" }}
+        >
           <TemplateBoundary key={template?.id || "modernist"}>
             <ResumePreview resume={resume} template={template} />
           </TemplateBoundary>
@@ -3767,10 +3821,41 @@ function ResumeAvatar({ resume, size = 64, accent, borderColor = "white", shape 
   const initials = (resume.name || "?").split(" ").map(w => w[0]).filter(Boolean).slice(0,2).join("").toUpperCase();
   const br = shape === "square" ? "8px" : "50%";
   if (resume.photo) {
-    return <img src={resume.photo} alt="Profile" style={{ width:size, height:size, borderRadius:br, objectFit:"cover", border:`3px solid ${borderColor}`, display:"block" }} />;
+    return (
+      <img
+        src={resume.photo}
+        alt="Profile"
+        crossOrigin="anonymous"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: br,
+          objectFit: "cover",
+          objectPosition: "center top",
+          border: `3px solid ${borderColor}`,
+          display: "block",
+          flexShrink: 0,
+        }}
+      />
+    );
   }
   if (initials) {
-    return <div style={{ width:size, height:size, borderRadius:br, background:accent, display:"flex", alignItems:"center", justifyContent:"center", fontSize:size*0.35+"px", fontWeight:"700", color:"white", border:`3px solid ${borderColor}`, flexShrink:0 }}>{initials}</div>;
+    return (
+      <div style={{
+        width: size,
+        height: size,
+        borderRadius: br,
+        background: accent,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: size * 0.35 + "px",
+        fontWeight: "700",
+        color: "white",
+        border: `3px solid ${borderColor}`,
+        flexShrink: 0,
+      }}>{initials}</div>
+    );
   }
   return null;
 }

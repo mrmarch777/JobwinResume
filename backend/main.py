@@ -29,7 +29,12 @@ app = FastAPI(title="JobwinResume API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",          # local Next.js dev
+        "https://jobwinresume.com",        # production domain
+        "https://www.jobwinresume.com",    # www variant
+        "https://*.vercel.app",            # Vercel preview URLs
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -817,10 +822,12 @@ async def check_spelling_grammar(request: SpellCheckRequest):
 
     # Build a readable text representation of all fields to check
     fields_to_check = {}
-    if resume.get("summary", "").strip():
-        fields_to_check["summary"] = ("Professional Summary", resume["summary"])
+    if resume.get("name", "").strip():
+        fields_to_check["name"] = ("Candidate Name", resume["name"])
     if resume.get("title", "").strip():
         fields_to_check["title"] = ("Job Title", resume["title"])
+    if resume.get("summary", "").strip():
+        fields_to_check["summary"] = ("Professional Summary", resume["summary"])
     if resume.get("languages", "").strip():
         fields_to_check["languages"] = ("Languages", resume["languages"])
     if resume.get("interests", "").strip():
@@ -857,22 +864,28 @@ async def check_spelling_grammar(request: SpellCheckRequest):
     ])
 
     prompt = f"""You are an expert proofreader specialising in professional resume content.
+Your ONLY job is to find and fix SPELLING MISTAKES and GRAMMAR ERRORS — character-level typos, wrong word forms, missing articles, subject-verb disagreements, etc.
 
-Check the following resume fields for SPELLING MISTAKES and GRAMMAR ERRORS only.
-Do NOT suggest rewrites, style changes, or content improvements — ONLY fix actual errors.
+CRITICAL RULES:
+1. Check EVERY individual word for spelling mistakes. A misspelled word is any word that is not a real English word (e.g. "commernce" → "commerce", "managment" → "management", "recieve" → "receive").
+2. Fix grammar errors: wrong tense, missing/extra articles (a/an/the), subject-verb disagreement, punctuation mistakes.
+3. Do NOT suggest content rewrites, style changes, or improvements — ONLY fix actual spelling/grammar errors.
+4. If a field has errors, return the ENTIRE corrected field text (not just the word that changed).
+5. Be thorough — scan every single word individually before deciding a field is error-free.
 
+FIELDS TO CHECK:
 {fields_text}
 
-Return ONLY a valid JSON array. Each item must have:
+Return ONLY a valid JSON array (no markdown, no explanation). Each item must have:
 - "field": the exact field ID string from above
 - "field_label": the human-readable label
-- "original": the original text WITH the error
-- "corrected": the corrected version of that SAME text
+- "original": the full original field text (as provided above)
+- "corrected": the corrected version of the full field text
 
-If a field has NO errors, do NOT include it.
+If a field has NO errors, do NOT include it in the array.
 If there are NO errors at all, return an empty array: []
 
-Return ONLY the JSON array with no explanation or markdown:"""
+JSON array only:"""
 
     try:
         import anthropic, json as _json2
@@ -883,11 +896,13 @@ Return ONLY the JSON array with no explanation or markdown:"""
             messages=[{"role": "user", "content": prompt}]
         )
         raw = msg.content[0].text.strip()
-        # Strip markdown fences
+        # Strip markdown fences if Claude wrapped in them
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
         if raw.endswith("```"):
             raw = raw[:-3].strip()
+        if raw.startswith("json"):
+            raw = raw[4:].strip()
         corrections = _json2.loads(raw)
         return {
             "status": "success",
