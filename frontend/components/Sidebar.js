@@ -68,7 +68,7 @@ export default function Sidebar({ activeId, collapsed, setCollapsed, user }) {
             </div>
           )}
           {collapsed && <div style={{ width: "30px", height: "30px", background: "linear-gradient(135deg, #6C63FF, #FF6584)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px" }}>📄</div>}
-          <button onClick={() => setCollapsed(!collapsed)} style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${t.border}`, color: t.muted, cursor: "pointer", fontSize: "12px", padding: "6px 8px", borderRadius: "8px", flexShrink: 0, transition: "all 0.2s" }}>
+          <button onClick={() => setCollapsed(!collapsed)} style={{ background: t.inputBg, border: `1px solid ${t.border}`, color: t.muted, cursor: "pointer", fontSize: "12px", padding: "6px 8px", borderRadius: "8px", flexShrink: 0, transition: "all 0.2s" }}>
             {collapsed ? "▶" : "◀"}
           </button>
         </div>
@@ -119,10 +119,10 @@ export default function Sidebar({ activeId, collapsed, setCollapsed, user }) {
                 <button key={thm} className="theme-btn" onClick={() => setTheme(thm)}
                   style={{ 
                     padding: "6px 8px", 
-                    background: themeName === thm ? "rgba(108,99,255,0.2)" : "rgba(255,255,255,0.04)", 
+                    background: themeName === thm ? "rgba(108,99,255,0.2)" : t.inputBg, 
                     border: `1px solid ${themeName === thm ? "rgba(108,99,255,0.4)" : t.border}`, 
                     borderRadius: "8px", 
-                    color: themeName === thm ? "#A29BFE" : t.muted, 
+                    color: themeName === thm ? "#A29BFE" : t.text, 
                     fontSize: "11px", 
                     cursor: "pointer", 
                     transition: "all 0.2s", 

@@ -3087,7 +3087,7 @@ export default function Resume() {
                     </div>
                   </div>
                   {/* A4 preview — scaled to fit, no horizontal scroll */}
-                  <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: "12px", padding: "16px", overflow: "hidden" }}>
+                  <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: "12px", padding: "16px", overflow: "visible" }}>
                     <ScaledPreview resume={resume} template={template} />
                   </div>
                 </div>
@@ -4351,29 +4351,29 @@ function TokyoLayout({ resume, accent }) {
   const skills = skillList(resume.skills);
   if (!resume.name && !resume.summary) return <EmptyMsg />;
   return (
-    <div id="resume-preview" style={{ background: "#fafafa", fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: "10px", color: "#111", lineHeight: 1.55 , minHeight: "1123px", width: "794px", boxSizing: "border-box"}}>
-      <div style={{ background: "#fff", borderBottom: `4px solid ${accent}`, padding: "20px 26px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+    <div id="resume-preview" style={{ background: "#fafafa", fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: "10px", color: "#111", lineHeight: 1.55, minHeight: "1123px", width: "794px", boxSizing: "border-box"}}>
+      <div style={{ background: "#fff", borderBottom: `4px solid ${accent}`, padding: "14px 22px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <h1 style={{ fontSize: "20px", fontWeight: "800", color: "#111", marginBottom: "3px" }}>{resume.name || "Your Name"}</h1>
+            <h1 style={{ fontSize: "20px", fontWeight: "800", color: "#111", marginBottom: "2px" }}>{resume.name || "Your Name"}</h1>
             <p style={{ fontSize: "9px", color: accent, fontWeight: "700", letterSpacing: "2px", textTransform: "uppercase" }}>{resume.title || "Professional Title"}</p>
           </div>
-          <div style={{ background: accent, padding: "8px 14px", borderRadius: "4px" }}>
-            <p style={{ fontSize: "7px", color: "white", lineHeight: 2 }}>{resume.email}<br/>{resume.phone}<br/>{resume.location}</p>
+          <div style={{ background: accent, padding: "6px 12px", borderRadius: "4px" }}>
+            <p style={{ fontSize: "7px", color: "white", lineHeight: 1.7 }}>{resume.email}{resume.email && <br/>}{resume.phone}{resume.phone && <br/>}{resume.location}</p>
           </div>
         </div>
       </div>
-      <div style={{ padding: "16px 26px" }}>
-        {resume.summary && <><div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"5px"}}><span style={{fontSize:"7px",color:"#fff",background:accent,padding:"1px 6px",borderRadius:"2px",fontWeight:"700"}}>PROFILE</span><div style={{flex:1,height:"1px",background:"#e0e0e0"}}/></div><p style={{fontSize:"9px",color:"#444",lineHeight:1.75,marginBottom:"14px"}}>{resume.summary}</p></>}
+      <div style={{ padding: "12px 22px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: "18px" }}>
           <div>
+            {resume.summary && <><div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px"}}><span style={{fontSize:"7px",color:"#fff",background:accent,padding:"1px 6px",borderRadius:"2px",fontWeight:"700"}}>PROFILE</span><div style={{flex:1,height:"1px",background:"#e0e0e0"}}/></div><p style={{fontSize:"8.5px",color:"#444",lineHeight:1.65,marginBottom:"10px"}}>{resume.summary}</p></>}
             {(resume.experience||[]).some(e=>e.company||e.role) && <>
-              <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}><span style={{fontSize:"7px",color:"#fff",background:accent,padding:"1px 6px",borderRadius:"2px",fontWeight:"700"}}>EXPERIENCE</span><div style={{flex:1,height:"1px",background:"#e0e0e0"}}/></div>
+              <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}><span style={{fontSize:"7px",color:"#fff",background:accent,padding:"1px 6px",borderRadius:"2px",fontWeight:"700"}}>EXPERIENCE</span><div style={{flex:1,height:"1px",background:"#e0e0e0"}}/></div>
               {(resume.experience||[]).map(e=>(e.company||e.role)&&<ExpItem key={e.id} exp={e} accent={accent} border/>)}
             </>}
             {(resume.projects||[]).some(p=>p.name) && <>
-              <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px",marginTop:"10px"}}><span style={{fontSize:"7px",color:"#fff",background:accent,padding:"1px 6px",borderRadius:"2px",fontWeight:"700"}}>PROJECTS</span><div style={{flex:1,height:"1px",background:"#e0e0e0"}}/></div>
-              {(resume.projects||[]).filter(p=>p.name).map(p=><div key={p.id} style={{marginBottom:"7px"}}><p style={{fontWeight:"700",fontSize:"9px"}}>{p.name}</p>{p.tech&&<p style={{color:accent,fontSize:"7.5px"}}>{p.tech}</p>}{p.description&&<p style={{fontSize:"8px",color:"#555"}}>{p.description}</p>}</div>)}
+              <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px",marginTop:"8px"}}><span style={{fontSize:"7px",color:"#fff",background:accent,padding:"1px 6px",borderRadius:"2px",fontWeight:"700"}}>PROJECTS</span><div style={{flex:1,height:"1px",background:"#e0e0e0"}}/></div>
+              {(resume.projects||[]).filter(p=>p.name).map(p=><div key={p.id} style={{marginBottom:"6px"}}><p style={{fontWeight:"700",fontSize:"9px"}}>{p.name}</p>{p.tech&&<p style={{color:accent,fontSize:"7.5px"}}>{p.tech}</p>}{p.description&&<p style={{fontSize:"8px",color:"#555"}}>{p.description}</p>}</div>)}
             </>}
           </div>
           <div>

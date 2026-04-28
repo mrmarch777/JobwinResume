@@ -375,7 +375,7 @@ export async function extractTextFromDOCX(file) {
 // ── AI-POWERED PARSING (PRIMARY — requires backend) ───────────────────────────
 
 async function parseWithAI(rawText, jobDescription = "") {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"; // set NEXT_PUBLIC_API_URL in production
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 25000); // 25s timeout
