@@ -30,10 +30,12 @@ app = FastAPI(title="JobwinResume API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",          # local Next.js dev
-        "https://jobwinresume.com",        # production domain
-        "https://www.jobwinresume.com",    # www variant
-        "https://*.vercel.app",            # Vercel preview URLs
+        "http://localhost:3000",                    # local Next.js dev
+        "https://jobwinresume.com",                 # production domain
+        "https://www.jobwinresume.com",             # www variant
+        "https://jobwinresume-api.onrender.com",    # Render backend itself
+        "https://*.vercel.app",                     # Vercel preview URLs
+        "https://*.onrender.com",                   # any Render preview
     ],
     allow_credentials=True,
     allow_methods=["*"],
