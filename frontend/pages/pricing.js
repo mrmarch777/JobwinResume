@@ -12,7 +12,7 @@ export default function Pricing() {
   const [openFaq, setOpenFaq] = useState(null);
   const [activeNav, setActiveNav] = useState("pricing");
   const [collapsed, setCollapsed] = useState(false);
-  const [isAnnual, setIsAnnual] = useState(false);
+  const [is10Day, setIs10Day] = useState(true);
   const { theme: t, themeName, setTheme } = useTheme();
   const { refreshPlan, plan: currentPlan } = usePlan();
   const currentPlanLabel = PLAN_LIMITS[currentPlan]?.label || "Free";
@@ -22,11 +22,10 @@ export default function Pricing() {
   // FIRSTTIME is annual-only and gives 45% off (introductory offer)
   // All other codes work on monthly plans only
   const PROMO_CODES = {
-    "FIRSTTIME":   { discount: 45, label: "45% off Annual Plans (Introductory Offer)", annualOnly: true },
     "BASIC10":     { discount: 10, label: "10% off on Basic", plan: "basic" },
     "STANDARD15":  { discount: 15, label: "15% off on Standard", plan: "standard" },
-    "PRO20":       { discount: 20, label: "20% off on Pro", plan: "pro" },
-    "JOBWIN10":     { discount: 10, label: "10% off" },
+    "PREMIUM20":   { discount: 20, label: "20% off on Premium", plan: "premium" },
+    "JOBWIN10":    { discount: 10, label: "10% off" },
     "LAUNCH20":    { discount: 20, label: "20% off" },
     "WELCOME15":   { discount: 15, label: "15% off" },
     "TESTMASTER95":{ discount: 95, label: "95% off (Test)" },
@@ -44,81 +43,31 @@ export default function Pricing() {
 
     if (PROMO_CODES[code]) {
       const promo = PROMO_CODES[code];
-
-      // FIRSTTIME is only valid in annual mode
-      if (promo.annualOnly && !isAnnual) {
-        setPromoError(`🗓️ Code "${code}" is only valid for Annual plans. Please switch to Annual billing first.`);
-        setPromoSuccess("");
-        setAppliedPromo(null);
-        return;
-      }
-
-      // Monthly-specific codes shouldn't be applied to annual
-      if (!promo.annualOnly && isAnnual && !promo.plan) {
-        setPromoError(`ℹ️ Monthly promo codes don't apply to annual plans. Use FIRSTTIME for 45% off annual.`);
-        setPromoSuccess("");
-        setAppliedPromo(null);
-        return;
-      }
-
       setAppliedPromo({ code, ...promo });
-      if (promo.annualOnly) {
-        setPromoSuccess(`🎉 Code "${code}" applied — ${promo.label}!`);
-      } else if (promo.plan) {
+      if (promo.plan) {
         setPromoSuccess(`✅ Code "${code}" applied — ${promo.label}! (Valid only for ${promo.plan.charAt(0).toUpperCase() + promo.plan.slice(1)} plan)`);
       } else {
         setPromoSuccess(`✅ Code "${code}" applied — ${promo.label}!`);
       }
       setPromoError("");
     } else {
-      setPromoError("❌ Invalid promo code. Try BASIC10, STANDARD15, PRO20, or FIRSTTIME (annual)");
+      setPromoError("❌ Invalid promo code. Try BASIC10, STANDARD15, or PREMIUM20");
       setPromoSuccess("");
       setAppliedPromo(null);
     }
   };
 
-  // Clear FIRSTTIME if user switches back to monthly, and vice versa
-  const handleBillingToggle = (annual) => {
-    setIsAnnual(annual);
-    // If switching to monthly and FIRSTTIME is applied, remove it
-    if (!annual && appliedPromo?.annualOnly) {
-      setAppliedPromo(null);
-      setPromoSuccess("");
-      setPromoInput("");
-      setPromoError("ℹ️ FIRSTTIME code removed — it only applies to annual plans.");
-    }
-    // If switching to annual and a monthly-only code is applied, remove it
-    if (annual && appliedPromo && !appliedPromo.annualOnly) {
-      setAppliedPromo(null);
-      setPromoSuccess("");
-      setPromoError("ℹ️ Monthly promo removed. Use FIRSTTIME for 45% off on annual plans.");
-    }
-  };
+  const handleBillingToggle = (tenDay) => { setIs10Day(tenDay); };
 
-  // ── PRICE CALCULATION ─────────────────────────────────────────────────────
-
-  // Monthly price with promo (existing logic, unchanged)
-  const monthlyDiscountedPrice = (originalPrice, planId) => {
-    if (!appliedPromo || originalPrice === 0) return originalPrice;
-    if (appliedPromo.annualOnly) return originalPrice; // FIRSTTIME doesn't affect monthly display
-    if (appliedPromo.plan && appliedPromo.plan !== planId) return originalPrice;
+  const getPrice = (plan) => {
+    const base = is10Day ? plan.price10 : plan.priceMonth;
+    if (!appliedPromo || base === 0) return base;
+    if (appliedPromo.plan && appliedPromo.plan !== plan.id) return base;
     if (appliedPromo.fixed_price !== undefined) return appliedPromo.fixed_price;
-    return Math.round(originalPrice * (1 - appliedPromo.discount / 100));
+    return Math.round(base * (1 - appliedPromo.discount / 100));
   };
-
-  // Annual pricing logic
-  // Default annual = 20% off monthly; FIRSTTIME = 45% off monthly
-  const getAnnualInfo = (originalPrice) => {
-    if (originalPrice === 0) return null;
-    const annualDiscount = appliedPromo?.annualOnly ? appliedPromo.discount : 20;
-    const perMonth = Math.round(originalPrice * (1 - annualDiscount / 100));
-    const annualTotal = perMonth * 12;
-    return { perMonth, annualTotal, annualDiscount };
-  };
-
-  // Check if monthly promo applies to this plan (for monthly view)
-  const monthlyPromoAppliesTo = (planId) => {
-    if (!appliedPromo || appliedPromo.annualOnly) return false;
+  const promoAppliesTo = (planId) => {
+    if (!appliedPromo) return false;
     if (appliedPromo.plan) return appliedPromo.plan === planId;
     return true;
   };
@@ -126,20 +75,20 @@ export default function Pricing() {
   // ── NAV / PLANS / FAQS ───────────────────────────────────────────────────
 
   const plans = [
-    { id: "free",     name: "Free",     price: 0,   period: "forever", desc: "Perfect for getting started",  features: ["5 resume templates", "1 resume", "Basic AI suggestions", "ATS score preview", "PDF export"],                                                   cta: "Current Plan", highlight: false },
-    { id: "basic",    name: "Basic",    price: 99,  period: "month",   desc: "For casual job seekers",        features: ["10 resume templates", "3 resumes", "AI bullet points", "Full ATS checker", "Job description tailoring"],                                      cta: "Get Basic",    highlight: false },
-    { id: "standard", name: "Standard", price: 199, period: "month",   desc: "Most popular choice",           features: ["20 resume templates", "5 resumes", "Full AI content writer", "Unlimited job tailoring", "Interview prep", "Priority support"],            cta: "Get Standard", highlight: true  },
-    { id: "pro",      name: "Pro",      price: 299, period: "month",   desc: "For serious job seekers",       features: ["All 25+ templates", "Unlimited resumes", "Unlimited AI writing", "Custom branding", "Portfolio page", "Dedicated support"],               cta: "Go Pro Now",   highlight: false },
+    { id: "free",     name: "Free",     price10: 0,   priceMonth: 0,    desc: "Try the platform, no card needed",   features: ["5 resume templates", "1 resume", "Basic AI assistance", "ATS score preview", "PDF export"],                                                                     cta: "Current Plan", highlight: false },
+    { id: "basic",    name: "Basic",    price10: 99,  priceMonth: 199,  desc: "Enhanced resume tools",              features: ["14 resume templates", "Unlimited resumes", "Full AI resume creation", "Up to 10 job searches/day", "Job activity tracker"],                                     cta: "Get Basic",    highlight: false },
+    { id: "standard", name: "Standard", price10: 299, priceMonth: 399,  desc: "Complete platform access",           features: ["All resume templates", "Full AI assistance", "Unlimited job search", "One-click apply", "Apply tracker & all tools", "Interview prep"],                         cta: "Get Standard", highlight: true  },
+    { id: "premium",  name: "Premium",  price10: 999, priceMonth: 1999, desc: "Done-for-you resume service",        features: ["Expert builds your resume", "Unlimited revisions", "Dedicated 1-on-1 support", "End-to-end handling", "All Standard features", "5-day support window"],        cta: "Get Premium",  highlight: false },
   ];
 
   const faqs = [
-    { q: "Can I cancel my subscription at any time?",     a: "Yes, you can cancel your monthly subscription at any time from your account settings. You'll keep access until the end of your billing cycle." },
-    { q: "How does the annual plan work?",                a: "Annual plans are billed as a single upfront payment for the full year. By default you save 20% compared to monthly billing. With the FIRSTTIME coupon code, you save 45% as an introductory offer." },
-    { q: "Can I get a refund on the annual plan?",        a: "If you cancel within 7 days of purchase and haven't significantly used the service, you may be eligible for a refund. Please contact support@jobwinresume.pro." },
-    { q: "What payment methods do you accept?",           a: "We accept all major credit cards, debit cards, UPI, and net banking through our secure Razorpay payment processor." },
-    { q: "Will I get a confirmation after payment?",      a: "Yes! Once your payment is successful, you'll immediately receive a confirmation email with your invoice and plan details." },
-    { q: "What happens if my payment fails?",             a: "If a payment fails, your account won't be charged and you'll remain on the free plan. You can retry from the billing section." },
-    { q: "How do I contact support?",                    a: "You can reach us at support@jobwinresume.pro or call +91 7700969639. We typically respond within a few hours." },
+    { q: "What is the difference between 10-Day and Monthly?", a: "10-Day access is a short-term pass — perfect if you're actively job hunting. Monthly gives you 30 days at a slightly better per-day rate. There are no recurring or annual plans." },
+    { q: "Will I be auto-charged after my plan expires?",       a: "No. We never auto-renew or auto-charge. Once your access expires you return to the free plan and choose when to renew." },
+    { q: "What is the Premium plan?",                          a: "Premium is a done-for-you service. Our expert builds your resume completely on your behalf with unlimited revisions and 1-on-1 support — you don't need to do anything." },
+    { q: "Can I get a refund?",                                a: "If you cancel within 24 hours of purchase and haven't used the service, you may be eligible for a refund. Contact support@jobwinresume.pro." },
+    { q: "What payment methods do you accept?",                a: "All major credit/debit cards, UPI, and net banking via Razorpay." },
+    { q: "Will I get a confirmation after payment?",           a: "Yes — you'll immediately receive a confirmation email with your invoice and plan details." },
+    { q: "How do I contact support?",                         a: "Email support@jobwinresume.pro or call +91 7700969639. We typically respond within a few hours." },
   ];
 
   useEffect(() => {
@@ -159,23 +108,16 @@ export default function Pricing() {
     if (plan.id === "free" || plan.id === currentPlan) return;
 
     // Validate plan-specific promo before proceeding (monthly)
-    if (!isAnnual && appliedPromo && appliedPromo.plan && appliedPromo.plan !== plan.id) {
+    if (appliedPromo && appliedPromo.plan && appliedPromo.plan !== plan.id) {
       alert(`⚠️ The promo code "${appliedPromo.code}" is only valid for the ${appliedPromo.plan.charAt(0).toUpperCase() + appliedPromo.plan.slice(1)} plan.`);
       return;
     }
 
     setLoading(plan.id);
 
-    let finalPrice;
-    let billingDesc;
-    if (isAnnual && plan.price > 0) {
-      const info = getAnnualInfo(plan.price);
-      finalPrice = info.annualTotal;
-      billingDesc = `JobwinResume ${plan.name} Annual Plan (${info.annualDiscount}% off${appliedPromo?.annualOnly ? " — FIRSTTIME offer" : " — standard annual"})`;
-    } else {
-      finalPrice = monthlyDiscountedPrice(plan.price, plan.id);
-      billingDesc = `JobwinResume ${plan.name} Plan${appliedPromo && !appliedPromo.annualOnly ? ` (${appliedPromo.label})` : ""}`;
-    }
+    let finalPrice = getPrice(plan);
+    let billingDesc = `JobwinResume ${plan.name} Plan (${is10Day ? "10 Days" : "Monthly"})${appliedPromo ? ` — ${appliedPromo.label}` : ""}`;
+    if (finalPrice === 0) return;
 
     try {
       const script = document.createElement("script");
@@ -192,7 +134,7 @@ export default function Pricing() {
           notes: {
             email: user.email,
             plan: plan.id,
-            billing: isAnnual ? "annual" : "monthly",
+            billing: is10Day ? "10day" : "monthly",
             promo: appliedPromo?.code || "none",
           },
           theme: { color: "#6C63FF" },
@@ -203,7 +145,7 @@ export default function Pricing() {
                 plan: plan.id,
                 payment_id: response.razorpay_payment_id,
                 amount: finalPrice,
-                billing: isAnnual ? "annual" : "monthly",
+                billing: is10Day ? "10day" : "monthly",
                 activated_at: new Date().toISOString(),
               };
               const checkExisting = await supabase.from("user_plans").select("email").eq("email", user.email).maybeSingle();
@@ -226,14 +168,14 @@ export default function Pricing() {
                     plan: plan.id,
                     email: user.email,
                     amount: finalPrice,
-                    billing: isAnnual ? "annual" : "monthly",
+                    billing: is10Day ? "10day" : "monthly",
                     promo_code: appliedPromo?.code || null,
                   }),
                 }).catch(() => {});
               }
             } catch (e) { /* ignore */ }
             await refreshPlan();
-            alert(`🎉 Payment successful! Welcome to JobwinResume ${plan.name}${isAnnual ? " (Annual)" : ""}! Your plan is now active.`);
+            alert(`🎉 Payment successful! Welcome to JobwinResume ${plan.name}! Your ${is10Day ? "10-day" : "monthly"} plan is now active.`);
             router.push("/dashboard");
           },
           modal: { ondismiss: () => setLoading(null) },
@@ -309,45 +251,13 @@ export default function Pricing() {
             {/* ── BILLING TOGGLE ── */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "28px", gap: "12px" }}>
               <div style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "4px", gap: "2px" }}>
-                <button
-                  className={`billing-toggle-btn ${!isAnnual ? "active" : "inactive"}`}
-                  onClick={() => handleBillingToggle(false)}
-                >
+                <button className={`billing-toggle-btn ${is10Day ? "active" : "inactive"}`} onClick={() => handleBillingToggle(true)}>10 Days</button>
+                <button className={`billing-toggle-btn ${!is10Day ? "active" : "inactive"}`} onClick={() => handleBillingToggle(false)}>
                   Monthly
-                </button>
-                <button
-                  className={`billing-toggle-btn ${isAnnual ? "active" : "inactive"}`}
-                  onClick={() => handleBillingToggle(true)}
-                >
-                  Annually
-                  {!isAnnual && (
-                    <span style={{ marginLeft: "8px", background: "rgba(67,217,162,0.18)", color: "#43D9A2", fontSize: "10px", fontWeight: "700", padding: "2px 6px", borderRadius: "100px" }}>
-                      SAVE 20%+
-                    </span>
-                  )}
+                  {is10Day && <span style={{ marginLeft: "8px", background: "rgba(67,217,162,0.18)", color: "#43D9A2", fontSize: "10px", fontWeight: "700", padding: "2px 6px", borderRadius: "100px" }}>SAVE MORE</span>}
                 </button>
               </div>
-
-              {/* Annual info banner */}
-              {isAnnual && (
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "rgba(108,99,255,0.08)", border: "1px solid rgba(108,99,255,0.25)", borderRadius: "10px", padding: "10px 18px", fontSize: "13px" }}>
-                  <span style={{ fontSize: "16px" }}>🎁</span>
-                  <span style={{ color: t.muted }}>
-                    Annual billing — <strong style={{ color: "white" }}>20% off</strong> by default.
-                    Apply coupon <strong style={{ color: "#6C63FF", letterSpacing: "0.5px", fontFamily: "monospace" }}>FIRSTTIME</strong> to unlock{" "}
-                    <span className="promo-badge" style={{ display: "inline-block", background: "linear-gradient(135deg,#6C63FF,#FF6584)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: "700" }}>
-                      45% off
-                    </span>{" "}
-                    (introductory offer).
-                  </span>
-                </div>
-              )}
-              {!isAnnual && (
-                <p style={{ color: t.muted, fontSize: "12px" }}>
-                  💡 Switch to <strong style={{ color: "white" }}>Annual</strong> and use code{" "}
-                  <span style={{ fontFamily: "monospace", color: "#A29BFE", fontWeight: "700" }}>FIRSTTIME</span> to save 45%
-                </p>
-              )}
+              <p style={{ color: t.muted, fontSize: "12px" }}>{is10Day ? "💡 Switch to Monthly for a better per-day rate" : "💡 10-Day — perfect for active job seekers"}</p>
             </div>
 
             {/* Promo Code Banner */}
@@ -355,7 +265,7 @@ export default function Pricing() {
               <div style={{ flex: 1, minWidth: "220px" }}>
                 <p style={{ fontSize: "13px", fontWeight: "600", color: t.text, marginBottom: "4px" }}>🏷️ Have a promo code?</p>
                 <p style={{ fontSize: "11px", color: t.muted }}>
-                  {isAnnual ? "Use FIRSTTIME for 45% off annual, or standard codes for monthly plans." : "Enter your code to get a discount on any paid plan."}
+                  {"Enter your code to get a discount on any paid plan."}
                 </p>
               </div>
               <div style={{ display: "flex", gap: "8px", alignItems: "center", flex: 1, minWidth: "260px" }}>
@@ -363,7 +273,7 @@ export default function Pricing() {
                   value={promoInput}
                   onChange={e => { setPromoInput(e.target.value); setPromoError(""); setPromoSuccess(""); }}
                   onKeyDown={e => e.key === "Enter" && applyPromo()}
-                  placeholder={isAnnual ? "e.g. FIRSTTIME" : "e.g. JOBWIN10"}
+                  placeholder="e.g. JOBWIN10"
                   style={{ flex: 1, padding: "9px 14px", background: t.inputBg, border: `1px solid ${appliedPromo ? "#43D9A2" : t.border}`, borderRadius: "8px", fontSize: "13px", color: t.text, outline: "none", letterSpacing: "1px", textTransform: "uppercase" }}
                 />
                 <button onClick={applyPromo}
@@ -379,105 +289,39 @@ export default function Pricing() {
               {/* Available codes hint */}
               <div style={{ width: "100%", marginTop: "10px", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                 <span style={{ fontSize: "11px", color: t.muted, fontWeight: "500" }}>
-                  {isAnnual ? "Annual code:" : "Monthly codes:"}
+                  "Promo codes:"
                 </span>
-                {isAnnual ? (
-                  <button onClick={() => { setPromoInput("FIRSTTIME"); setPromoError(""); setPromoSuccess(""); }}
-                    style={{ background: "transparent", border: "1px dashed rgba(108,99,255,0.7)", borderRadius: "6px", padding: "4px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ fontFamily: "monospace", fontSize: "12px", fontWeight: "700", color: "white", letterSpacing: "0.5px" }}>FIRSTTIME</span>
-                    <span style={{ fontSize: "10px", color: "#A29BFE" }}>45% Off Annual 🎉</span>
+                {[
+                  { code: "BASIC10",    label: "10% Off Basic",    color: "#6C63FF" },
+                  { code: "STANDARD15", label: "15% Off Standard", color: "#A29BFE" },
+                  { code: "PREMIUM20",  label: "20% Off Premium",  color: "#FF6584" },
+                ].map(({ code, label, color }) => (
+                  <button key={code} onClick={() => { setPromoInput(code); setPromoError(""); setPromoSuccess(""); }}
+                    style={{ background: "transparent", border: `1px dashed ${color}88`, borderRadius: "6px", padding: "4px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontFamily: "monospace", fontSize: "12px", fontWeight: "700", color: "white", letterSpacing: "0.5px" }}>{code}</span>
+                    <span style={{ fontSize: "10px", color }}>{label}</span>
                   </button>
-                ) : (
-                  [
-                    { code: "BASIC10",    label: "10% Off Basic",    color: "#6C63FF" },
-                    { code: "STANDARD15", label: "15% Off Standard", color: "#A29BFE" },
-                    { code: "PRO20",      label: "20% Off Pro",      color: "#FF6584" },
-                  ].map(({ code, label, color }) => (
-                    <button key={code} onClick={() => { setPromoInput(code); setPromoError(""); setPromoSuccess(""); }}
-                      style={{ background: "transparent", border: `1px dashed ${color}88`, borderRadius: "6px", padding: "4px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ fontFamily: "monospace", fontSize: "12px", fontWeight: "700", color: "white", letterSpacing: "0.5px" }}>{code}</span>
-                      <span style={{ fontSize: "10px", color }}>{label}</span>
-                    </button>
-                  ))
-                )}
+                ))}
               </div>
             </div>
 
             {/* ── PLAN CARDS ── */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "16px", marginBottom: "60px" }}>
               {plans.map((p, i) => {
-                const annualInfo = isAnnual && p.price > 0 ? getAnnualInfo(p.price) : null;
-                const showMonthlyPromo = !isAnnual && monthlyPromoAppliesTo(p.id) && p.price > 0;
-                const displayMonthlyPrice = monthlyDiscountedPrice(p.price, p.id);
-
+                const displayPrice = getPrice(p);
+                const origPrice = is10Day ? p.price10 : p.priceMonth;
+                const hasDiscount = promoAppliesTo(p.id) && displayPrice !== origPrice && origPrice > 0;
                 return (
-                  <div key={i} className="plan-card"
-                    style={{ padding: "28px", borderRadius: "20px", background: p.highlight ? `linear-gradient(180deg,rgba(108,99,255,0.15) 0%,rgba(108,99,255,0.05) 100%)` : t.card, border: `1px solid ${p.highlight ? "rgba(108,99,255,0.5)" : t.border}`, position: "relative" }}>
-
-                    {/* MOST POPULAR badge */}
-                    {p.highlight && (
-                      <div style={{ position: "absolute", top: "-13px", left: "50%", transform: "translateX(-50%)", background: "linear-gradient(135deg,#6C63FF,#FF6584)", color: "white", padding: "4px 16px", borderRadius: "100px", fontSize: "10px", fontWeight: "600", whiteSpace: "nowrap" }}>MOST POPULAR</div>
-                    )}
-
-                    {/* ANNUAL OFFER badge */}
-                    {isAnnual && p.price > 0 && annualInfo && (
-                      <div style={{ position: "absolute", top: p.highlight ? "18px" : "12px", right: "12px", background: annualInfo.annualDiscount === 45 ? "linear-gradient(135deg,#6C63FF,#FF6584)" : "rgba(67,217,162,0.15)", border: annualInfo.annualDiscount === 45 ? "none" : "1px solid rgba(67,217,162,0.3)", color: annualInfo.annualDiscount === 45 ? "white" : "#43D9A2", padding: "3px 8px", borderRadius: "100px", fontSize: "9px", fontWeight: "700", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
-                        {annualInfo.annualDiscount === 45 ? "🎉 45% OFF" : "20% OFF"}
-                      </div>
-                    )}
-
+                  <div key={i} className="plan-card" style={{ padding: "28px", borderRadius: "20px", background: p.highlight ? "linear-gradient(180deg,rgba(108,99,255,0.15) 0%,rgba(108,99,255,0.05) 100%)" : t.card, border: `1px solid ${p.highlight ? "rgba(108,99,255,0.5)" : t.border}`, position: "relative" }}>
+                    {p.highlight && <div style={{ position: "absolute", top: "-13px", left: "50%", transform: "translateX(-50%)", background: "linear-gradient(135deg,#6C63FF,#FF6584)", color: "white", padding: "4px 16px", borderRadius: "100px", fontSize: "10px", fontWeight: "600", whiteSpace: "nowrap" }}>MOST POPULAR</div>}
                     <h3 style={{ fontFamily: "'Noto Serif',serif", fontSize: "18px", fontWeight: "700", marginBottom: "6px", color: p.highlight ? "#A29BFE" : t.text }}>{p.name}</h3>
                     <p style={{ color: t.muted, fontSize: "12px", marginBottom: "20px" }}>{p.desc}</p>
-
-                    {/* Price block */}
                     <div style={{ marginBottom: "24px" }}>
-                      {/* Monthly mode */}
-                      {!isAnnual && (
-                        <>
-                          {showMonthlyPromo && (
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
-                              <span style={{ textDecoration: "line-through", color: t.muted, fontSize: "16px" }}>₹{p.price}</span>
-                              <span style={{ background: "rgba(67,217,162,0.15)", color: "#43D9A2", fontSize: "10px", fontWeight: "700", padding: "2px 8px", borderRadius: "100px" }}>-{appliedPromo.discount}%</span>
-                            </div>
-                          )}
-                          {!isAnnual && appliedPromo && appliedPromo.plan && appliedPromo.plan !== p.id && p.price > 0 && (
-                            <div style={{ marginBottom: "4px" }}>
-                              <span style={{ background: "rgba(255,101,132,0.1)", color: "#FF6584", fontSize: "9px", fontWeight: "700", padding: "2px 8px", borderRadius: "100px", letterSpacing: "0.5px" }}>CODE FOR {appliedPromo.plan.toUpperCase()} ONLY</span>
-                            </div>
-                          )}
-                          <span style={{ fontFamily: "'Noto Serif',serif", fontSize: "36px", fontWeight: "700", color: showMonthlyPromo ? "#43D9A2" : t.text }}>
-                            ₹{displayMonthlyPrice}
-                          </span>
-                          <span style={{ color: t.muted, fontSize: "13px" }}>/{p.period}</span>
-                        </>
-                      )}
-
-                      {/* Annual mode */}
-                      {isAnnual && p.price > 0 && annualInfo && (
-                        <>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                            <span style={{ textDecoration: "line-through", color: t.muted, fontSize: "14px" }}>₹{p.price}/mo</span>
-                          </div>
-                          <span style={{ fontFamily: "'Noto Serif',serif", fontSize: "36px", fontWeight: "700", color: annualInfo.annualDiscount === 45 ? "#A29BFE" : "#43D9A2" }}>
-                            ₹{annualInfo.perMonth}
-                          </span>
-                          <span style={{ color: t.muted, fontSize: "13px" }}>/mo</span>
-                          <div style={{ marginTop: "6px", fontSize: "11px", color: t.muted }}>
-                            Billed as <strong style={{ color: t.text }}>₹{annualInfo.annualTotal}</strong> / year
-                          </div>
-                        </>
-                      )}
-
-                      {/* Free plan annual */}
-                      {isAnnual && p.price === 0 && (
-                        <>
-                          <span style={{ fontFamily: "'Noto Serif',serif", fontSize: "36px", fontWeight: "700", color: t.text }}>₹0</span>
-                          <span style={{ color: t.muted, fontSize: "13px" }}>/forever</span>
-                        </>
-                      )}
+                      {hasDiscount && <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}><span style={{ textDecoration: "line-through", color: t.muted, fontSize: "14px" }}>₹{origPrice}</span><span style={{ background: "rgba(67,217,162,0.15)", color: "#43D9A2", fontSize: "10px", fontWeight: "700", padding: "2px 8px", borderRadius: "100px" }}>-{appliedPromo.discount}%</span></div>}
+                      <span style={{ fontFamily: "'Noto Serif',serif", fontSize: "36px", fontWeight: "700", color: hasDiscount ? "#43D9A2" : t.text }}>₹{displayPrice}</span>
+                      {origPrice > 0 && <span style={{ color: t.muted, fontSize: "13px" }}>/{is10Day ? "10 days" : "month"}</span>}
+                      {origPrice === 0 && <span style={{ color: t.muted, fontSize: "13px" }}>/forever</span>}
                     </div>
-
-                    {/* Features */}
                     <div style={{ marginBottom: "24px" }}>
                       {p.features.map((f, j) => (
                         <div key={j} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", color: t.muted, fontSize: "13px" }}>
@@ -485,12 +329,9 @@ export default function Pricing() {
                         </div>
                       ))}
                     </div>
-
-                    {/* CTA Button */}
-                    <button className="upgrade-btn" onClick={() => handleUpgrade(p)}
-                      disabled={loading === p.id || p.id === currentPlan}
+                    <button className="upgrade-btn" onClick={() => handleUpgrade(p)} disabled={loading === p.id || p.id === currentPlan}
                       style={{ width: "100%", padding: "12px", background: p.id === currentPlan ? "rgba(67,217,162,0.12)" : p.highlight ? "linear-gradient(135deg,#6C63FF,#FF6584)" : "rgba(255,255,255,0.06)", color: p.id === currentPlan ? "#43D9A2" : p.highlight ? "white" : t.text, border: `1px solid ${p.id === currentPlan ? "rgba(67,217,162,0.3)" : p.highlight ? "transparent" : t.border}`, borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: p.id === currentPlan ? "default" : "pointer", transition: "all 0.3s", fontFamily: "'DM Sans',sans-serif" }}>
-                      {loading === p.id ? "Processing..." : p.id === currentPlan ? "Current Plan ✓" : isAnnual && p.price > 0 ? `${p.cta} — Annually` : p.cta}
+                      {loading === p.id ? "Processing..." : p.id === currentPlan ? "Current Plan ✓" : p.cta}
                     </button>
                   </div>
                 );
@@ -501,23 +342,10 @@ export default function Pricing() {
             <div style={{ marginBottom: "60px" }}>
               <h2 style={{ fontFamily: "'Noto Serif',serif", fontSize: "24px", fontWeight: "600", textAlign: "center", marginBottom: "28px", color: t.text }}>Compare Features</h2>
               <div style={{ background: t.card, borderRadius: "16px", overflow: "hidden", border: `1px solid ${t.border}` }}>
-                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", padding: "14px 22px", background: `${t.accent}12`, borderBottom: `1px solid ${t.border}` }}>
-                  {["Feature", "Free", "Basic", "Standard", "Pro"].map((h, i) => (
-                    <div key={i} style={{ color: i === 0 ? t.muted : t.accent, fontWeight: "600", fontSize: "12px", textTransform: i === 0 ? "none" : "uppercase", letterSpacing: i === 0 ? "0" : "1px" }}>{h}</div>
-                  ))}
-                </div>
-                {[
-                  ["Resume Templates",   "5",        "10",       "20",         "25+"],
-                  ["Resumes",            "1",        "3",        "5",          "Unlimited"],
-                  ["AI Content Writer",  "Basic",    "✓",        "✓",          "✓"],
-                  ["ATS Score Checker",  "Preview",  "Full",     "Full",       "Full"],
-                  ["Job Tailoring",      "—",        "✓",        "Unlimited",  "Unlimited"],
-                  ["Interview Prep",     "—",        "—",        "✓",          "✓"],
-                  ["Priority Support",   "—",        "Email",    "Priority",   "Dedicated"],
-                ].map((row, i) => (
-                  <div key={i} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", padding: "12px 22px", borderBottom: `1px solid ${t.border}`, background: i % 2 === 0 ? "transparent" : `${t.accent}04` }}>
-                    {row.map((cell, j) => (
-                      <div key={j} style={{ color: j === 0 ? t.muted : cell === "✓" || cell === "Unlimited" || cell === "Priority" ? "#43D9A2" : cell === "—" ? t.muted : t.text, fontSize: "13px", fontWeight: j > 0 && cell !== "—" ? "500" : "400" }}>{cell}</div>
+                {[["Feature","Free","Basic","Standard","Premium"],["Resume Templates","5","14","All","All"],["Resumes","1","Unlimited","Unlimited","Unlimited"],["AI Content Writer","Basic","✓","✓","✓"],["ATS Score Checker","Preview","Full","Full","Full"],["Job Search","3/day","10/day","Unlimited","Unlimited"],["One-Click Apply","—","—","✓","✓"],["Interview Prep","—","—","✓","✓"],["Expert Builds Resume","—","—","—","✓"],["Dedicated Support","—","Email","Priority","1-on-1"]].map((row,i)=>(
+                  <div key={i} style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr",padding:i===0?"14px 22px":"12px 22px",borderBottom:`1px solid ${t.border}`,background:i===0?`${t.accent}12`:i%2===0?"transparent":`${t.accent}04`}}>
+                    {row.map((cell,j)=>(
+                      <div key={j} style={{color:i===0?(j===0?t.muted:t.accent):j===0?t.muted:["✓","Unlimited","Priority","1-on-1"].includes(cell)?"#43D9A2":cell==="—"?t.muted:t.text,fontSize:"13px",fontWeight:i===0?600:j>0&&cell!=="—"?500:400,textTransform:i===0&&j>0?"uppercase":"none",letterSpacing:i===0&&j>0?"1px":"0"}}>{cell}</div>
                     ))}
                   </div>
                 ))}

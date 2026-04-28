@@ -43,10 +43,10 @@ export const THEMES = {
 // ── PLAN LIMITS ───────────────────────────────────────────────────────────────
 // 🚧 DEV MODE: All features unlocked — restore per-plan limits before launch
 export const PLAN_LIMITS = {
-  free:     { resumes: Infinity, searches: Infinity, templates: Infinity, apply: true, interview: true, atsOptimise: true, hrFinder: true, label: "Pro" },
-  basic:    { resumes: Infinity, searches: Infinity, templates: Infinity, apply: true, interview: true, atsOptimise: true, hrFinder: true, label: "Basic" },
-  standard: { resumes: Infinity, searches: Infinity, templates: Infinity, apply: true, interview: true, atsOptimise: true, hrFinder: true, label: "Standard" },
-  pro:      { resumes: Infinity, searches: Infinity, templates: Infinity, apply: true, interview: true, atsOptimise: true, hrFinder: true, label: "Pro" },
+  free:     { resumes: 1,        searches: 3,        templates: 5,   apply: false, interview: false, atsOptimise: false, hrFinder: false, label: "Free"     },
+  basic:    { resumes: Infinity, searches: 10,       templates: 14,  apply: false, interview: false, atsOptimise: true,  hrFinder: false, label: "Basic"    },
+  standard: { resumes: Infinity, searches: Infinity, templates: 999, apply: true,  interview: true,  atsOptimise: true,  hrFinder: true,  label: "Standard" },
+  premium:  { resumes: Infinity, searches: Infinity, templates: 999, apply: true,  interview: true,  atsOptimise: true,  hrFinder: true,  label: "Premium"  },
 };
 
 // Feature keys users can check against
