@@ -36,7 +36,7 @@ export default function Apply() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { router.push("/login"); return; }
       setUser(session.user);
-      const name = session.user.email.split("@")[0];
+      const name = session.user.user_metadata?.full_name?.split(" ")[0] || session.user.email.split("@")[0];
       setYourName(name);
     });
     // Load selected jobs from localStorage
@@ -171,7 +171,7 @@ export default function Apply() {
       <Sidebar activeId="apply" collapsed={collapsed} setCollapsed={setCollapsed} user={user} />
 
       {/* ── MAIN ── */}
-      <main className="mobile-main" style={{ flex: 1, marginLeft: collapsed ? "68px" : "232px", transition: "margin-left 0.3s ease", display: "flex", flexDirection: "column" }}>
+      <main className="mobile-main" style={{ flex: 1, marginLeft: collapsed ? "72px" : "240px", transition: "margin-left 0.3s ease", display: "flex", flexDirection: "column" }}>
 
         {/* Topbar */}
         <header style={{ height: "56px", background: `${t.sidebar}ee`, backdropFilter: "blur(20px)", borderBottom: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", position: "sticky", top: 0, zIndex: 100 }}>
@@ -198,7 +198,7 @@ export default function Apply() {
                 <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
                   <button onClick={() => router.push("/pricing")}
                     style={{ padding: "13px 32px", background: "linear-gradient(135deg,#6C63FF,#FF6584)", color: "white", border: "none", borderRadius: "10px", fontSize: "14px", fontWeight: "700", cursor: "pointer", boxShadow: "0 4px 20px rgba(108,99,255,0.4)" }}>
-                    ⚡ Upgrade to Basic — ₹99/mo
+                    ⚡ Upgrade to Basic — ₹99/10 days
                   </button>
                   <button onClick={() => router.push("/pricing")}
                     style={{ padding: "13px 24px", background: t.card, color: t.muted, border: `1px solid ${t.border}`, borderRadius: "10px", fontSize: "14px", cursor: "pointer" }}>

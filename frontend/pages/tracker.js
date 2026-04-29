@@ -87,7 +87,7 @@ export default function Tracker() {
   };
 
   const deleteApp = (id) => {
-    if (!confirm("Delete this application?")) return;
+    if (!window.confirm("Delete this application? This cannot be undone.")) return;
     saveApplications(applications.filter(a => a.id !== id));
     if (activeApp?.id === id) setActiveApp(null);
   };
@@ -120,14 +120,14 @@ export default function Tracker() {
         .theme-btn:hover { background:rgba(108,99,255,0.2) !important; }
         input::placeholder, textarea::placeholder { color:${t.muted}; }
         input, textarea, select { color:${t.text}; }
-        select option { background:#1a1a2e; color:white; }
+        select option { background:${t.sidebar}; color:${t.text}; }
       `}</style>
 
       {/* ── SIDEBAR ── */}
       <Sidebar activeId="tracker" collapsed={collapsed} setCollapsed={setCollapsed} user={user} />
 
       {/* MAIN */}
-      <main className="mobile-main" style={{ flex: 1, marginLeft: collapsed ? "68px" : "232px", transition: "margin-left 0.3s ease", display: "flex", flexDirection: "column" }}>
+      <main className="mobile-main" style={{ flex: 1, marginLeft: collapsed ? "72px" : "240px", transition: "margin-left 0.3s ease", display: "flex", flexDirection: "column" }}>
         {/* Topbar */}
         <header style={{ height: "56px", background: `${t.sidebar}ee`, backdropFilter: "blur(20px)", borderBottom: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", position: "sticky", top: 0, zIndex: 100 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>

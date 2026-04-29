@@ -73,9 +73,19 @@ export default function Interview() {
       if (!session) { router.push("/login"); return; }
       setUser(session.user);
     });
-    // Load contributions from localStorage
-    const saved = localStorage.getItem("jobwin_contributions");
-    if (saved) setContributions(JSON.parse(saved));
+    // Load contributions from Supabase, fall back to localStorage
+    const loadContribs = async () => {
+      const saved = localStorage.getItem("jobwin_contributions");
+      if (saved) setContributions(JSON.parse(saved));
+      try {
+        const { data } = await supabase.from("interview_contributions").select("*").order("submitted_at", { ascending: false }).limit(100);
+        if (data && data.length > 0) {
+          setContributions(data);
+          localStorage.setItem("jobwin_contributions", JSON.stringify(data));
+        }
+      } catch (e) {}
+    };
+    loadContribs();
   }, []);
 
   const handleTheme = (name) => setTheme(name);
@@ -194,7 +204,7 @@ export default function Interview() {
         .contrib-card:hover { border-color:rgba(108,99,255,0.3) !important; }
         input::placeholder, textarea::placeholder { color:${t.muted}; }
         input, select, textarea { color:${t.text}; }
-        select option { background:#1a1a2e; color:white; }
+        select option { background:${t.sidebar}; color:${t.text}; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         .fade-up { animation:fadeUp 0.4s ease forwards; }
       `}</style>
@@ -203,7 +213,7 @@ export default function Interview() {
       <Sidebar activeId="interview" collapsed={collapsed} setCollapsed={setCollapsed} user={user} />
 
       {/* MAIN */}
-      <main className="mobile-main" style={{ flex: 1, marginLeft: collapsed ? "68px" : "232px", transition: "margin-left 0.3s ease", display: "flex", flexDirection: "column" }}>
+      <main className="mobile-main" style={{ flex: 1, marginLeft: collapsed ? "72px" : "240px", transition: "margin-left 0.3s ease", display: "flex", flexDirection: "column" }}>
         <header style={{ height: "56px", background: `${t.sidebar}ee`, backdropFilter: "blur(20px)", borderBottom: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", position: "sticky", top: 0, zIndex: 100 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <button onClick={() => router.push("/dashboard")} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${t.border}`, color: t.muted, padding: "6px 14px", borderRadius: "8px", cursor: "pointer", fontSize: "12px" }}>← Dashboard</button>
@@ -232,7 +242,7 @@ export default function Interview() {
                 <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
                   <button onClick={() => router.push("/pricing")}
                     style={{ padding: "13px 32px", background: "linear-gradient(135deg,#6C63FF,#FF6584)", color: "white", border: "none", borderRadius: "10px", fontSize: "14px", fontWeight: "700", cursor: "pointer", boxShadow: "0 4px 20px rgba(108,99,255,0.4)" }}>
-                    ⚡ Upgrade to Standard — ₹199/mo
+                    ⚡ Upgrade to Standard — ₹299/10 days
                   </button>
                   <button onClick={() => router.push("/pricing")}
                     style={{ padding: "13px 24px", background: t.card, color: t.muted, border: `1px solid ${t.border}`, borderRadius: "10px", fontSize: "14px", cursor: "pointer" }}>
@@ -281,7 +291,7 @@ export default function Interview() {
                     <div>
                       <label style={{ color: t.muted, fontSize: "10px", textTransform: "uppercase", letterSpacing: "1px", display: "block", marginBottom: "5px" }}>Job Title *</label>
                       <input type="text" placeholder="e.g. Data Analyst" value={jobTitle} onChange={e => setJobTitle(e.target.value)}
-                        onKeyPress={e => e.key === "Enter" && generateQuestions()}
+                        onKeyDown={e => e.key === "Enter" && generateQuestions()}
                         style={{ width: "100%", padding: "10px 13px", background: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "9px", fontSize: "13px", outline: "none" }} />
                     </div>
                     <div>
