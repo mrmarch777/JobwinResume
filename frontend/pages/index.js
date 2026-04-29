@@ -362,8 +362,16 @@ export default function Home() {
             Build a professional, ATS-friendly resume in <strong style={{ color:"rgba(255,255,255,0.85)" }}>5 minutes</strong>. Our AI writes compelling bullet points, checks compatibility in real-time, and formats for any company. <strong style={{ color:"rgba(255,255,255,0.85)" }}>Free forever</strong>.
           </p>
 
-          <div style={{ display:"inline-flex", alignItems:"center", gap:"6px", background:"rgba(67,217,162,0.1)", border:"1px solid rgba(67,217,162,0.2)", padding:"8px 16px", borderRadius:"100px", marginBottom:"36px", fontSize:"13px", color:"#43D9A2", fontWeight:"600" }}>
+          <div style={{ display:"inline-flex", alignItems:"center", gap:"6px", background:"rgba(67,217,162,0.1)", border:"1px solid rgba(67,217,162,0.2)", padding:"8px 16px", borderRadius:"100px", marginBottom:"20px", fontSize:"13px", color:"#43D9A2", fontWeight:"600" }}>
             <span>⚡</span> 10,000+ resumes | 92% avg ATS score | 85% get interviews
+          </div>
+
+          {/* 🎁 Promo trap — curiosity hook */}
+          <div onClick={() => router.push("/signup")} style={{ display:"inline-flex", alignItems:"center", gap:"10px", background:"rgba(108,99,255,0.12)", border:"1px solid rgba(108,99,255,0.3)", borderRadius:"10px", padding:"10px 18px", marginBottom:"28px", cursor:"pointer", transition:"all 0.2s" }}>
+            <span style={{ fontSize:"16px" }}>🎁</span>
+            <span style={{ fontSize:"13px", color:"rgba(255,255,255,0.7)" }}>New user exclusive — use promo code</span>
+            <span style={{ background:"rgba(108,99,255,0.3)", border:"1px dashed #6C63FF", borderRadius:"6px", padding:"3px 10px", fontSize:"13px", fontWeight:"800", color:"#A29BFE", letterSpacing:"2px", filter:"blur(3px)", userSelect:"none" }}>JOBWIN10</span>
+            <span style={{ fontSize:"13px", color:"#A29BFE", fontWeight:"600" }}>to save 10% → Sign up to reveal</span>
           </div>
 
           <div className="hero-btns" style={{ display:"flex", gap:"16px", justifyContent:"center", flexWrap:"wrap", marginBottom:"52px" }}>
@@ -610,7 +618,17 @@ export default function Home() {
           <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:"clamp(26px,4vw,48px)", fontWeight:"900", marginBottom:"16px" }}>
             Choose your plan.<br />Get hired on <span style={{ color:"#6C63FF", fontStyle:"italic" }}>day 1.</span>
           </h2>
-          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"16px", marginBottom:"36px" }}>Plans from ₹99/10 days | Money-back guarantee | Cancel anytime</p>
+          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"16px", marginBottom:"16px" }}>Plans from ₹99/10 days | No recurring charges | Cancel anytime</p>
+
+          {/* ✨ PROMO CODE TRAP — creates urgency to sign up */}
+          <div style={{ display:"inline-flex", alignItems:"center", gap:"10px", background:"linear-gradient(135deg,rgba(108,99,255,0.15),rgba(255,101,132,0.1))", border:"1px solid rgba(108,99,255,0.35)", borderRadius:"12px", padding:"12px 20px", marginBottom:"28px", cursor:"pointer", maxWidth:"480px" }} onClick={() => router.push("/signup")}>
+            <span style={{ fontSize:"20px" }}>🎁</span>
+            <div style={{ textAlign:"left" }}>
+              <div style={{ fontSize:"13px", fontWeight:"700", color:"white", marginBottom:"2px" }}>New users get an exclusive promo code!</div>
+              <div style={{ fontSize:"12px", color:"rgba(255,255,255,0.5)" }}>Sign up free to unlock <span style={{ color:"#A29BFE", fontWeight:"600" }}>JOBWIN10</span> — 10% off any plan. Limited time. →</div>
+            </div>
+            <div style={{ background:"rgba(108,99,255,0.25)", border:"1px dashed rgba(108,99,255,0.5)", borderRadius:"8px", padding:"6px 12px", fontSize:"13px", fontWeight:"800", color:"#A29BFE", letterSpacing:"1px", whiteSpace:"nowrap" }}>JOBWIN••</div>
+          </div>
 
           {/* Toggle: false = 10 Days, true = Monthly */}
           <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"14px", marginBottom:"48px" }}>
@@ -625,10 +643,10 @@ export default function Home() {
 
           <div className="pricing-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"16px" }}>
             {[
-              { name:"Free",     tenDay:"₹0",    monthly:"₹0",    desc:"Perfect to get started",  features:["5 templates","1 resume","Basic AI suggestions","PDF export","ATS score preview"], highlight:false },
-              { name:"Basic",    tenDay:"₹99",   monthly:"₹249", desc:"For casual job seekers",  features:["10 templates","3 resumes","AI bullet points","Full ATS checker","Job tailoring"], highlight:false },
-              { name:"Standard", tenDay:"₹299",  monthly:"₹699", desc:"Most popular choice",     features:["20 templates","5 resumes","Full AI writer","Unlimited tailoring","Interview prep","Priority support"], highlight:true },
-              { name:"Pro",      tenDay:"₹499",  monthly:"₹999", desc:"For serious job seekers", features:["All 32 templates","Unlimited resumes","Unlimited AI","Custom branding","Portfolio page","Dedicated support"], highlight:false },
+              { name:"Free",     tenDay:"₹0",    monthly:"₹0",     desc:"Try the platform, no card needed", features:["5 resume templates","1 resume","Basic AI assistance","ATS score preview","PDF export"], highlight:false },
+              { name:"Basic",    tenDay:"₹99",   monthly:"₹199",  desc:"Enhanced resume tools",           features:["14 resume templates","Unlimited resumes","Full AI resume creation","Up to 10 job searches/day","Job activity tracker"], highlight:false },
+              { name:"Standard", tenDay:"₹299",  monthly:"₹399",  desc:"Complete platform access",        features:["All resume templates","Full AI assistance","Unlimited job search","One-click apply","Apply tracker & all tools","Interview prep"], highlight:true },
+              { name:"Premium",  tenDay:"₹999",  monthly:"₹1999", desc:"Done-for-you resume service",     features:["Expert builds your resume","Unlimited revisions","Dedicated 1-on-1 support","End-to-end handling","All Standard features","5-day support window"], highlight:false },
             ].map((p, i) => (
               <div key={i} style={{ padding:"28px", borderRadius:"16px", background:p.highlight?"linear-gradient(180deg,rgba(108,99,255,0.15) 0%,rgba(108,99,255,0.05) 100%)":"rgba(255,255,255,0.03)", border:`1px solid ${p.highlight?"rgba(108,99,255,0.5)":"rgba(255,255,255,0.07)"}`, position:"relative", transition:"all 0.3s" }}>
                 {p.highlight && (
