@@ -435,6 +435,17 @@ export default function Resume() {
   }, []);
 
   useEffect(() => {
+    const handleKeydown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        if (activeView === "editor") saveCurrentResume(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeydown);
+    return () => window.removeEventListener("keydown", handleKeydown);
+  }, [activeView, resume, resumeName]);
+
+  useEffect(() => {
     if (activeView === "editor") {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
       autoSaveTimer.current = setTimeout(() => {
@@ -1322,7 +1333,7 @@ export default function Resume() {
       </div>
 
       {/* MAIN */}
-      <main className="no-print mobile-main" style={{ flex: 1, marginLeft: collapsed ? "68px" : "232px", transition: "margin-left 0.3s ease", display: "flex", flexDirection: "column", background: t.bg }}>
+      <main className="no-print mobile-main" style={{ flex: 1, marginLeft: collapsed ? "72px" : "240px", transition: "margin-left 0.3s ease", display: "flex", flexDirection: "column", background: t.bg }}>
         <header style={{ height: "56px", background: t.sidebar, borderBottom: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", position: "sticky", top: 0, zIndex: 100 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <button onClick={() => setActiveView("dashboard")} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${t.border}`, color: t.muted, padding: "6px 14px", borderRadius: "8px", cursor: "pointer", fontSize: "12px" }}>
@@ -2250,6 +2261,40 @@ export default function Resume() {
                 );
               })()}
 
+              {/* ── Resume Completion Progress Bar ── */}
+              {(() => {
+                const sc = {
+                  personal: !!(resume.name && resume.email),
+                  summary: !!(resume.summary?.trim()),
+                  experience: (resume.experience||[]).some(e => e.company || e.role),
+                  education: (resume.education||[]).some(e => e.school || e.degree || e.institution),
+                  skills: (resume.skills||[]).length > 0,
+                  projects: (resume.projects||[]).some(p => p.name),
+                  certs: (resume.certifications||[]).some(c => c.name || c.title),
+                  achievements: (resume.achievements||[]).some(a => a.title || a.text || a.description),
+                  strengths: (resume.strengths||[]).length > 0,
+                  extras: !!(resume.languages?.trim() || resume.interests?.trim() || (resume.hobbies||[]).length > 0),
+                };
+                const done = Object.values(sc).filter(Boolean).length;
+                const pct = Math.round((done / 10) * 100);
+                const barColor = pct >= 70 ? "linear-gradient(90deg,#43D9A2,#00b894)" : pct >= 40 ? "linear-gradient(90deg,#FFB347,#e17055)" : "linear-gradient(90deg,#FF6584,#d63031)";
+                const msg = pct >= 90 ? "🏆 Excellent! Your resume is very complete." : pct >= 70 ? "🟢 Great progress! A few more sections to go." : pct >= 40 ? "🟡 Keep going — fill more sections to improve your chances." : "🔴 Just getting started — fill in your details below.";
+                return (
+                  <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: "14px", padding: "14px 18px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                        <span style={{ fontSize: "12px", fontWeight: "600", color: t.text }}>Resume Completeness</span>
+                        <span style={{ fontSize: "12px", fontWeight: "700", color: pct >= 70 ? "#43D9A2" : pct >= 40 ? "#FFB347" : "#FF6584" }}>{pct}% — {done}/10 sections</span>
+                      </div>
+                      <div style={{ height: "6px", background: t.border, borderRadius: "3px", overflow: "hidden", marginBottom: "6px" }}>
+                        <div style={{ height: "100%", width: `${pct}%`, background: barColor, borderRadius: "3px", transition: "width 0.6s ease" }} />
+                      </div>
+                      <p style={{ fontSize: "11px", color: t.muted, margin: 0 }}>{msg}</p>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Templates Section */}
               <div style={{ marginBottom: "32px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
@@ -2586,12 +2631,29 @@ export default function Resume() {
                 <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: "16px", overflow: "hidden" }}>
                   {/* Fix 5: Horizontal scrollable tab bar — all 10 sections always reachable */}
                   <div className="section-tabs-bar" style={{ display: "flex", borderBottom: `1px solid ${t.border}`, overflowX: "auto", flexWrap: "nowrap" }}>
-                    {sections.map(s => (
-                      <button key={s.id} className="section-btn" onClick={() => setActiveSection(s.id)}
-                        style={{ padding: "10px 11px", background: activeSection === s.id ? `${t.accent}15` : "transparent", color: activeSection === s.id ? t.accent : t.muted, border: "none", borderBottom: activeSection === s.id ? `2px solid ${t.accent}` : "2px solid transparent", cursor: "pointer", fontSize: "10px", fontWeight: activeSection === s.id ? "600" : "400", whiteSpace: "nowrap", fontFamily: "'DM Sans',sans-serif", display: "flex", alignItems: "center", gap: "3px" }}>
-                        {s.icon} {s.label}
-                      </button>
-                    ))}
+                    {sections.map(s => {
+                      const sc = {
+                        personal: !!(resume.name && resume.email),
+                        summary: !!(resume.summary?.trim()),
+                        experience: (resume.experience||[]).some(e => e.company || e.role),
+                        education: (resume.education||[]).some(e => e.school || e.degree || e.institution),
+                        skills: (resume.skills||[]).length > 0,
+                        projects: (resume.projects||[]).some(p => p.name),
+                        certs: (resume.certifications||[]).some(c => c.name || c.title),
+                        achievements: (resume.achievements||[]).some(a => a.title || a.text || a.description),
+                        strengths: (resume.strengths||[]).length > 0,
+                        extras: !!(resume.languages?.trim() || resume.interests?.trim() || (resume.hobbies||[]).length > 0),
+                      };
+                      const isActive = activeSection === s.id;
+                      const isDone = sc[s.id];
+                      return (
+                        <button key={s.id} className="section-btn" onClick={() => setActiveSection(s.id)}
+                          style={{ padding: "10px 11px", background: isActive ? `${t.accent}15` : "transparent", color: isActive ? t.accent : t.muted, border: "none", borderBottom: isActive ? `2px solid ${t.accent}` : "2px solid transparent", cursor: "pointer", fontSize: "10px", fontWeight: isActive ? "600" : "400", whiteSpace: "nowrap", fontFamily: "'DM Sans',sans-serif", display: "flex", alignItems: "center", gap: "4px" }}>
+                          {s.icon} {s.label}
+                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: isDone ? "#43D9A2" : t.border, flexShrink: 0, display: "inline-block", marginLeft: 2 }} />
+                        </button>
+                      );
+                    })}
                   </div>
                   <div style={{ padding: "16px", maxHeight: "calc(100vh - 280px)", overflowY: "auto" }}>
 
