@@ -42,7 +42,7 @@ export default function Dashboard() {
   const planLabel = PLAN_LIMITS[plan]?.label || "Free";
   const themes = THEMES;
   const [searching, setSearching] = useState(false);
-  const [notifications, setNotifications] = useState(3);
+  const [notifications, setNotifications] = useState(0);
   const navItems = [
     { id: "home", icon: "⊞", label: "Home" },
     { id: "resume", icon: "📄", label: "Resume Builder" },
@@ -98,7 +98,7 @@ export default function Dashboard() {
     </div>
   );
 
-  const firstName = user.email.split("@")[0];
+  const firstName = user.user_metadata?.full_name?.split(" ")[0] || user.email.split("@")[0];
   const initials = firstName.slice(0, 2).toUpperCase();
 
   return (
@@ -217,7 +217,7 @@ export default function Dashboard() {
                     <div style={{ fontSize: "10px", color: t.muted }}>/ 100</div>
                   </div>
                 </div>
-                <p style={{ color: t.muted, fontSize: "12px", marginTop: "8px" }}>ATS Score <span style={{fontSize:"10px",opacity:0.5}}>(estimate)</span></p>
+                <p style={{ color: t.muted, fontSize: "12px", marginTop: "8px" }}>ATS Score <span style={{fontSize:"10px",opacity:0.5}}>(run ATS tool to get real score)</span></p>
               </div>
               <button style={{ width: "100%", padding: "11px", background: "rgba(67,217,162,0.1)", color: "#43D9A2", border: "1px solid rgba(67,217,162,0.2)", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
                 Optimize Now →
@@ -230,7 +230,7 @@ export default function Dashboard() {
                 <div style={{ width: "36px", height: "36px", background: "rgba(108,99,255,0.15)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>📊</div>
                 <div>
                   <h3 style={{ fontFamily: "'Noto Serif', serif", fontSize: "16px", fontWeight: "600", color: t.text }}>Application Tracker</h3>
-                  <p style={{ color: t.muted, fontSize: "12px" }}>Manage your pipeline</p>
+                  <p style={{ color: t.muted, fontSize: "12px" }}>Go to tracker to see real data</p>
                 </div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" }}>
