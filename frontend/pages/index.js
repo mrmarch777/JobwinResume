@@ -63,14 +63,142 @@ const FAQS = [
   { q: "Can I cancel my subscription anytime?", a: "Absolutely. No contracts, no lock-ins. You can upgrade, downgrade, or cancel from your account settings at any time." },
 ];
 
-const TEMPLATE_PREVIEWS = [
-  { name: "ATS Classic",  tag: "ATS ✓",     color: "#1a1a2e", accent: "#4F46E5" },
-  { name: "Modernist",    tag: "Modern",     color: "#6C63FF", accent: "#A29BFE" },
-  { name: "Creative",     tag: "Creative",   color: "#FF6584", accent: "#FF9EAD" },
-  { name: "Executive",    tag: "Executive",  color: "#0A4A6B", accent: "#43D9A2" },
-  { name: "Editorial",    tag: "Premium",    color: "#3D52A0", accent: "#A29BFE" },
-  { name: "Minimal",      tag: "Minimal",    color: "#111111", accent: "#6C63FF" },
+const TEMPLATE_CARDS = [
+  { name: "ATS Classic",  tag: "ATS ✓",    tagC: "#43D9A2", layout: "classic" },
+  { name: "Modernist",    tag: "Modern",    tagC: "#A29BFE", layout: "sidebar" },
+  { name: "Creative",     tag: "Creative",  tagC: "#FF9EAD", layout: "creative" },
+  { name: "Executive",    tag: "Executive", tagC: "#FFD700", layout: "dark" },
+  { name: "Tokyo",        tag: "Premium",   tagC: "#A29BFE", layout: "strip" },
+  { name: "Minimal",      tag: "Minimal",   tagC: "#aaa",    layout: "minimal" },
+  { name: "Bold",         tag: "Creative",  tagC: "#FF9EAD", layout: "bold" },
+  { name: "Futuristic",   tag: "Dark",      tagC: "#43D9A2", layout: "futuristic" },
 ];
+
+function MiniResume({ layout }) {
+  const s = { borderRadius: "3px", display: "block" };
+  if (layout === "classic") return (
+    <div style={{ background: "#fff", height: "100%", padding: "14px 12px", fontFamily: "sans-serif" }}>
+      <div style={{ borderBottom: "3px solid #1A56DB", paddingBottom: "8px", marginBottom: "8px" }}>
+        <div style={{ height: "8px", background: "#111", width: "55%", borderRadius: "3px", marginBottom: "4px" }} />
+        <div style={{ height: "5px", background: "#1A56DB", width: "38%", borderRadius: "3px", marginBottom: "4px" }} />
+        <div style={{ display: "flex", gap: "8px" }}>
+          {["email", "phone", "city"].map(l => <div key={l} style={{ height: "3px", background: "#bbb", width: "50px", borderRadius: "2px" }} />)}
+        </div>
+      </div>
+      {[["EXPERIENCE","#1A56DB"],["EDUCATION","#1A56DB"],["SKILLS","#1A56DB"]].map(([sec,col],i)=>(
+        <div key={i} style={{ marginBottom: "8px" }}>
+          <div style={{ height: "4px", background: col, width: "40%", borderRadius: "2px", marginBottom: "4px" }} />
+          {[90,75,82,65].slice(0,i===2?4:2).map((w,j)=>(
+            <div key={j} style={{ height: "3px", background: "#ddd", width: w+"%", borderRadius: "2px", marginBottom: "3px" }} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+  if (layout === "sidebar") return (
+    <div style={{ background: "#fff", height: "100%", display: "flex" }}>
+      <div style={{ width: "36%", background: "#6C63FF", padding: "14px 8px" }}>
+        <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.3)", margin: "0 auto 8px" }} />
+        <div style={{ height: "4px", background: "rgba(255,255,255,0.8)", width: "80%", borderRadius: "2px", margin: "0 auto 4px" }} />
+        <div style={{ height: "3px", background: "rgba(255,255,255,0.4)", width: "60%", borderRadius: "2px", margin: "0 auto 12px" }} />
+        {[70,85,60,75,55].map((w,i)=>(
+          <div key={i} style={{ height: "2px", background: "rgba(255,255,255,0.3)", width: w+"%", borderRadius: "2px", marginBottom: "3px" }} />
+        ))}
+      </div>
+      <div style={{ flex: 1, padding: "14px 10px" }}>
+        {["EXPERIENCE","EDUCATION"].map((sec,i)=>(
+          <div key={i} style={{ marginBottom: "10px" }}>
+            <div style={{ height: "3px", background: "#6C63FF", width: "60%", borderRadius: "2px", marginBottom: "5px" }} />
+            {[88,70,80].map((w,j)=>(
+              <div key={j} style={{ height: "2px", background: "#ddd", width: w+"%", borderRadius: "2px", marginBottom: "3px" }} />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+  if (layout === "creative") return (
+    <div style={{ background: "#fff", height: "100%" }}>
+      <div style={{ background: "linear-gradient(135deg,#FF6584,#ff8e53)", padding: "16px 12px 12px", marginBottom: "10px" }}>
+        <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "rgba(255,255,255,0.3)", marginBottom: "6px" }} />
+        <div style={{ height: "6px", background: "rgba(255,255,255,0.9)", width: "50%", borderRadius: "3px", marginBottom: "4px" }} />
+        <div style={{ height: "3px", background: "rgba(255,255,255,0.5)", width: "35%", borderRadius: "2px" }} />
+      </div>
+      <div style={{ padding: "0 12px" }}>
+        {[88,72,80,65].map((w,i)=>(
+          <div key={i} style={{ height: "3px", background: i===0?"#FF6584":"#eee", width: w+"%", borderRadius: "2px", marginBottom: "4px" }} />
+        ))}
+      </div>
+    </div>
+  );
+  if (layout === "dark") return (
+    <div style={{ background: "#FAFAFA", height: "100%" }}>
+      <div style={{ background: "#0A2647", padding: "14px 12px" }}>
+        <div style={{ height: "7px", background: "#FFD700", width: "50%", borderRadius: "3px", marginBottom: "5px" }} />
+        <div style={{ height: "3px", background: "rgba(255,255,255,0.4)", width: "35%", borderRadius: "2px", marginBottom: "4px" }} />
+        <div style={{ display: "flex", gap: "6px" }}>
+          {[40,50,45].map((w,i)=><div key={i} style={{ height: "2px", background: "rgba(255,215,0,0.5)", width: w+"px", borderRadius: "2px" }} />)}
+        </div>
+      </div>
+      <div style={{ padding: "12px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+          <div>{[80,65,72].map((w,i)=><div key={i} style={{ height: "2px", background: "#ddd", width: w+"%", borderRadius: "2px", marginBottom: "3px" }} />)}</div>
+          <div>{[70,85,60].map((w,i)=><div key={i} style={{ height: "2px", background: "#ddd", width: w+"%", borderRadius: "2px", marginBottom: "3px" }} />)}</div>
+        </div>
+      </div>
+    </div>
+  );
+  if (layout === "strip") return (
+    <div style={{ background: "#fff", height: "100%", display: "flex" }}>
+      <div style={{ width: "5px", background: "linear-gradient(180deg,#6C63FF,#FF6584)", flexShrink: 0 }} />
+      <div style={{ flex: 1, padding: "14px 12px" }}>
+        <div style={{ height: "7px", background: "#1a1a1a", width: "55%", borderRadius: "3px", marginBottom: "3px" }} />
+        <div style={{ height: "3px", background: "#6C63FF", width: "38%", borderRadius: "2px", marginBottom: "10px" }} />
+        {["EXPERIENCE","EDUCATION","SKILLS"].map((sec,i)=>(
+          <div key={i} style={{ marginBottom: "8px" }}>
+            <div style={{ height: "3px", background: "#6C63FF", width: i===2?"30%":"45%", borderRadius: "2px", marginBottom: "4px" }} />
+            {[85,68,76].slice(0,i===2?3:2).map((w,j)=>(
+              <div key={j} style={{ height: "2px", background: "#e0e0e0", width: w+"%", borderRadius: "2px", marginBottom: "3px" }} />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+  if (layout === "minimal") return (
+    <div style={{ background: "#fff", height: "100%", padding: "16px 14px" }}>
+      <div style={{ textAlign: "center", marginBottom: "10px", paddingBottom: "8px", borderBottom: "1px solid #eee" }}>
+        <div style={{ height: "7px", background: "#1a1a1a", width: "45%", borderRadius: "3px", margin: "0 auto 5px" }} />
+        <div style={{ height: "3px", background: "#888", width: "30%", borderRadius: "2px", margin: "0 auto" }} />
+      </div>
+      {[85,70,78,62,80,55].map((w,i)=>(
+        <div key={i} style={{ height: i%3===0?"2.5px":"2px", background: i%3===0?"#333":"#e8e8e8", width: w+"%", borderRadius: "2px", marginBottom: "4px" }} />
+      ))}
+    </div>
+  );
+  if (layout === "bold") return (
+    <div style={{ background: "#fff", height: "100%" }}>
+      <div style={{ background: "#FF6584", padding: "14px 12px 10px" }}>
+        <div style={{ height: "8px", background: "#fff", width: "55%", borderRadius: "3px", marginBottom: "4px" }} />
+        <div style={{ height: "4px", background: "rgba(255,255,255,0.6)", width: "38%", borderRadius: "2px" }} />
+      </div>
+      <div style={{ padding: "10px 12px" }}>
+        {[90,72,82,60,76,50].map((w,i)=>(
+          <div key={i} style={{ height: i===0?"3px":"2px", background: i===0?"#FF6584":"#e8e8e8", width: w+"%", borderRadius: "2px", marginBottom: "4px" }} />
+        ))}
+      </div>
+    </div>
+  );
+  return (
+    <div style={{ background: "#0D0D1E", height: "100%", padding: "14px 12px" }}>
+      <div style={{ height: "7px", background: "linear-gradient(90deg,#6C63FF,#FF6584)", width: "55%", borderRadius: "3px", marginBottom: "3px" }} />
+      <div style={{ height: "3px", background: "rgba(108,99,255,0.4)", width: "38%", borderRadius: "2px", marginBottom: "10px" }} />
+      {[85,68,76,55,80,62,70].map((w,i)=>(
+        <div key={i} style={{ height: "2px", background: i===0?"rgba(108,99,255,0.8)":"rgba(255,255,255,0.1)", width: w+"%", borderRadius: "2px", marginBottom: "4px" }} />
+      ))}
+    </div>
+  );
+}
 
 export default function Home() {
   const [openFaq, setOpenFaq]             = useState(null);
@@ -109,6 +237,7 @@ export default function Home() {
         @keyframes float      { 0%,100%{transform:translateY(0)}   50%{transform:translateY(-10px)} }
         @keyframes pulse      { 0%,100%{opacity:0.3}               50%{opacity:0.8} }
         @keyframes marquee    { 0%{transform:translateX(0)}        100%{transform:translateX(calc(-50% - 20px))} }
+        @keyframes marqueeT   { 0%{transform:translateX(0)}        100%{transform:translateX(calc(-50% - 12px))} }
         @keyframes textShine  { 0%{background-position:0% 50%}     100%{background-position:200% 50%} }
         @keyframes scrollDown { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(12px)} }
         @keyframes fadeUp     { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
@@ -291,52 +420,59 @@ export default function Home() {
       </section>
 
       {/* ── TEMPLATES SHOWCASE ── */}
-      <section id="templates" style={{ padding:"100px 60px", background:"#0a0a1a" }}>
-        <div style={{ maxWidth:"1200px", margin:"0 auto" }}>
-          <div style={{ textAlign:"center", marginBottom:"64px" }}>
+      <section id="templates" style={{ padding:"100px 0", background:"#0a0a1a", overflow:"hidden" }}>
+        <div style={{ maxWidth:"1100px", margin:"0 auto", padding:"0 60px" }}>
+          <div style={{ textAlign:"center", marginBottom:"48px" }}>
             <p style={{ color:"#6C63FF", fontSize:"13px", fontWeight:"600", letterSpacing:"2px", textTransform:"uppercase", marginBottom:"12px" }}>TEMPLATES</p>
             <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:"clamp(28px,4vw,48px)", fontWeight:"700", marginBottom:"16px" }}>
-              32 professional templates<br /><span style={{ color:"#6C63FF", fontStyle:"italic" }}>made for Indian job seekers</span>
+              32 beautiful templates<br /><span style={{ color:"#6C63FF", fontStyle:"italic" }}>made for Indian job seekers</span>
             </h2>
-            <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"16px" }}>From ATS-optimised to creative — every template is recruiter-tested and PDF-perfect.</p>
+            <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"16px", marginBottom:"28px" }}>From ATS-optimised to creative — every template is recruiter-tested and PDF-perfect.</p>
+            <div style={{ display:"flex", gap:"8px", justifyContent:"center", flexWrap:"wrap" }}>
+              {["All","ATS","Modern","Creative","Executive","Minimal","Dark"].map(cat=>(
+                <span key={cat} style={{ padding:"6px 16px", borderRadius:"100px", border:"1px solid rgba(108,99,255,0.35)", color:cat==="All"?"#fff":"rgba(255,255,255,0.55)", background:cat==="All"?"rgba(108,99,255,0.25)":"transparent", fontSize:"12px", fontWeight:cat==="All"?"600":"400", cursor:"pointer", transition:"all 0.2s" }}>{cat}</span>
+              ))}
+            </div>
           </div>
+        </div>
 
-          <div className="templates-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"24px", marginBottom:"48px" }}>
-            {TEMPLATE_PREVIEWS.map((t, i) => (
-              <div key={i} className="template-card"
-                onClick={() => router.push("/signup")}
-                style={{ borderRadius:"16px", overflow:"hidden", border:"1px solid rgba(255,255,255,0.08)", cursor:"pointer", transition:"all 0.35s", background:"rgba(255,255,255,0.03)" }}>
-                {/* Mock resume preview */}
-                <div style={{ height:"260px", background:`linear-gradient(160deg, ${t.color}dd 0%, #0d0d20 100%)`, position:"relative", padding:"20px", display:"flex", flexDirection:"column", gap:"8px" }}>
-                  <div style={{ height:"8px", background:t.accent, borderRadius:"4px", width:"55%", opacity:0.9 }} />
-                  <div style={{ height:"4px", background:"rgba(255,255,255,0.2)", borderRadius:"4px", width:"35%" }} />
-                  <div style={{ marginTop:"12px", display:"flex", flexDirection:"column", gap:"5px" }}>
-                    {[85,60,75,50,65,45,70].map((w,j) => (
-                      <div key={j} style={{ height:"3px", background:"rgba(255,255,255,0.12)", borderRadius:"3px", width:w+"%", borderLeft:`2px solid ${t.accent}` }} />
-                    ))}
+        {/* Auto-scroll marquee row 1 */}
+        <div style={{ overflow:"hidden", width:"100%", maskImage:"linear-gradient(to right,transparent,black 8%,black 92%,transparent)", WebkitMaskImage:"linear-gradient(to right,transparent,black 8%,black 92%,transparent)", marginBottom:"16px" }}>
+          <div style={{ display:"flex", gap:"16px", width:"max-content", padding:"8px 0", animation:"marqueeT 28s linear infinite" }}>
+            {[...TEMPLATE_CARDS, ...TEMPLATE_CARDS].map((t, i) => (
+              <div key={i} className="template-card" onClick={() => router.push("/signup")}
+                style={{ width:"180px", height:"240px", flexShrink:0, borderRadius:"12px", overflow:"hidden", border:"1px solid rgba(255,255,255,0.1)", cursor:"pointer", transition:"all 0.3s", position:"relative", background:"#fff", boxShadow:"0 4px 24px rgba(0,0,0,0.3)" }}>
+                <MiniResume layout={t.layout} />
+                <div style={{ position:"absolute", top:"8px", right:"8px", background:t.tagC, color:"#fff", fontSize:"9px", fontWeight:"700", padding:"2px 8px", borderRadius:"100px" }}>{t.tag}</div>
+                <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top,rgba(0,0,0,0.75) 0%,transparent 50%)", opacity:0, transition:"opacity 0.3s", display:"flex", alignItems:"flex-end", padding:"12px" }} className="card-overlay">
+                  <div>
+                    <div style={{ color:"#fff", fontSize:"11px", fontWeight:"600", marginBottom:"2px" }}>{t.name}</div>
+                    <div style={{ color:"#A29BFE", fontSize:"10px" }}>Use this →</div>
                   </div>
-                  <div style={{ marginTop:"10px", display:"flex", gap:"6px", flexWrap:"wrap" }}>
-                    {[40,55,38,48].map((w,j)=>(
-                      <div key={j} style={{ height:"16px", background:`${t.accent}22`, border:`1px solid ${t.accent}44`, borderRadius:"4px", width:w+"px" }} />
-                    ))}
-                  </div>
-                  {/* Tag */}
-                  <div style={{ position:"absolute", top:"14px", right:"14px", background:t.accent, color:"white", fontSize:"10px", fontWeight:"700", padding:"3px 10px", borderRadius:"100px", letterSpacing:"0.5px" }}>{t.tag}</div>
-                </div>
-                <div style={{ padding:"14px 18px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                  <span style={{ fontWeight:"600", fontSize:"14px", color:"white" }}>{t.name}</span>
-                  <span style={{ color:"#6C63FF", fontSize:"12px", fontWeight:"500" }}>Use this →</span>
                 </div>
               </div>
             ))}
           </div>
+        </div>
 
-          <div style={{ textAlign:"center" }}>
-            <button className="btn-primary" onClick={() => router.push("/signup")}
-              style={{ padding:"14px 40px", background:"linear-gradient(135deg,#6C63FF,#FF6584)", color:"white", border:"none", borderRadius:"10px", fontSize:"15px", fontWeight:"600", cursor:"pointer", boxShadow:"0 4px 20px rgba(108,99,255,0.35)", transition:"all 0.3s" }}>
-              View All 32 Templates
-            </button>
+        {/* Auto-scroll marquee row 2 — reversed */}
+        <div style={{ overflow:"hidden", width:"100%", maskImage:"linear-gradient(to right,transparent,black 8%,black 92%,transparent)", WebkitMaskImage:"linear-gradient(to right,transparent,black 8%,black 92%,transparent)", marginBottom:"48px" }}>
+          <div style={{ display:"flex", gap:"16px", width:"max-content", padding:"8px 0", animation:"marqueeT 36s linear infinite reverse" }}>
+            {[...TEMPLATE_CARDS.slice().reverse(), ...TEMPLATE_CARDS.slice().reverse()].map((t, i) => (
+              <div key={i} className="template-card" onClick={() => router.push("/signup")}
+                style={{ width:"180px", height:"240px", flexShrink:0, borderRadius:"12px", overflow:"hidden", border:"1px solid rgba(255,255,255,0.1)", cursor:"pointer", transition:"all 0.3s", position:"relative", background:"#fff", boxShadow:"0 4px 24px rgba(0,0,0,0.3)" }}>
+                <MiniResume layout={t.layout} />
+                <div style={{ position:"absolute", top:"8px", right:"8px", background:t.tagC, color:"#fff", fontSize:"9px", fontWeight:"700", padding:"2px 8px", borderRadius:"100px" }}>{t.tag}</div>
+              </div>
+            ))}
           </div>
+        </div>
+
+        <div style={{ textAlign:"center", padding:"0 60px" }}>
+          <button className="btn-primary" onClick={() => router.push("/signup")}
+            style={{ padding:"14px 40px", background:"linear-gradient(135deg,#6C63FF,#FF6584)", color:"white", border:"none", borderRadius:"10px", fontSize:"15px", fontWeight:"600", cursor:"pointer", boxShadow:"0 4px 20px rgba(108,99,255,0.35)", transition:"all 0.3s" }}>
+            Browse All 32 Templates →
+          </button>
         </div>
       </section>
 
