@@ -24,13 +24,11 @@ export default function SignUp() {
   const handleSignUp = async () => {
     if (!name || !email || !password) { setError("Please fill in all fields."); return; }
 
-    const allowedDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "ymail.com"];
-    const emailParts = email.split('@');
-    if (emailParts.length !== 2 || !allowedDomains.includes(emailParts[1].toLowerCase())) {
-      setError("Please use a recognized email provider (Gmail, Yahoo, Outlook).");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
       return;
     }
-
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     if (!agreed) { setError("Please agree to the Terms of Service."); return; }
     setLoading(true); setError(""); setSuccess("");
@@ -38,6 +36,7 @@ export default function SignUp() {
       const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } });
       if (error) throw error;
       setSuccess("Account created! Check your email to verify, then log in.");
+      setTimeout(() => router.push("/login"), 3000);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     }
