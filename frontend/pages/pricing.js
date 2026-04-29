@@ -28,8 +28,6 @@ export default function Pricing() {
     "JOBWIN10":    { discount: 10, label: "10% off" },
     "LAUNCH20":    { discount: 20, label: "20% off" },
     "WELCOME15":   { discount: 15, label: "15% off" },
-    "TESTMASTER95":{ discount: 95, label: "95% off (Test)" },
-    "TEST1RUPEE":  { fixed_price: 1, label: "₹1 Test Plan" },
   };
 
   const [promoInput, setPromoInput] = useState("");
@@ -207,8 +205,8 @@ export default function Pricing() {
         .faq-item:hover { border-color:rgba(108,99,255,0.4) !important; }
         .billing-toggle-btn { transition: all 0.25s; cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 24px; border-radius: 8px; }
         .billing-toggle-btn.active { background: linear-gradient(135deg,#6C63FF,#FF6584); color: white; box-shadow: 0 4px 16px rgba(108,99,255,0.4); }
-        .billing-toggle-btn.inactive { background: transparent; color: rgba(255,255,255,0.45); }
-        .billing-toggle-btn.inactive:hover { color: white; background: rgba(255,255,255,0.06); }
+        .billing-toggle-btn.inactive { background: transparent; color: ${t.muted}; }
+        .billing-toggle-btn.inactive:hover { color: ${t.text}; background: rgba(108,99,255,0.08); }
         @keyframes pulse-badge { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.85;transform:scale(1.04)} }
         .promo-badge { animation: pulse-badge 2.5s ease-in-out infinite; }
       `}</style>
@@ -217,7 +215,7 @@ export default function Pricing() {
       <Sidebar activeId="pricing" collapsed={collapsed} setCollapsed={setCollapsed} user={user} />
 
       {/* ── MAIN ── */}
-      <main className="mobile-main" style={{ flex: 1, marginLeft: collapsed ? "68px" : "232px", transition: "margin-left 0.3s ease", display: "flex", flexDirection: "column" }}>
+      <main className="mobile-main" style={{ flex: 1, marginLeft: collapsed ? "72px" : "240px", transition: "margin-left 0.3s ease", display: "flex", flexDirection: "column" }}>
 
         {/* Top bar */}
         <header style={{ height: "56px", background: `${t.sidebar}ee`, backdropFilter: "blur(20px)", borderBottom: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", position: "sticky", top: 0, zIndex: 100 }}>
@@ -244,7 +242,7 @@ export default function Pricing() {
                 Invest in your <span style={{ color: "#6C63FF", fontStyle: "italic" }}>Future.</span>
               </h1>
               <p style={{ color: t.muted, fontSize: "15px", maxWidth: "480px", margin: "0 auto" }}>
-                Choose the plan that accelerates your career. Cancel anytime.
+                Choose the plan that accelerates your career. No recurring charges.
               </p>
             </div>
 
@@ -288,9 +286,7 @@ export default function Pricing() {
 
               {/* Available codes hint */}
               <div style={{ width: "100%", marginTop: "10px", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                <span style={{ fontSize: "11px", color: t.muted, fontWeight: "500" }}>
-                  "Promo codes:"
-                </span>
+                <span style={{ fontSize: "11px", color: t.muted, fontWeight: "500" }}>Promo codes:</span>
                 {[
                   { code: "BASIC10",    label: "10% Off Basic",    color: "#6C63FF" },
                   { code: "STANDARD15", label: "15% Off Standard", color: "#A29BFE" },
