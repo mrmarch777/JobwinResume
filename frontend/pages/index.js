@@ -610,25 +610,25 @@ export default function Home() {
           <h2 style={{ fontFamily:"'Playfair Display', serif", fontSize:"clamp(26px,4vw,48px)", fontWeight:"900", marginBottom:"16px" }}>
             Choose your plan.<br />Get hired on <span style={{ color:"#6C63FF", fontStyle:"italic" }}>day 1.</span>
           </h2>
-          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"16px", marginBottom:"36px" }}>Plans from ₹99/month | Money-back guarantee | Cancel anytime</p>
+          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:"16px", marginBottom:"36px" }}>Plans from ₹99/10 days | Money-back guarantee | Cancel anytime</p>
 
-          {/* Toggle */}
+          {/* Toggle: false = 10 Days, true = Monthly */}
           <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"14px", marginBottom:"48px" }}>
-            <span style={{ color:!isAnnual?"white":"rgba(255,255,255,0.45)", fontWeight:"600", fontSize:"15px", transition:"color 0.3s" }}>Monthly</span>
+            <span style={{ color:!isAnnual?"white":"rgba(255,255,255,0.45)", fontWeight:"600", fontSize:"15px", transition:"color 0.3s" }}>10 Days</span>
             <div onClick={() => setIsAnnual(!isAnnual)} style={{ width:"54px", height:"30px", background:"rgba(108,99,255,0.2)", borderRadius:"20px", position:"relative", cursor:"pointer", border:"1px solid rgba(108,99,255,0.4)" }}>
               <div style={{ position:"absolute", top:"3px", left:isAnnual?"27px":"3px", width:"22px", height:"22px", background:"linear-gradient(135deg,#6C63FF,#FF6584)", borderRadius:"50%", transition:"all 0.3s cubic-bezier(0.4,0,0.2,1)", boxShadow:"0 2px 8px rgba(108,99,255,0.5)" }} />
             </div>
             <span style={{ color:isAnnual?"white":"rgba(255,255,255,0.45)", fontWeight:"600", fontSize:"15px", display:"flex", alignItems:"center", gap:"8px", transition:"color 0.3s" }}>
-              Annually <span style={{ background:"rgba(67,217,162,0.15)", color:"#43D9A2", fontSize:"11px", padding:"3px 8px", borderRadius:"100px", fontWeight:"700" }}>SAVE 20%</span>
+              Monthly <span style={{ background:"rgba(67,217,162,0.15)", color:"#43D9A2", fontSize:"11px", padding:"3px 8px", borderRadius:"100px", fontWeight:"700" }}>BEST VALUE</span>
             </span>
           </div>
 
           <div className="pricing-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"16px" }}>
             {[
-              { name:"Free",     monthly:"₹0",   annual:"₹0",   period:"forever", desc:"Perfect to get started",     features:["5 templates","1 resume","Basic AI suggestions","PDF export","ATS score preview"], highlight:false },
-              { name:"Basic",    monthly:"₹99",  annual:"₹79",  period:"mo",      desc:"For casual job seekers",     features:["10 templates","3 resumes","AI bullet points","Full ATS checker","Job tailoring"], highlight:false },
-              { name:"Standard", monthly:"₹199", annual:"₹159", period:"mo",      desc:"Most popular choice",        features:["20 templates","5 resumes","Full AI writer","Unlimited tailoring","Interview prep","Priority support"], highlight:true },
-              { name:"Pro",      monthly:"₹299", annual:"₹239", period:"mo",      desc:"For serious job seekers",    features:["All 25+ templates","Unlimited resumes","Unlimited AI","Custom branding","Portfolio page","Dedicated support"], highlight:false },
+              { name:"Free",     tenDay:"₹0",    monthly:"₹0",    desc:"Perfect to get started",  features:["5 templates","1 resume","Basic AI suggestions","PDF export","ATS score preview"], highlight:false },
+              { name:"Basic",    tenDay:"₹99",   monthly:"₹249", desc:"For casual job seekers",  features:["10 templates","3 resumes","AI bullet points","Full ATS checker","Job tailoring"], highlight:false },
+              { name:"Standard", tenDay:"₹299",  monthly:"₹699", desc:"Most popular choice",     features:["20 templates","5 resumes","Full AI writer","Unlimited tailoring","Interview prep","Priority support"], highlight:true },
+              { name:"Pro",      tenDay:"₹499",  monthly:"₹999", desc:"For serious job seekers", features:["All 32 templates","Unlimited resumes","Unlimited AI","Custom branding","Portfolio page","Dedicated support"], highlight:false },
             ].map((p, i) => (
               <div key={i} style={{ padding:"28px", borderRadius:"16px", background:p.highlight?"linear-gradient(180deg,rgba(108,99,255,0.15) 0%,rgba(108,99,255,0.05) 100%)":"rgba(255,255,255,0.03)", border:`1px solid ${p.highlight?"rgba(108,99,255,0.5)":"rgba(255,255,255,0.07)"}`, position:"relative", transition:"all 0.3s" }}>
                 {p.highlight && (
@@ -637,9 +637,10 @@ export default function Home() {
                 <h3 style={{ fontFamily:"'Playfair Display', serif", fontSize:"20px", fontWeight:"700", marginBottom:"6px", color:p.highlight?"#A29BFE":"white" }}>{p.name}</h3>
                 <p style={{ color:"rgba(255,255,255,0.4)", fontSize:"12px", marginBottom:"20px" }}>{p.desc}</p>
                 <div style={{ marginBottom:"24px" }}>
-                  <span style={{ fontFamily:"'Playfair Display', serif", fontSize:"36px", fontWeight:"700", color:"white" }}>{isAnnual?p.annual:p.monthly}</span>
-                  <span style={{ color:"rgba(255,255,255,0.4)", fontSize:"13px" }}>/{p.period}</span>
-                  {isAnnual && p.name!=="Free" && <div style={{ color:"#43D9A2", fontSize:"11px", marginTop:"4px", fontWeight:"500" }}>Billed annually</div>}
+                  <span style={{ fontFamily:"'Playfair Display', serif", fontSize:"36px", fontWeight:"700", color:"white" }}>{isAnnual ? p.monthly : p.tenDay}</span>
+                  <span style={{ color:"rgba(255,255,255,0.4)", fontSize:"13px" }}>{p.name==="Free" ? " forever" : isAnnual ? "/mo" : "/10 days"}</span>
+                  {isAnnual && p.name!=="Free" && <div style={{ color:"#43D9A2", fontSize:"11px", marginTop:"4px", fontWeight:"500" }}>Billed monthly</div>}
+                  {!isAnnual && p.name!=="Free" && <div style={{ color:"#A29BFE", fontSize:"11px", marginTop:"4px", fontWeight:"500" }}>Monthly plan also available</div>}
                 </div>
                 <div style={{ marginBottom:"24px", textAlign:"left" }}>
                   {p.features.map((f, j) => (
