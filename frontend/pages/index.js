@@ -64,14 +64,14 @@ const FAQS = [
 ];
 
 const TEMPLATE_CARDS = [
-  { name: "ATS Classic",  tag: "ATS ✓",    tagC: "#43D9A2", layout: "classic" },
-  { name: "Modernist",    tag: "Modern",    tagC: "#A29BFE", layout: "sidebar" },
-  { name: "Creative",     tag: "Creative",  tagC: "#FF9EAD", layout: "creative" },
-  { name: "Executive",    tag: "Executive", tagC: "#FFD700", layout: "dark" },
-  { name: "Tokyo",        tag: "Premium",   tagC: "#A29BFE", layout: "strip" },
-  { name: "Minimal",      tag: "Minimal",   tagC: "#aaa",    layout: "minimal" },
-  { name: "Bold",         tag: "Creative",  tagC: "#FF9EAD", layout: "bold" },
-  { name: "Futuristic",   tag: "Dark",      tagC: "#43D9A2", layout: "futuristic" },
+  { name: "ATS Classic",  tag: "ATS ✓",    tagC: "#43D9A2", layout: "classic",    img: "/templates/ats-classic.jpg" },
+  { name: "Modernist",    tag: "Modern",    tagC: "#A29BFE", layout: "sidebar",    img: "/templates/modernist.jpg" },
+  { name: "Creative",     tag: "Creative",  tagC: "#FF9EAD", layout: "creative",   img: "/templates/creative.jpg" },
+  { name: "Executive",    tag: "Executive", tagC: "#FFD700", layout: "dark",       img: "/templates/executive.jpg" },
+  { name: "Tokyo",        tag: "Premium",   tagC: "#A29BFE", layout: "strip",      img: "/templates/tokyo.jpg" },
+  { name: "Minimal",      tag: "Minimal",   tagC: "#aaa",    layout: "minimal",    img: "/templates/minimal.jpg" },
+  { name: "Editorial",    tag: "Creative",  tagC: "#FF9EAD", layout: "bold",       img: "/templates/editorial.jpg" },
+  { name: "Futuristic",   tag: "Dark",      tagC: "#43D9A2", layout: "futuristic", img: "/templates/futuristic.jpg" },
 ];
 
 function MiniResume({ layout }) {
@@ -447,16 +447,17 @@ export default function Home() {
         {/* Auto-scroll marquee row 1 */}
         <div style={{ overflow:"hidden", width:"100%", maskImage:"linear-gradient(to right,transparent,black 8%,black 92%,transparent)", WebkitMaskImage:"linear-gradient(to right,transparent,black 8%,black 92%,transparent)", marginBottom:"16px" }}>
           <div style={{ display:"flex", gap:"16px", width:"max-content", padding:"8px 0", animation:"marqueeT 28s linear infinite" }}>
-            {[...TEMPLATE_CARDS, ...TEMPLATE_CARDS].map((t, i) => (
+             {[...TEMPLATE_CARDS, ...TEMPLATE_CARDS].map((t, i) => (
               <div key={i} className="template-card" onClick={() => router.push("/signup")}
-                style={{ width:"180px", height:"240px", flexShrink:0, borderRadius:"12px", overflow:"hidden", border:"1px solid rgba(255,255,255,0.1)", cursor:"pointer", transition:"all 0.3s", position:"relative", background:"#fff", boxShadow:"0 4px 24px rgba(0,0,0,0.3)" }}>
-                <MiniResume layout={t.layout} />
+                style={{ width:"160px", height:"226px", flexShrink:0, borderRadius:"12px", overflow:"hidden", border:"1px solid rgba(255,255,255,0.1)", cursor:"pointer", transition:"all 0.3s", position:"relative", background:"#fff", boxShadow:"0 4px 24px rgba(0,0,0,0.3)" }}>
+                {t.img
+                  ? <img src={t.img} alt={t.name} style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top", display:"block" }} onError={e => { e.target.style.display="none"; e.target.nextSibling.style.display="block"; }} />
+                  : null}
+                <div style={{ display: t.img ? "none" : "block", height:"100%" }}><MiniResume layout={t.layout} /></div>
                 <div style={{ position:"absolute", top:"8px", right:"8px", background:t.tagC, color:"#fff", fontSize:"9px", fontWeight:"700", padding:"2px 8px", borderRadius:"100px" }}>{t.tag}</div>
-                <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top,rgba(0,0,0,0.75) 0%,transparent 50%)", opacity:0, transition:"opacity 0.3s", display:"flex", alignItems:"flex-end", padding:"12px" }} className="card-overlay">
-                  <div>
-                    <div style={{ color:"#fff", fontSize:"11px", fontWeight:"600", marginBottom:"2px" }}>{t.name}</div>
-                    <div style={{ color:"#A29BFE", fontSize:"10px" }}>Use this →</div>
-                  </div>
+                <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"linear-gradient(to top,rgba(0,0,0,0.8) 0%,transparent 60%)", padding:"20px 10px 10px", opacity:0, transition:"opacity 0.3s" }} className="card-overlay">
+                  <div style={{ color:"#fff", fontSize:"11px", fontWeight:"600", marginBottom:"2px" }}>{t.name}</div>
+                  <div style={{ color:"#A29BFE", fontSize:"10px" }}>Use this →</div>
                 </div>
               </div>
             ))}
@@ -466,10 +467,13 @@ export default function Home() {
         {/* Auto-scroll marquee row 2 — reversed */}
         <div style={{ overflow:"hidden", width:"100%", maskImage:"linear-gradient(to right,transparent,black 8%,black 92%,transparent)", WebkitMaskImage:"linear-gradient(to right,transparent,black 8%,black 92%,transparent)", marginBottom:"48px" }}>
           <div style={{ display:"flex", gap:"16px", width:"max-content", padding:"8px 0", animation:"marqueeT 36s linear infinite reverse" }}>
-            {[...TEMPLATE_CARDS.slice().reverse(), ...TEMPLATE_CARDS.slice().reverse()].map((t, i) => (
+             {[...TEMPLATE_CARDS.slice().reverse(), ...TEMPLATE_CARDS.slice().reverse()].map((t, i) => (
               <div key={i} className="template-card" onClick={() => router.push("/signup")}
-                style={{ width:"180px", height:"240px", flexShrink:0, borderRadius:"12px", overflow:"hidden", border:"1px solid rgba(255,255,255,0.1)", cursor:"pointer", transition:"all 0.3s", position:"relative", background:"#fff", boxShadow:"0 4px 24px rgba(0,0,0,0.3)" }}>
-                <MiniResume layout={t.layout} />
+                style={{ width:"160px", height:"226px", flexShrink:0, borderRadius:"12px", overflow:"hidden", border:"1px solid rgba(255,255,255,0.1)", cursor:"pointer", transition:"all 0.3s", position:"relative", background:"#fff", boxShadow:"0 4px 24px rgba(0,0,0,0.3)" }}>
+                {t.img
+                  ? <img src={t.img} alt={t.name} style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top", display:"block" }} onError={e => { e.target.style.display="none"; e.target.nextSibling.style.display="block"; }} />
+                  : null}
+                <div style={{ display: t.img ? "none" : "block", height:"100%" }}><MiniResume layout={t.layout} /></div>
                 <div style={{ position:"absolute", top:"8px", right:"8px", background:t.tagC, color:"#fff", fontSize:"9px", fontWeight:"700", padding:"2px 8px", borderRadius:"100px" }}>{t.tag}</div>
               </div>
             ))}
