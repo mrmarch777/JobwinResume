@@ -645,7 +645,7 @@ export default function Home() {
             {[
               { name:"Free",     tenDay:"₹0",    monthly:"₹0",     desc:"Try the platform, no card needed", features:["5 resume templates","1 resume","Basic AI assistance","ATS score preview","PDF export"], highlight:false },
               { name:"Basic",    tenDay:"₹99",   monthly:"₹199",  desc:"Enhanced resume tools",           features:["14 resume templates","Unlimited resumes","Full AI resume creation","Up to 10 job searches/day","Job activity tracker"], highlight:false },
-              { name:"Standard", tenDay:"₹299",  monthly:"₹399",  desc:"Complete platform access",        features:["All resume templates","Full AI assistance","Unlimited job search","One-click apply","Apply tracker & all tools","Interview prep"], highlight:true },
+              { name:"Standard", tenDay:"₹199",  monthly:"₹299",  desc:"Complete platform access",        features:["All resume templates","Full AI assistance","Unlimited job search","One-click apply","Apply tracker & all tools","Interview prep"], highlight:true },
               { name:"Premium",  tenDay:"₹999",  monthly:"₹1999", desc:"Done-for-you resume service",     features:["Expert builds your resume","Unlimited revisions","Dedicated 1-on-1 support","End-to-end handling","All Standard features","5-day support window"], highlight:false },
             ].map((p, i) => (
               <div key={i} style={{ padding:"28px", borderRadius:"16px", background:p.highlight?"linear-gradient(180deg,rgba(108,99,255,0.15) 0%,rgba(108,99,255,0.05) 100%)":"rgba(255,255,255,0.03)", border:`1px solid ${p.highlight?"rgba(108,99,255,0.5)":"rgba(255,255,255,0.07)"}`, position:"relative", transition:"all 0.3s" }}>

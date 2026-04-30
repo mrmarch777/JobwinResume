@@ -75,7 +75,7 @@ export default function Pricing() {
   const plans = [
     { id: "free",     name: "Free",     price10: 0,   priceMonth: 0,    desc: "Try the platform, no card needed",   features: ["5 resume templates", "1 resume", "Basic AI assistance", "ATS score preview", "PDF export"],                                                                     cta: "Current Plan", highlight: false },
     { id: "basic",    name: "Basic",    price10: 99,  priceMonth: 199,  desc: "Enhanced resume tools",              features: ["14 resume templates", "Unlimited resumes", "Full AI resume creation", "Up to 10 job searches/day", "Job activity tracker"],                                     cta: "Get Basic",    highlight: false },
-    { id: "standard", name: "Standard", price10: 299, priceMonth: 399,  desc: "Complete platform access",           features: ["All resume templates", "Full AI assistance", "Unlimited job search", "One-click apply", "Apply tracker & all tools", "Interview prep"],                         cta: "Get Standard", highlight: true  },
+    { id: "standard", name: "Standard", price10: 199, priceMonth: 299,  desc: "Complete platform access",           features: ["All resume templates", "Full AI assistance", "Unlimited job search", "One-click apply", "Apply tracker & all tools", "Interview prep"],                         cta: "Get Standard", highlight: true  },
     { id: "premium",  name: "Premium",  price10: 999, priceMonth: 1999, desc: "Done-for-you resume service",        features: ["Expert builds your resume", "Unlimited revisions", "Dedicated 1-on-1 support", "End-to-end handling", "All Standard features", "5-day support window"],        cta: "Get Premium",  highlight: false },
   ];
 
