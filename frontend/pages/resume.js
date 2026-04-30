@@ -179,6 +179,8 @@ const EMPTY_RESUME = {
     certifications: "sidebar",
     achievements: "main",
   },
+  photoSize: 100,
+  customSections: [],
 };
 
 const HOBBY_EMOJIS = [
@@ -413,16 +415,18 @@ export default function Resume() {
   ];
 
   const sections = [
-    { id: "personal", icon: "👤", label: "Personal" },
-    { id: "summary", icon: "📝", label: "Summary" },
-    { id: "experience", icon: "💼", label: "Experience" },
-    { id: "education", icon: "🎓", label: "Education" },
-    { id: "skills", icon: "⚡", label: "Skills" },
-    { id: "projects", icon: "🚀", label: "Projects" },
-    { id: "certs", icon: "📜", label: "Certifications" },
+    { id: "personal",     icon: "👤", label: "Personal" },
+    { id: "summary",      icon: "📝", label: "Summary" },
+    { id: "experience",   icon: "💼", label: "Experience" },
+    { id: "education",    icon: "🎓", label: "Education" },
+    { id: "skills",       icon: "⚡", label: "Skills" },
+    { id: "projects",     icon: "🚀", label: "Projects" },
+    { id: "certs",        icon: "📜", label: "Certifications" },
     { id: "achievements", icon: "🏆", label: "Achievements" },
-    { id: "strengths", icon: "💪", label: "Strengths" },
-    { id: "extras", icon: "🌟", label: "Extras" },
+    { id: "strengths",    icon: "💪", label: "Strengths" },
+    { id: "extras",       icon: "🌟", label: "Extras" },
+    { id: "custom",       icon: "➕", label: "Custom" },
+    { id: "layout",       icon: "📐", label: "Layout" },
   ];
 
   useEffect(() => {
@@ -1284,7 +1288,7 @@ export default function Resume() {
           width: 794px !important;
           min-width: 794px !important;
           max-width: 794px !important;
-          min-height: 1123px !important;
+          min-height: 0 !important;
           max-height: none !important;
           box-sizing: border-box !important;
           overflow: visible;
@@ -2727,6 +2731,20 @@ export default function Resume() {
                               <input placeholder="https://example.com/photo.jpg" value={resume.photo || ""} onChange={e => updateResume("photo", e.target.value)} style={inpStyle} />
                             </div>
                           )}
+                          {PHOTO_TEMPLATES.includes(template?.layout) && resume.photo && (
+                            <div style={{ gridColumn: "span 2", background: t.inputBg, borderRadius: "10px", padding: "12px 14px", border: `1px solid ${t.border}` }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                                <label style={{ color: t.text, fontSize: "12px", fontWeight: "600" }}>🔍 Photo Size: {resume.photoSize || 100}%</label>
+                                <button onClick={() => updateResume("photoSize", 100)} style={{ fontSize: "10px", color: t.muted, background: "none", border: "none", cursor: "pointer" }}>Reset</button>
+                              </div>
+                              <input type="range" min="60" max="160" step="5" value={resume.photoSize || 100}
+                                onChange={e => updateResume("photoSize", Number(e.target.value))}
+                                style={{ width: "100%", accentColor: t.accent }} />
+                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9px", color: t.muted, marginTop: "2px" }}>
+                                <span>Smaller (60%)</span><span>Default</span><span>Larger (160%)</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -3019,6 +3037,114 @@ export default function Resume() {
                         {(resume.strengths || []).length > 0 && (
                           <p style={{ color: t.muted, fontSize: "10px", marginTop: "4px" }}>💡 Tip: 3–6 strengths is ideal. Keep each under 10 words for best readability.</p>
                         )}
+                      </div>
+                    )}
+
+                    {/* CUSTOM SECTIONS — Bug #7 */}
+                    {activeSection === "custom" && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <div>
+                            <h3 style={{ fontFamily: "'Noto Serif',serif", fontSize: "14px", fontWeight: "600", color: t.text }}>➕ Custom Sections</h3>
+                            <p style={{ color: t.muted, fontSize: "10px", marginTop: "2px" }}>Add any section: Extracurricular, Soft Skills, Declaration, Volunteer Work, etc.</p>
+                          </div>
+                          <button onClick={() => {
+                            const newSec = { id: Date.now().toString(), title: "New Section", items: [{ id: Date.now().toString() + "i", text: "" }] };
+                            updateResume("customSections", [...(resume.customSections || []), newSec]);
+                          }} style={{ padding: "6px 12px", background: "linear-gradient(135deg,#6C63FF,#FF6584)", color: "white", border: "none", borderRadius: "8px", fontSize: "11px", fontWeight: "600", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>+ Add Section</button>
+                        </div>
+                        {(resume.customSections || []).length === 0 && (
+                          <div style={{ background: t.inputBg, border: `2px dashed ${t.border}`, borderRadius: "12px", padding: "28px", textAlign: "center" }}>
+                            <div style={{ fontSize: "28px", marginBottom: "8px" }}>📋</div>
+                            <p style={{ color: t.muted, fontSize: "12px", marginBottom: "4px" }}>No custom sections yet</p>
+                            <p style={{ color: t.muted, fontSize: "11px" }}>Click <strong style={{ color: t.accent }}>+ Add Section</strong> to create<br />Extracurricular Activities, Soft Skills, Declaration...</p>
+                          </div>
+                        )}
+                        {(resume.customSections || []).map((sec) => (
+                          <div key={sec.id} style={{ background: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "12px", padding: "14px" }}>
+                            <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px" }}>
+                              <input
+                                value={sec.title}
+                                onChange={e => {
+                                  const updated = (resume.customSections || []).map(s => s.id === sec.id ? { ...s, title: e.target.value } : s);
+                                  updateResume("customSections", updated);
+                                }}
+                                placeholder="Section title (e.g. Extracurricular Activities)"
+                                style={{ ...inpStyle, flex: 1, fontWeight: "600" }}
+                              />
+                              <button onClick={() => updateResume("customSections", (resume.customSections || []).filter(s => s.id !== sec.id))}
+                                style={{ padding: "6px 10px", background: "rgba(255,101,132,0.1)", color: "#FF6584", border: "1px solid rgba(255,101,132,0.2)", borderRadius: "7px", fontSize: "12px", cursor: "pointer", flexShrink: 0 }}>🗑</button>
+                            </div>
+                            {(sec.items || []).map((item, ii) => (
+                              <div key={item.id} style={{ display: "flex", gap: "6px", alignItems: "center", marginBottom: "6px" }}>
+                                <span style={{ color: t.accent, fontWeight: "700", flexShrink: 0 }}>▸</span>
+                                <input
+                                  value={item.text}
+                                  onChange={e => {
+                                    const updated = (resume.customSections || []).map(s => s.id === sec.id
+                                      ? { ...s, items: s.items.map(it => it.id === item.id ? { ...it, text: e.target.value } : it) }
+                                      : s);
+                                    updateResume("customSections", updated);
+                                  }}
+                                  placeholder={`Item ${ii + 1} — e.g. Organised annual college tech fest`}
+                                  style={{ ...inpStyle, flex: 1 }}
+                                />
+                                <button onClick={() => {
+                                  const updated = (resume.customSections || []).map(s => s.id === sec.id
+                                    ? { ...s, items: s.items.filter(it => it.id !== item.id) }
+                                    : s);
+                                  updateResume("customSections", updated);
+                                }} style={{ padding: "4px 8px", background: "rgba(255,101,132,0.08)", color: "#FF6584", border: "1px solid rgba(255,101,132,0.2)", borderRadius: "6px", fontSize: "11px", cursor: "pointer", flexShrink: 0 }}>✕</button>
+                              </div>
+                            ))}
+                            <button onClick={() => {
+                              const updated = (resume.customSections || []).map(s => s.id === sec.id
+                                ? { ...s, items: [...(s.items || []), { id: Date.now().toString(), text: "" }] }
+                                : s);
+                              updateResume("customSections", updated);
+                            }} style={{ marginTop: "6px", padding: "5px 12px", background: "none", border: `1px dashed ${t.border}`, borderRadius: "7px", color: t.muted, fontSize: "11px", cursor: "pointer" }}>+ Add Item</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* LAYOUT — Bug #5: Section placement in own tab */}
+                    {activeSection === "layout" && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                        <div>
+                          <h3 style={{ fontFamily: "'Noto Serif',serif", fontSize: "14px", fontWeight: "600", color: t.text }}>📐 Layout & Section Placement</h3>
+                          <p style={{ color: t.muted, fontSize: "10px", marginTop: "2px" }}>Drag sections to left sidebar or right main column (two-column templates only).</p>
+                        </div>
+                        {!SIDEBAR_LAYOUTS.includes(template?.layout) && (
+                          <div style={{ background: "rgba(255,179,71,0.08)", border: "1px solid rgba(255,179,71,0.25)", borderRadius: "10px", padding: "12px 14px", fontSize: "12px", color: "#FFB347" }}>
+                            ⚠️ Section placement only applies to two-column templates (Modernist, Creative, Executive, etc.). Switch template to use this feature.
+                          </div>
+                        )}
+                        {[
+                          ["skills",         "⚡ Skills"],
+                          ["languages",      "🗣 Languages"],
+                          ["interests",      "💡 Interests"],
+                          ["hobbies",        "🎯 Hobbies"],
+                          ["strengths",      "💪 Strengths"],
+                          ["certifications", "📜 Certifications"],
+                          ["achievements",   "🏆 Achievements"],
+                          ["projects",       "🚀 Projects"],
+                          ["education",      "🎓 Education"],
+                        ].map(([key, label]) => {
+                          const defaultSide = ["achievements", "projects", "education"].includes(key) ? "main" : "sidebar";
+                          const current = (resume.sectionLayout || {})[key] || defaultSide;
+                          return (
+                            <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: t.inputBg, borderRadius: "10px", border: `1px solid ${t.border}` }}>
+                              <span style={{ color: t.text, fontSize: "12px", fontWeight: "500" }}>{label}</span>
+                              <div style={{ display: "flex", gap: "4px" }}>
+                                {[["sidebar", "◀ Left"], ["main", "Right ▶"]].map(([pos, lbl]) => (
+                                  <button key={pos} onClick={() => updateSectionLayout(key, pos)}
+                                    style={{ padding: "4px 14px", borderRadius: "14px", border: `1px solid ${current === pos ? t.accent : t.border}`, background: current === pos ? `${t.accent}22` : "transparent", color: current === pos ? t.accent : t.muted, fontSize: "11px", fontWeight: "600", cursor: "pointer", transition: "all 0.15s" }}>{lbl}</button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
 
@@ -3777,6 +3903,16 @@ function ATSLayout({ resume, accent, pro }) {
       {resume.languages && <><Sec title="Languages" accent={accent} /><p style={{ fontSize: "8.5px", color: "#555" }}>{resume.languages}</p></>}
       {(resume.strengths||[]).some(s=>s.text) && <><Sec title="Core Strengths" accent={accent} />{(resume.strengths||[]).filter(s=>s.text).map(s=><div key={s.id} style={{display:"flex",gap:"4px",marginBottom:"2px"}}><span style={{color:accent,fontWeight:"700",fontSize:"8px",flexShrink:0}}>▸</span><p style={{fontSize:"8px",color:"#444",lineHeight:1.4}}>{s.text}</p></div>)}</>}
       {(resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:"#444",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"8px"}}>·</span>,el],[])}</div></>}
+      {resume.interests && <><Sec title="Interests" accent={accent} /><p style={{ fontSize: "8.5px", color: "#555" }}>{resume.interests}</p></>}
+      {resume.other && <><Sec title="Other Information" accent={accent} /><p style={{ fontSize: "8.5px", color: "#555" }}>{resume.other}</p></>}
+      {(resume.customSections || []).filter(sec => sec.title && (sec.items || []).some(it => it.text)).map(sec => (
+        <React.Fragment key={sec.id}>
+          <Sec title={sec.title} accent={accent} />
+          {sec.items.filter(it => it.text).map(it => (
+            <p key={it.id} style={{ fontSize: "8.5px", color: "#444", marginBottom: "2px" }}>▸ {it.text}</p>
+          ))}
+        </React.Fragment>
+      ))}
     </div>
   );
 }
