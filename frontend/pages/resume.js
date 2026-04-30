@@ -1081,7 +1081,9 @@ export default function Resume() {
     };
     
     setResume(completeResume);
-    setResumeName(resumeData.name || importPreview._importMetadata?.importedFrom?.replace(/\.[^.]+$/, "") || "Imported Resume");
+    // Use the imported file name (without extension) as the resume label, NOT the person's name
+    const importedFileName = importPreview._importMetadata?.importedFrom?.replace(/\.[^.]+$/, "") || "";
+    setResumeName(importedFileName || (resumeData.name ? `${resumeData.name}'s Resume` : "Imported Resume"));
     setActiveResumeId(null);
     setActiveTemplate("modernist");
     setActiveSection("personal");
@@ -1145,8 +1147,8 @@ export default function Resume() {
       clone.style.width = "794px";
       clone.style.minWidth = "794px";
       clone.style.maxWidth = "794px";
-      // Let content dictate height — no forced min-height so no blank second page for short resumes
-      clone.style.minHeight = "1123px";
+      // Let content dictate height — no forced min-height to prevent blank second page
+      clone.style.minHeight = "0";
       clone.style.height = "auto";
       clone.style.overflow = "visible";
 
@@ -1178,14 +1180,18 @@ export default function Resume() {
         imageTimeout: 0,
       });
 
-      // A4 dimensions at 72dpi in jsPDF default unit (mm)
+      // A4 dimensions
       const A4_W_MM = 210;
       const A4_H_MM = 297;
-
-      // Scale factor: canvas px → mm on A4 width
       const pxToMm = A4_W_MM / canvas.width;
       const totalHeightMm = canvas.height * pxToMm;
-      const totalPages = Math.ceil(totalHeightMm / A4_H_MM);
+      // Use floor + small buffer to avoid adding a near-empty last page
+      const BLANK_PAGE_THRESHOLD_MM = 8; // ignore final page if shorter than 8mm
+      const rawPages = totalHeightMm / A4_H_MM;
+      const lastPageHeightMm = (rawPages % 1) * A4_H_MM;
+      const totalPages = lastPageHeightMm > 0 && lastPageHeightMm < BLANK_PAGE_THRESHOLD_MM
+        ? Math.floor(rawPages)
+        : Math.ceil(rawPages);
 
       const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
 

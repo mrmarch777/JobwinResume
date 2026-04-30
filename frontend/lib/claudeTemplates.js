@@ -464,7 +464,10 @@ function Template15({ d = SAMPLE, colors = { primary: "#0d2137", accent: "#b8922
   return (
     <div id="resume-preview" style={s.page}>
       <div style={s.sidebar}>
-        <div style={{width:110,height:110,borderRadius:"50%",background:`linear-gradient(135deg,${colors.primary},${colors.accent})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,fontWeight:700,color:"#fff",border:`3px solid ${colors.accent}`,marginBottom:20}}/>
+        {d.photo
+          ? <img src={d.photo} alt="Profile" crossOrigin="anonymous" style={{ width:110, height:110, borderRadius:"50%", objectFit:"cover", objectPosition:"center top", border:`3px solid ${colors.accent}`, marginBottom:20, display:"block" }} />
+          : <div style={{width:110,height:110,borderRadius:"50%",background:`linear-gradient(135deg,${colors.primary},${colors.accent})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,fontWeight:700,color:"#fff",border:`3px solid ${colors.accent}`,marginBottom:20}}>{(d.name||"?").split(" ").map(w=>w[0]).filter(Boolean).slice(0,2).join("").toUpperCase()}</div>
+        }
         <div style={s.sideName}>{d.name}</div>
         <div style={s.sideTitle}>{d.title?.split(" ").slice(0,3).join(" ")}</div>
         <div style={s.divider}/>
@@ -537,7 +540,10 @@ function Template16({ d = SAMPLE, colors = { primary: "#1a1a2e", accent: "#e9456
     <div id="resume-preview" style={s.page}>
       <div style={s.header}>
         <div style={{position:"absolute",right:-60,top:-60,width:280,height:280,borderRadius:"50%",background:`${colors.accent}15`}}/>
-        <div style={{width:108,height:108,borderRadius:"12px",background:`linear-gradient(135deg,${colors.accent},#8b2252)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,fontWeight:700,color:"#fff",border:`3px solid ${colors.accent}`,boxShadow:"0 8px 32px rgba(0,0,0,0.3)",flexShrink:0,position:"relative"}}/>
+        {d.photo
+          ? <img src={d.photo} alt="Profile" crossOrigin="anonymous" style={{ width:108, height:108, borderRadius:"12px", objectFit:"cover", objectPosition:"center top", border:`3px solid ${colors.accent}`, boxShadow:"0 8px 32px rgba(0,0,0,0.3)", flexShrink:0, position:"relative" }} />
+          : <div style={{width:108,height:108,borderRadius:"12px",background:`linear-gradient(135deg,${colors.accent},#8b2252)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,fontWeight:700,color:"#fff",border:`3px solid ${colors.accent}`,boxShadow:"0 8px 32px rgba(0,0,0,0.3)",flexShrink:0,position:"relative"}}>{(d.name||"?").split(" ").map(w=>w[0]).filter(Boolean).slice(0,2).join("").toUpperCase()}</div>
+        }
         <div style={s.headerInfo}>
           <div style={s.name}>{d.name}</div>
           <div style={s.titleText}>{d.title}</div>
