@@ -4083,13 +4083,51 @@ function EduItem({ edu, accent }) {
 }
 
 
+// ── Convert internal resume format → claudeTemplates "d" format ──
+function toClaudeFormat(res) {
+  const skillList = (res.skills || []).map(s => typeof s === "string" ? s : s.name).filter(Boolean);
+  return {
+    name:     res.name     || "",
+    title:    res.title    || "",
+    email:    res.email    || "",
+    phone:    res.phone    || "",
+    location: res.location || "",
+    linkedin: res.linkedin || "",
+    website:  res.website  || "",
+    photo:    res.photo    || "",
+    summary:  res.summary  || "",
+    experience: (res.experience || []).filter(e => e.company || e.role).map(e => ({
+      role:     e.role     || "",
+      company:  e.company  || "",
+      location: e.location || "",
+      period:   e.current  ? `${e.from || ""} – Present` : [e.from, e.to].filter(Boolean).join(" – "),
+      current:  e.current  || false,
+      bullets:  [...(e.responsibilities || []), ...(e.bullets || [])].filter(Boolean),
+    })),
+    education: (res.education || []).filter(e => e.institution || e.degree).map(e => ({
+      degree: [e.degree, e.field].filter(Boolean).join(" in "),
+      school: e.institution || "",
+      year:   e.year  || "",
+      honors: e.grade || "",
+    })),
+    skills:         skillList,
+    certifications: (res.certifications || []).filter(c => c.name).map(c => c.name),
+    achievements:   (res.achievements  || []).filter(a => a.text).map(a => a.text),
+    projects:       (res.projects      || []).filter(p => p.name).map(p => ({ name: p.name, desc: p.description || "" })),
+    languages:      res.languages ? res.languages.split(/[,;]/).map(l => l.trim()).filter(Boolean) : [],
+    hobbies:        (res.hobbies   || []).filter(h => h.name).map(h => h.name),
+    interests:      res.interests  || "",
+  };
+}
+
 function ResumePreview({ resume, template }) {
   const layout = template?.layout || "modernist";
   // Custom accent overrides the template default
   const accent = (resume.customAccent && resume.customAccent !== "") ? resume.customAccent : (template?.accent || "#6C63FF");
   // photoHidden: clear photo so no template renders it
   const r = resume.photoHidden ? { ...resume, photo: "" } : resume;
-  const d = toClaudeFormat(r);
+  // Only compute claude format when needed (Claude layouts only)
+  const d = layout.startsWith("claude_") ? toClaudeFormat(r) : null;
   if (layout === "claude_marketing") return <Template6 d={d} colors={{primary: "#7b1d3f", accent: "#e94560", bg: "#fff", light: "#fdf5f7", text: "#1a1a1a"}} />;
   if (layout === "claude_graduate") return <Template7 d={d} colors={{primary: "#1d4e89", accent: "#00b4d8", bg: "#f0f7ff", text: "#1a1a1a"}} />;
   if (layout === "claude_ats1") return <Template11 d={d} colors={{primary: "#1a1a1a", accent: "#2c5282", rule: "#cccccc"}} />;
