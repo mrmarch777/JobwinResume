@@ -180,7 +180,38 @@ const EMPTY_RESUME = {
     achievements: "main",
   },
   photoSize: 100,
+  photoHidden: false,
   customSections: [],
+  docType: "Resume",
+  skillShowRating: true,
+  customAccent: "",           // overrides template accent color when set
+  resumeLayout: "standard",   // "standard" | "compact" | "2col"  — structural layout override
+  pageMargin: "standard",     // "compact" | "standard" | "spacious" — PDF margin control
+  sectionOrder: [             // controls render order (ATSLayout + others)
+    "summary", "experience", "education", "skills", "projects",
+    "certifications", "achievements", "strengths", "hobbies",
+    "interests", "languages", "other", "custom"
+  ],
+  sectionNames: {              // user-renamed section labels
+    summary: "Professional Summary",
+    experience: "Work Experience",
+    education: "Education",
+    skills: "Skills",
+    projects: "Projects",
+    certifications: "Certifications",
+    achievements: "Achievements",
+    strengths: "Core Strengths",
+    extras: "Additional Info",
+    hobbies: "Hobbies & Interests",
+    languages: "Languages",
+    interests: "Areas of Interest",
+  },
+  declaration: {               // optional declaration at bottom
+    enabled: false,
+    text: "I hereby declare that all the information stated above is true and correct to the best of my knowledge and belief.",
+    place: "",
+    date: "",
+  },
 };
 
 const HOBBY_EMOJIS = [
@@ -1026,6 +1057,39 @@ export default function Resume() {
   const [openEmojiPickerId, setOpenEmojiPickerId] = useState(null);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const uploadInputRef = useRef(null);
+  // Paste-text import
+  const [pasteMode, setPasteMode] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+  const [pasteParsing, setPasteParsing] = useState(false);
+
+  const parsePastedText = async () => {
+    if (!pasteText.trim() || pasteText.trim().length < 50) {
+      setUploadError("Please paste at least 50 characters of resume content.");
+      return;
+    }
+    setUploadError("");
+    setPasteParsing(true);
+    try {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/parse-resume-text`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: pasteText, job_description: uploadJobDesc }),
+      });
+      if (!res.ok) throw new Error("Parse failed — server error");
+      const parsed = await res.json();
+      const normalized = normalizeAIResume(parsed);
+      normalized._importMetadata = { importedFrom: "Pasted Text", quality: { overall: 70 } };
+      normalized._captureSummary = { captured: [], missing: [], captureRate: 70 };
+      setImportPreview(normalized);
+      setPasteMode(false);
+      setPasteText("");
+    } catch (err) {
+      setUploadError(err.message || "Failed to parse pasted text. Try uploading a file instead.");
+    } finally {
+      setPasteParsing(false);
+    }
+  };
 
   const uploadResumeFile = async (e) => {
     const file = e.target.files?.[0];
@@ -1143,6 +1207,11 @@ export default function Resume() {
       const clone = el.cloneNode(true);
       // Remove #resume-preview id so the CSS min-height rule doesn't force extra blank space
       clone.id = "resume-pdf-export";
+      // Apply pageMargin padding override to clone if needed (ATS/Minimal export)
+      const marginPadMap = { compact: "18px 20px", standard: "28px 30px", spacious: "40px 44px" };
+      if (resume.pageMargin && resume.pageMargin !== "standard" && marginPadMap[resume.pageMargin]) {
+        clone.style.padding = marginPadMap[resume.pageMargin];
+      }
       clone.style.transform = "none";
       clone.style.boxShadow = "none";
       clone.style.borderRadius = "0";
@@ -1311,6 +1380,8 @@ export default function Resume() {
         /* Page-break control for multi-section resumes */
         .exp-item  { page-break-inside: avoid; break-inside: avoid; }
         .edu-item  { page-break-inside: avoid; break-inside: avoid; }
+        h2 { page-break-after: avoid; break-after: avoid; }
+        p, li { orphans: 3; widows: 3; }
         .page-break-before { page-break-before: always; break-before: page; }
         .page-break-after  { page-break-after: always;  break-after: page; }
 
@@ -1424,6 +1495,19 @@ export default function Resume() {
                   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     {(uploadParsing ? ["Processing", "AI Powered", "Auto-Parse"] : ["PDF", "Word", "Auto-Parse", "1 Click"]).map(tag => (
                       <span key={tag} style={{ background: uploadParsing ? "rgba(108,99,255,0.2)" : "rgba(255,179,71,0.2)", color: uploadParsing ? "#A29BFE" : "#FFB347", padding: "5px 12px", borderRadius: "8px", fontSize: "11px", fontWeight: "600", border: uploadParsing ? "1px solid rgba(108,99,255,0.3)" : "1px solid rgba(255,179,71,0.3)" }}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+                {/* Paste Resume Text Card */}
+                <div onClick={() => { setPasteMode(true); setUploadError(""); }} style={{ background: "linear-gradient(135deg,rgba(67,217,162,0.12),rgba(67,217,162,0.04))", border: "2px solid rgba(67,217,162,0.35)", borderRadius: "18px", padding: "48px 36px", cursor: "pointer", transition: "all 0.3s", boxShadow: "0 4px 20px rgba(67,217,162,0.06)" }}
+                  onMouseOver={e => e.currentTarget.style.transform = "translateY(-6px)"}
+                  onMouseOut={e => e.currentTarget.style.transform = "translateY(0)"}>
+                  <div style={{ fontSize: "56px", marginBottom: "18px" }}>📋</div>
+                  <h3 style={{ fontFamily: "'Noto Serif',serif", fontSize: "22px", fontWeight: "700", color: "#43D9A2", marginBottom: "12px", margin: "0 0 12px 0" }}>Paste Resume Text</h3>
+                  <p style={{ color: t.muted, fontSize: "14px", lineHeight: "1.7", marginBottom: "16px", margin: "0 0 16px 0" }}>Paste resume content from ChatGPT, Google Docs, or any source — AI will structure it automatically.</p>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    {["ChatGPT", "Plain Text", "AI Structured", "Instant"].map(tag => (
+                      <span key={tag} style={{ background: "rgba(67,217,162,0.18)", color: "#43D9A2", padding: "5px 12px", borderRadius: "8px", fontSize: "11px", fontWeight: "600", border: "1px solid rgba(67,217,162,0.3)" }}>{tag}</span>
                     ))}
                   </div>
                 </div>
@@ -2671,6 +2755,28 @@ export default function Resume() {
                     {activeSection === "personal" && (
                       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                         <h3 style={{ fontFamily: "'Noto Serif',serif", fontSize: "14px", fontWeight: "600", color: t.text, marginBottom: "4px" }}>👤 Personal Information</h3>
+                        {/* Doc Type Selector */}
+                        <div style={{ background: t.inputBg, borderRadius: "10px", padding: "10px 14px", border: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <span style={{ color: t.text, fontSize: "12px", fontWeight: "600" }}>📄 Document Type</span>
+                          <div style={{ display: "flex", gap: "4px" }}>
+                            {["Resume", "CV", "Curriculum Vitae"].map(dt => (
+                              <button key={dt} onClick={() => updateResume("docType", dt)}
+                                style={{ padding: "3px 10px", borderRadius: "12px", border: `1px solid ${(resume.docType || "Resume") === dt ? t.accent : t.border}`, background: (resume.docType || "Resume") === dt ? `${t.accent}20` : "transparent", color: (resume.docType || "Resume") === dt ? t.accent : t.muted, fontSize: "10px", fontWeight: "600", cursor: "pointer", transition: "all 0.15s" }}>{dt}</button>
+                            ))}
+                          </div>
+                        </div>
+                        {/* Photo Hide Toggle — only for photo templates */}
+                        {PHOTO_TEMPLATES.includes(template?.layout) && (
+                          <div style={{ background: t.inputBg, borderRadius: "10px", padding: "10px 14px", border: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span style={{ color: t.text, fontSize: "12px", fontWeight: "600" }}>📸 Profile Photo</span>
+                            <div style={{ display: "flex", gap: "4px" }}>
+                              {[["Show", false], ["Hide", true]].map(([lbl, val]) => (
+                                <button key={lbl} onClick={() => updateResume("photoHidden", val)}
+                                  style={{ padding: "3px 12px", borderRadius: "12px", border: `1px solid ${(resume.photoHidden === val) ? t.accent : t.border}`, background: (resume.photoHidden === val) ? `${t.accent}20` : "transparent", color: (resume.photoHidden === val) ? t.accent : t.muted, fontSize: "10px", fontWeight: "600", cursor: "pointer", transition: "all 0.15s" }}>{lbl}</button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         {/* Photo warning for photo-supporting templates */}
                         {PHOTO_TEMPLATES.includes(template?.layout) && (
                           <div style={{ background: resume.photo ? "rgba(67,217,162,0.08)" : "rgba(255,179,71,0.08)", border: `1px solid ${resume.photo ? "rgba(67,217,162,0.3)" : "rgba(255,179,71,0.3)"}`, borderRadius: "10px", padding: "10px 14px", fontSize: "12px" }}>
@@ -2881,10 +2987,21 @@ export default function Resume() {
                     {/* SKILLS */}
                     {activeSection === "skills" && (
                       <div>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                           <h3 style={{ fontFamily: "'Noto Serif',serif", fontSize: "14px", fontWeight: "600", color: t.text }}>⚡ Skills & Proficiency</h3>
                           <button onClick={addSkill} style={{ padding: "5px 10px", background: `${t.accent}18`, color: t.accent, border: `1px solid ${t.accent}33`, borderRadius: "6px", fontSize: "11px", cursor: "pointer", fontWeight: "600" }}>+ Add Skill</button>
                         </div>
+                        {/* Skill Rating Toggle */}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: t.inputBg, borderRadius: "10px", padding: "8px 12px", border: `1px solid ${t.border}`, marginBottom: "10px" }}>
+                          <span style={{ color: t.text, fontSize: "11px", fontWeight: "600" }}>📊 Show Skill Rating Dots</span>
+                          <div style={{ display: "flex", gap: "4px" }}>
+                            {[["With Rating", true], ["Plain Text", false]].map(([lbl, val]) => (
+                              <button key={lbl} onClick={() => updateResume("skillShowRating", val)}
+                                style={{ padding: "3px 10px", borderRadius: "12px", border: `1px solid ${(resume.skillShowRating !== false) === val ? t.accent : t.border}`, background: (resume.skillShowRating !== false) === val ? `${t.accent}20` : "transparent", color: (resume.skillShowRating !== false) === val ? t.accent : t.muted, fontSize: "10px", fontWeight: "600", cursor: "pointer", transition: "all 0.15s" }}>{lbl}</button>
+                            ))}
+                          </div>
+                        </div>
+
                         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                           {(resume.skills || []).map(skill => (
                             <div key={skill.id} style={{ background: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "10px", padding: "10px 12px", display: "flex", alignItems: "center", gap: "10px" }}>
@@ -3110,41 +3227,221 @@ export default function Resume() {
 
                     {/* LAYOUT — Bug #5: Section placement in own tab */}
                     {activeSection === "layout" && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                         <div>
-                          <h3 style={{ fontFamily: "'Noto Serif',serif", fontSize: "14px", fontWeight: "600", color: t.text }}>📐 Layout & Section Placement</h3>
-                          <p style={{ color: t.muted, fontSize: "10px", marginTop: "2px" }}>Drag sections to left sidebar or right main column (two-column templates only).</p>
+                          <h3 style={{ fontFamily: "'Noto Serif',serif", fontSize: "14px", fontWeight: "600", color: t.text }}>📐 Layout, Names & Declaration</h3>
+                          <p style={{ color: t.muted, fontSize: "10px", marginTop: "2px" }}>Rename sections, add a declaration, and control column placement.</p>
                         </div>
-                        {!SIDEBAR_LAYOUTS.includes(template?.layout) && (
-                          <div style={{ background: "rgba(255,179,71,0.08)", border: "1px solid rgba(255,179,71,0.25)", borderRadius: "10px", padding: "12px 14px", fontSize: "12px", color: "#FFB347" }}>
-                            ⚠️ Section placement only applies to two-column templates (Modernist, Creative, Executive, etc.). Switch template to use this feature.
+
+                        {/* ── SECTION RENAMING ── */}
+                        <div style={{ background: t.inputBg, borderRadius: "12px", padding: "14px", border: `1px solid ${t.border}` }}>
+                          <p style={{ color: t.text, fontSize: "12px", fontWeight: "700", marginBottom: "10px" }}>✏️ Rename Sections</p>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                            {[
+                              ["summary",      "Summary header"],
+                              ["experience",   "Experience header"],
+                              ["education",    "Education header"],
+                              ["skills",       "Skills header"],
+                              ["projects",     "Projects header"],
+                              ["certifications","Certifications header"],
+                              ["achievements", "Achievements header"],
+                              ["strengths",    "Strengths header"],
+                              ["hobbies",      "Hobbies header"],
+                              ["languages",    "Languages header"],
+                              ["interests",    "Interests header"],
+                            ].map(([key, ph]) => (
+                              <div key={key} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                <span style={{ fontSize: "10px", color: t.muted, width: "90px", flexShrink: 0, textTransform: "capitalize" }}>{key}</span>
+                                <input
+                                  value={(resume.sectionNames || {})[key] || ""}
+                                  onChange={e => updateResume("sectionNames", { ...(resume.sectionNames || {}), [key]: e.target.value })}
+                                  placeholder={ph}
+                                  style={{ ...inpStyle, flex: 1, fontSize: "11px", padding: "6px 10px" }}
+                                />
+                              </div>
+                            ))}
                           </div>
-                        )}
-                        {[
-                          ["skills",         "⚡ Skills"],
-                          ["languages",      "🗣 Languages"],
-                          ["interests",      "💡 Interests"],
-                          ["hobbies",        "🎯 Hobbies"],
-                          ["strengths",      "💪 Strengths"],
-                          ["certifications", "📜 Certifications"],
-                          ["achievements",   "🏆 Achievements"],
-                          ["projects",       "🚀 Projects"],
-                          ["education",      "🎓 Education"],
-                        ].map(([key, label]) => {
-                          const defaultSide = ["achievements", "projects", "education"].includes(key) ? "main" : "sidebar";
-                          const current = (resume.sectionLayout || {})[key] || defaultSide;
-                          return (
-                            <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: t.inputBg, borderRadius: "10px", border: `1px solid ${t.border}` }}>
-                              <span style={{ color: t.text, fontSize: "12px", fontWeight: "500" }}>{label}</span>
-                              <div style={{ display: "flex", gap: "4px" }}>
-                                {[["sidebar", "◀ Left"], ["main", "Right ▶"]].map(([pos, lbl]) => (
-                                  <button key={pos} onClick={() => updateSectionLayout(key, pos)}
-                                    style={{ padding: "4px 14px", borderRadius: "14px", border: `1px solid ${current === pos ? t.accent : t.border}`, background: current === pos ? `${t.accent}22` : "transparent", color: current === pos ? t.accent : t.muted, fontSize: "11px", fontWeight: "600", cursor: "pointer", transition: "all 0.15s" }}>{lbl}</button>
-                                ))}
+                        </div>
+
+                        {/* ── DECLARATION ── */}
+                        <div style={{ background: t.inputBg, borderRadius: "12px", padding: "14px", border: `1px solid ${t.border}` }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                            <p style={{ color: t.text, fontSize: "12px", fontWeight: "700" }}>📜 Declaration Section</p>
+                            <div style={{ display: "flex", gap: "4px" }}>
+                              {[["Add", true], ["Remove", false]].map(([lbl, val]) => (
+                                <button key={lbl} onClick={() => updateResume("declaration", { ...(resume.declaration || {}), enabled: val })}
+                                  style={{ padding: "3px 12px", borderRadius: "12px", border: `1px solid ${(resume.declaration?.enabled === val) ? t.accent : t.border}`, background: (resume.declaration?.enabled === val) ? `${t.accent}20` : "transparent", color: (resume.declaration?.enabled === val) ? t.accent : t.muted, fontSize: "10px", fontWeight: "600", cursor: "pointer" }}>{lbl}</button>
+                              ))}
+                            </div>
+                          </div>
+                          {resume.declaration?.enabled && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                              <textarea
+                                value={resume.declaration?.text || ""}
+                                onChange={e => updateResume("declaration", { ...(resume.declaration || {}), text: e.target.value })}
+                                rows={3}
+                                placeholder="I hereby declare that all the information stated above is true and correct..."
+                                style={{ ...inpStyle, resize: "vertical", fontSize: "11px" }}
+                              />
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+                                <input value={resume.declaration?.place || ""} onChange={e => updateResume("declaration", { ...(resume.declaration || {}), place: e.target.value })} placeholder="Place (e.g. Mumbai)" style={{ ...inpStyle, fontSize: "11px" }} />
+                                <input value={resume.declaration?.date || ""} onChange={e => updateResume("declaration", { ...(resume.declaration || {}), date: e.target.value })} placeholder="Date (e.g. 2 May 2026)" style={{ ...inpStyle, fontSize: "11px" }} />
                               </div>
                             </div>
-                          );
-                        })}
+                          )}
+                        </div>
+
+                        {/* ── SECTION PLACEMENT ── */}
+                        <div>
+                          <p style={{ color: t.text, fontSize: "12px", fontWeight: "700", marginBottom: "6px" }}>🗂 Column Placement</p>
+                          <p style={{ color: t.muted, fontSize: "10px", marginBottom: "10px" }}>Left sidebar or right main column — applies to two-column templates only.</p>
+                          {!SIDEBAR_LAYOUTS.includes(template?.layout) && (
+                            <div style={{ background: "rgba(255,179,71,0.08)", border: "1px solid rgba(255,179,71,0.25)", borderRadius: "10px", padding: "10px 14px", fontSize: "11px", color: "#FFB347", marginBottom: "8px" }}>
+                              ⚠️ Switch to a two-column template to use column placement.
+                            </div>
+                          )}
+                          {[
+                            ["skills",         "⚡ Skills"],
+                            ["languages",      "🗣 Languages"],
+                            ["interests",      "💡 Interests"],
+                            ["hobbies",        "🎯 Hobbies"],
+                            ["strengths",      "💪 Strengths"],
+                            ["certifications", "📜 Certifications"],
+                            ["achievements",   "🏆 Achievements"],
+                            ["projects",       "🚀 Projects"],
+                            ["education",      "🎓 Education"],
+                          ].map(([key, label]) => {
+                            const defaultSide = ["achievements", "projects", "education"].includes(key) ? "main" : "sidebar";
+                            const current = (resume.sectionLayout || {})[key] || defaultSide;
+                            return (
+                              <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 10px", background: t.inputBg, borderRadius: "10px", border: `1px solid ${t.border}`, marginBottom: "5px" }}>
+                                <span style={{ color: t.text, fontSize: "11px", fontWeight: "500" }}>{label}</span>
+                                <div style={{ display: "flex", gap: "4px" }}>
+                                  {[["sidebar", "◀ Left"], ["main", "Right ▶"]].map(([pos, lbl]) => (
+                                    <button key={pos} onClick={() => updateSectionLayout(key, pos)}
+                                      style={{ padding: "3px 12px", borderRadius: "12px", border: `1px solid ${current === pos ? t.accent : t.border}`, background: current === pos ? `${t.accent}22` : "transparent", color: current === pos ? t.accent : t.muted, fontSize: "10px", fontWeight: "600", cursor: "pointer", transition: "all 0.15s" }}>{lbl}</button>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                        {/* ── ACCENT COLOR PICKER ── */}
+                        <div style={{ background: t.inputBg, borderRadius: "12px", padding: "14px", border: `1px solid ${t.border}` }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                            <div>
+                              <p style={{ color: t.text, fontSize: "12px", fontWeight: "700", margin: 0 }}>🎨 Accent Color</p>
+                              <p style={{ color: t.muted, fontSize: "10px", margin: "2px 0 0" }}>Override template color — applies to all headings & highlights</p>
+                            </div>
+                            {resume.customAccent && (
+                              <button onClick={() => updateResume("customAccent", "")}
+                                style={{ padding: "3px 10px", borderRadius: "10px", border: `1px solid ${t.border}`, background: "none", color: t.muted, fontSize: "10px", cursor: "pointer" }}>Reset</button>
+                            )}
+                          </div>
+                          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                            {["#6C63FF","#e94560","#00b4d8","#43D9A2","#F59E0B","#1a7abf","#2D6A4F","#D32F2F","#3D52A0","#0A4A6B","#3D2B1F","#111111"].map(c => (
+                              <button key={c} onClick={() => updateResume("customAccent", c)}
+                                style={{ width: "22px", height: "22px", borderRadius: "50%", border: `2px solid ${ (resume.customAccent||"") === c ? "#fff" : "transparent" }`, background: c, cursor: "pointer", outline: (resume.customAccent||"") === c ? `2px solid ${c}` : "none", flexShrink: 0, transition: "all 0.15s" }} />
+                            ))}
+                            <label style={{ display: "flex", alignItems: "center", gap: "5px", cursor: "pointer" }}>
+                              <input type="color"
+                                value={resume.customAccent || (template?.accent || "#6C63FF")}
+                                onChange={e => updateResume("customAccent", e.target.value)}
+                                style={{ width: "28px", height: "28px", border: "none", borderRadius: "50%", cursor: "pointer", padding: 0 }} />
+                              <span style={{ color: t.muted, fontSize: "10px" }}>Custom</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* ── SECTION REORDER ── */}
+                        <div style={{ background: t.inputBg, borderRadius: "12px", padding: "14px", border: `1px solid ${t.border}` }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                            <div>
+                              <p style={{ color: t.text, fontSize: "12px", fontWeight: "700", margin: 0 }}>↕ Section Order</p>
+                              <p style={{ color: t.muted, fontSize: "10px", margin: "2px 0 0" }}>Move sections up/down to change their order in the resume</p>
+                            </div>
+                            <button onClick={() => updateResume("sectionOrder", ["summary","experience","education","skills","projects","certifications","achievements","strengths","hobbies","interests","languages","other","custom"])}
+                              style={{ padding: "3px 10px", borderRadius: "10px", border: `1px solid ${t.border}`, background: "none", color: t.muted, fontSize: "10px", cursor: "pointer" }}>Reset</button>
+                          </div>
+                          {(() => {
+                            const SLABELS = { summary:"📝 Summary", experience:"💼 Experience", education:"🎓 Education", skills:"⚡ Skills", projects:"🚀 Projects", certifications:"📜 Certifications", achievements:"🏆 Achievements", strengths:"💪 Strengths", hobbies:"🎯 Hobbies", interests:"💡 Interests", languages:"🗣 Languages", other:"🌟 Other", custom:"➕ Custom" };
+                            const DEF = ["summary","experience","education","skills","projects","certifications","achievements","strengths","hobbies","interests","languages","other","custom"];
+                            const order = (resume.sectionOrder && resume.sectionOrder.length > 0) ? resume.sectionOrder : DEF;
+                            const move = (idx, dir) => {
+                              const a = [...order]; const b = idx + dir;
+                              if (b < 0 || b >= a.length) return;
+                              [a[idx], a[b]] = [a[b], a[idx]];
+                              updateResume("sectionOrder", a);
+                            };
+                            return (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                                {order.map((key, idx) => (
+                                  <div key={key} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px", background: t.card, borderRadius: "8px", border: `1px solid ${t.border}` }}>
+                                    <span style={{ fontSize: "9px", color: t.muted, width: "14px", textAlign: "center", flexShrink: 0 }}>{idx+1}</span>
+                                    <span style={{ fontSize: "11px", color: t.text, flex: 1, fontWeight: "500" }}>{SLABELS[key] || key}</span>
+                                    <div style={{ display: "flex", gap: "2px" }}>
+                                      <button onClick={() => move(idx, -1)} disabled={idx === 0}
+                                        style={{ padding: "2px 7px", background: idx===0 ? "transparent" : `${t.accent}18`, color: idx===0 ? t.border : t.accent, border: `1px solid ${idx===0 ? t.border : t.accent}40`, borderRadius: "4px", fontSize: "9px", cursor: idx===0 ? "default":"pointer" }}>▲</button>
+                                      <button onClick={() => move(idx, 1)} disabled={idx === order.length-1}
+                                        style={{ padding: "2px 7px", background: idx===order.length-1 ? "transparent" : `${t.accent}18`, color: idx===order.length-1 ? t.border : t.accent, border: `1px solid ${idx===order.length-1 ? t.border : t.accent}40`, borderRadius: "4px", fontSize: "9px", cursor: idx===order.length-1 ? "default":"pointer" }}>▼</button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                        </div>
+
+                        {/* ── PAGE MARGIN CONTROL ── */}
+                        <div style={{ background: t.inputBg, borderRadius: "12px", padding: "14px", border: `1px solid ${t.border}` }}>
+                          <div style={{ marginBottom: "10px" }}>
+                            <p style={{ color: t.text, fontSize: "12px", fontWeight: "700", margin: 0 }}>📏 Page Margins</p>
+                            <p style={{ color: t.muted, fontSize: "10px", margin: "2px 0 0" }}>Control whitespace and content density</p>
+                          </div>
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            {[
+                              { id: "compact",   label: "Compact",  sub: "More content" },
+                              { id: "standard",  label: "Standard", sub: "Balanced"     },
+                              { id: "spacious",  label: "Spacious", sub: "Breathable"   },
+                            ].map(m => {
+                              const active = (resume.pageMargin || "standard") === m.id;
+                              return (
+                                <button key={m.id} onClick={() => updateResume("pageMargin", m.id)}
+                                  style={{ flex: 1, padding: "8px 6px", borderRadius: "10px", border: `1.5px solid ${active ? t.accent : t.border}`, background: active ? `${t.accent}18` : "transparent", cursor: "pointer", transition: "all 0.15s" }}>
+                                  <p style={{ color: active ? t.accent : t.text, fontSize: "11px", fontWeight: "700", margin: 0 }}>{m.label}</p>
+                                  <p style={{ color: t.muted, fontSize: "9px", margin: "2px 0 0" }}>{m.sub}</p>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* ── RESUME STRUCTURE ── */}
+                        <div style={{ background: t.inputBg, borderRadius: "12px", padding: "14px", border: `1px solid ${t.border}` }}>
+                          <div style={{ marginBottom: "10px" }}>
+                            <p style={{ color: t.text, fontSize: "12px", fontWeight: "700", margin: 0 }}>🗂 Resume Structure</p>
+                            <p style={{ color: t.muted, fontSize: "10px", margin: "2px 0 0" }}>Switch between 1-column and 2-column layout (ATS & single-column templates)</p>
+                          </div>
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            {[
+                              { id: "standard", label: "Standard",   icon: "▬", sub: "Default template" },
+                              { id: "1col",     label: "1-Column",   icon: "≡", sub: "Full width"        },
+                              { id: "2col",     label: "2-Column",   icon: "⫾", sub: "Sidebar + Main"    },
+                            ].map(opt => {
+                              const active = (resume.resumeLayout || "standard") === opt.id;
+                              return (
+                                <button key={opt.id} onClick={() => updateResume("resumeLayout", opt.id)}
+                                  style={{ flex: 1, padding: "8px 6px", borderRadius: "10px", border: `1.5px solid ${active ? t.accent : t.border}`, background: active ? `${t.accent}18` : "transparent", cursor: "pointer", transition: "all 0.15s" }}>
+                                  <p style={{ color: active ? t.accent : t.text, fontSize: "14px", margin: 0 }}>{opt.icon}</p>
+                                  <p style={{ color: active ? t.accent : t.text, fontSize: "11px", fontWeight: "700", margin: "2px 0 0" }}>{opt.label}</p>
+                                  <p style={{ color: t.muted, fontSize: "9px", margin: "2px 0 0" }}>{opt.sub}</p>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
                       </div>
                     )}
 
@@ -3293,6 +3590,36 @@ export default function Resume() {
           {importSuccess && (
             <div style={{ position:"fixed", bottom:24, right:24, background:"#43D9A2", color:"#fff", padding:"14px 22px", borderRadius:"14px", fontWeight:"700", fontSize:"14px", boxShadow:"0 8px 32px rgba(67,217,162,0.4)", zIndex:99999, display:"flex", alignItems:"center", gap:"10px", animation:"slideIn 0.3s ease" }}>
               ✅ Resume imported! All fields populated — review and polish.
+            </div>
+          )}
+
+          {/* ── PASTE TEXT MODAL ── */}
+          {pasteMode && (
+            <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.82)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:9999, padding:"16px", backdropFilter:"blur(4px)" }}>
+              <div style={{ background:t.bg, borderRadius:"20px", border:`1.5px solid ${t.border}`, width:"100%", maxWidth:"680px", padding:"36px", boxShadow:"0 32px 80px rgba(0,0,0,0.6)" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"20px" }}>
+                  <div>
+                    <h2 style={{ fontFamily:"'Noto Serif',serif", fontSize:"22px", fontWeight:"700", color:t.text, margin:"0 0 4px" }}>📋 Paste Your Resume</h2>
+                    <p style={{ color:t.muted, fontSize:"13px", margin:0 }}>Paste from ChatGPT, Google Docs, Word, or any text source — AI will structure it automatically.</p>
+                  </div>
+                  <button onClick={() => { setPasteMode(false); setPasteText(""); setUploadError(""); }} style={{ background:"none", border:"none", color:t.muted, fontSize:"22px", cursor:"pointer", padding:"4px" }}>×</button>
+                </div>
+                <textarea
+                  value={pasteText}
+                  onChange={e => setPasteText(e.target.value)}
+                  placeholder={"Paste your resume content here...\n\nExample:\nJohn Smith\nSoftware Engineer | john@email.com | +91 98765 43210\n\nSummary\nExperienced software engineer with 5 years...\n\nExperience\nSenior Developer — TechCorp (2021–Present)\n• Built scalable APIs serving 2M users..."}
+                  rows={14}
+                  style={{ width:"100%", padding:"14px", background:t.inputBg, border:`1px solid ${t.border}`, borderRadius:"12px", fontSize:"13px", color:t.text, outline:"none", fontFamily:"'DM Sans',sans-serif", lineHeight:"1.6", resize:"vertical", boxSizing:"border-box", marginBottom:"16px" }}
+                />
+                {uploadError && <p style={{ color:"#FF6584", fontSize:"12px", marginBottom:"12px" }}>⚠️ {uploadError}</p>}
+                <div style={{ display:"flex", gap:"10px", justifyContent:"flex-end" }}>
+                  <button onClick={() => { setPasteMode(false); setPasteText(""); setUploadError(""); }} style={{ padding:"10px 20px", background:"none", border:`1px solid ${t.border}`, borderRadius:"10px", color:t.muted, fontSize:"13px", cursor:"pointer" }}>Cancel</button>
+                  <button onClick={parsePastedText} disabled={pasteParsing || pasteText.trim().length < 50}
+                    style={{ padding:"10px 24px", background: pasteParsing ? "#555" : "linear-gradient(135deg,#43D9A2,#00b894)", color:"white", border:"none", borderRadius:"10px", fontSize:"13px", fontWeight:"700", cursor: pasteParsing ? "not-allowed" : "pointer" }}>
+                    {pasteParsing ? "⏳ Parsing..." : "🤖 Parse & Import"}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -3755,43 +4082,14 @@ function EduItem({ edu, accent }) {
   );
 }
 
-// ── RESUME PREVIEW DISPATCHER ──
-// ── Adapter: convert the app's resume state → claude template data format ──────
-function toClaudeFormat(r) {
-  // Skills: [{name, rating}] | string → ["Python", "SQL"]
-  const rawSkills = Array.isArray(r.skills)
-    ? r.skills
-    : (typeof r.skills === "string" ? r.skills.split(",").map(s => s.trim()) : []);
-  const skills = rawSkills.map(s => typeof s === "string" ? s : (s.name || "")).filter(Boolean);
-  // Certifications: [{name, issuer, year}] → ["AWS Certified (2023)"]
-  const certifications = (r.certifications || []).map(c =>
-    typeof c === "string" ? c : [c.name, c.issuer, c.year].filter(Boolean).join(" · ")
-  ).filter(Boolean);
-  // Languages: string → array
-  const languages = r.languages ? r.languages.split(",").map(l => l.trim()).filter(Boolean) : [];
-  // Hobbies: [{name, icon}] → ["Reading"]
-  const hobbies = (r.hobbies || []).map(h => typeof h === "string" ? h : (h.name || "")).filter(Boolean);
-  // Education: add 'school' and 'honors' aliases
-  const education = (r.education || []).map(e => ({
-    ...e,
-    school: e.institution || e.school || e.university || "",
-    honors: e.grade || e.honors || ""
-  }));
-  // Experience: add 'period' and flatten bullets/responsibilities
-  const experience = (r.experience || []).map(e => {
-    const from = e.from || "";
-    const to = e.current ? "Present" : (e.to || "");
-    const period = from && to ? `${from} – ${to}` : from || to || e.period || "";
-    const bullets = [...(e.bullets || []), ...(e.responsibilities || [])].filter(Boolean);
-    return { ...e, period, bullets };
-  });
-  return { ...r, skills, certifications, languages, hobbies, education, experience };
-}
 
 function ResumePreview({ resume, template }) {
   const layout = template?.layout || "modernist";
-  const accent = template?.accent || "#6C63FF";
-  const d = toClaudeFormat(resume);
+  // Custom accent overrides the template default
+  const accent = (resume.customAccent && resume.customAccent !== "") ? resume.customAccent : (template?.accent || "#6C63FF");
+  // photoHidden: clear photo so no template renders it
+  const r = resume.photoHidden ? { ...resume, photo: "" } : resume;
+  const d = toClaudeFormat(r);
   if (layout === "claude_marketing") return <Template6 d={d} colors={{primary: "#7b1d3f", accent: "#e94560", bg: "#fff", light: "#fdf5f7", text: "#1a1a1a"}} />;
   if (layout === "claude_graduate") return <Template7 d={d} colors={{primary: "#1d4e89", accent: "#00b4d8", bg: "#f0f7ff", text: "#1a1a1a"}} />;
   if (layout === "claude_ats1") return <Template11 d={d} colors={{primary: "#1a1a1a", accent: "#2c5282", rule: "#cccccc"}} />;
@@ -3799,30 +4097,30 @@ function ResumePreview({ resume, template }) {
   if (layout === "claude_ats3") return <Template13 d={d} colors={{primary: "#0a3d62", accent: "#1a7abf", rule: "#d0e8f5", bg: "#f0f7fc"}} />;
   if (layout === "claude_photo1") return <Template15 d={d} colors={{primary: "#0d2137", accent: "#b8922e", bg: "#f5f3ef", text: "#1a1a1a"}} />;
   if (layout === "claude_photo2") return <Template16 d={d} colors={{primary: "#1a1a2e", accent: "#e94560", bg: "#fff", light: "#f8f8fc"}} />;
-  if (layout === "photo_german") return <PhotoGermanLayout resume={resume} accent={accent} />;
-  if (layout === "photo_modern") return <PhotoModernLayout resume={resume} accent={accent} />;
-  if (layout === "photo_sidebar") return <PhotoSidebarLayout resume={resume} accent={accent} />;
-  if (layout === "photo_bold") return <PhotoBoldLayout resume={resume} accent={accent} />;
-  if (layout === "photo_minimal") return <PhotoMinimalLayout resume={resume} accent={accent} />;
-  if (layout === "ats" || layout === "ats_pro") return <ATSLayout resume={resume} accent={accent} pro={layout === "ats_pro"} />;
-  if (layout === "vintage") return <VintageLayout resume={resume} accent={accent} />;
-  if (layout === "typewriter") return <TypewriterLayout resume={resume} accent={accent} />;
-  if (layout === "gazette") return <GazetteLayout resume={resume} accent={accent} />;
-  if (layout === "editorial") return <EditorialLayout resume={resume} accent={accent} />;
-  if (layout === "verdant") return <VerdantLayout resume={resume} accent={accent} />;
-  if (layout === "creative") return <CreativeLayout resume={resume} accent={accent} />;
-  if (layout === "executive") return <ExecutiveLayout resume={resume} accent={accent} />;
-  if (layout === "slate") return <SlateLayout resume={resume} accent={accent} />;
-  if (layout === "neon") return <NeonLayout resume={resume} accent={accent} />;
-  if (layout === "minimal") return <MinimalLayout resume={resume} accent={accent} />;
-  if (layout === "prism") return <PrismLayout resume={resume} accent={accent} />;
-  if (layout === "tokyo") return <TokyoLayout resume={resume} accent={accent} />;
-  if (layout === "coral") return <CoralLayout resume={resume} accent={accent} />;
-  if (layout === "sage") return <SageLayout resume={resume} accent={accent} />;
-  if (layout === "blueprint") return <BlueprintLayout resume={resume} accent={accent} />;
-  if (layout === "lumina") return <LuminaLayout resume={resume} accent={accent} />;
-  if (layout === "obsidian") return <ObsidianLayout resume={resume} accent={accent} />;
-  return <ModernistLayout resume={resume} accent={accent} />;
+  if (layout === "photo_german") return <PhotoGermanLayout resume={r} accent={accent} />;
+  if (layout === "photo_modern") return <PhotoModernLayout resume={r} accent={accent} />;
+  if (layout === "photo_sidebar") return <PhotoSidebarLayout resume={r} accent={accent} />;
+  if (layout === "photo_bold") return <PhotoBoldLayout resume={r} accent={accent} />;
+  if (layout === "photo_minimal") return <PhotoMinimalLayout resume={r} accent={accent} />;
+  if (layout === "ats" || layout === "ats_pro") return <ATSLayout resume={r} accent={accent} pro={layout === "ats_pro"} resumeLayout={r.resumeLayout || "standard"} pageMargin={r.pageMargin || "standard"} />;
+  if (layout === "vintage") return <VintageLayout resume={r} accent={accent} pageMargin={r.pageMargin||"standard"} />;
+  if (layout === "typewriter") return <TypewriterLayout resume={r} accent={accent} />;
+  if (layout === "gazette") return <GazetteLayout resume={r} accent={accent} />;
+  if (layout === "editorial") return <EditorialLayout resume={r} accent={accent} />;
+  if (layout === "verdant") return <VerdantLayout resume={r} accent={accent} />;
+  if (layout === "creative") return <CreativeLayout resume={r} accent={accent} />;
+  if (layout === "executive") return <ExecutiveLayout resume={r} accent={accent} />;
+  if (layout === "slate") return <SlateLayout resume={r} accent={accent} />;
+  if (layout === "neon") return <NeonLayout resume={r} accent={accent} />;
+  if (layout === "minimal") return <MinimalLayout resume={r} accent={accent} pageMargin={r.pageMargin||"standard"} />;
+  if (layout === "prism") return <PrismLayout resume={r} accent={accent} />;
+  if (layout === "tokyo") return <TokyoLayout resume={r} accent={accent} />;
+  if (layout === "coral") return <CoralLayout resume={r} accent={accent} />;
+  if (layout === "sage") return <SageLayout resume={r} accent={accent} />;
+  if (layout === "blueprint") return <BlueprintLayout resume={r} accent={accent} />;
+  if (layout === "lumina") return <LuminaLayout resume={r} accent={accent} />;
+  if (layout === "obsidian") return <ObsidianLayout resume={r} accent={accent} />;
+  return <ModernistLayout resume={r} accent={accent} />;
 }
 // ── Fix 3: Proper React class-based Error Boundary (functional try/catch doesn't catch render errors) ──
 class TemplateBoundary extends React.Component {
@@ -3872,16 +4170,72 @@ function Sec({ title, accent, style = {} }) {
 }
 function EmptyMsg() { return <div style={{ textAlign: "center", padding: "20px", color: "#aaa", fontSize: "10px" }}>Fill in your details on the left to preview your resume.</div>; }
 
+// ── SHARED: Custom sections + Declaration block used by ALL templates ──
+function CustomSectionsBlock({ resume, accent }) {
+  const hasSections = (resume.customSections || []).some(sec => sec.title && (sec.items || []).some(it => it.text));
+  const hasDecl = resume.declaration?.enabled && (resume.declaration.text || resume.declaration.place || resume.declaration.date);
+  if (!hasSections && !hasDecl) return null;
+  const sn = resume.sectionNames || {};
+  return (
+    <div style={{ marginTop: "4px" }}>
+      {(resume.customSections || []).filter(sec => sec.title && (sec.items || []).some(it => it.text)).map(sec => (
+        <React.Fragment key={sec.id}>
+          <Sec title={sec.title} accent={accent} />
+          {sec.items.filter(it => it.text).map(it => (
+            <p key={it.id} style={{ fontSize: "8.5px", color: "#444", marginBottom: "2px" }}>▸ {it.text}</p>
+          ))}
+        </React.Fragment>
+      ))}
+      {hasDecl && (
+        <div style={{ marginTop: "12px", paddingTop: "10px", borderTop: `1px solid ${accent}33` }}>
+          <Sec title={sn.declaration || "Declaration"} accent={accent} />
+          {resume.declaration.text && <p style={{ fontSize: "8px", color: "#555", lineHeight: 1.6, marginBottom: "8px" }}>{resume.declaration.text}</p>}
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8px", color: "#444" }}>
+            {resume.declaration.place && <span>Place: {resume.declaration.place}</span>}
+            {resume.declaration.date && <span>Date: {resume.declaration.date}</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // ─────────────────────────────────────────────────────────
 // 1 & 2 — ATS CLASSIC / ATS PRO  (clean, machine-readable)
 // ─────────────────────────────────────────────────────────
-function ATSLayout({ resume, accent, pro }) {
+function ATSLayout({ resume, accent, pro, resumeLayout = "standard", pageMargin = "standard" }) {
   const skills = skillList(resume.skills);
+  const sn = resume.sectionNames || {};
+  const MARGIN_PAD = { compact: "18px 20px", standard: "28px 30px", spacious: "40px 44px" };
+  const pad = MARGIN_PAD[pageMargin] || "28px 30px";
+  const is2col = resumeLayout === "2col";
   const hasContent = resume.name || resume.summary || (resume.experience||[]).length;
   if (!hasContent) return <EmptyMsg />;
+
+  // Section render map — keyed by sectionOrder entry
+  const SECTION_RENDERERS = {
+    summary: () => resume.summary && <React.Fragment key="summary"><Sec title={sn.summary||"Professional Summary"} accent={accent} /><p style={{ fontSize: "9px", color: "#333", lineHeight: 1.7, marginBottom: "8px" }}>{resume.summary}</p></React.Fragment>,
+    experience: () => (resume.experience||[]).some(e=>e.company||e.role) && <React.Fragment key="experience"><Sec title={sn.experience||"Work Experience"} accent={accent} />{(resume.experience||[]).map(e=>(e.company||e.role)&&<ExpItem key={e.id} exp={e} accent={accent} border={pro} />)}</React.Fragment>,
+    skills: () => skills.length > 0 && <React.Fragment key="skills"><Sec title={sn.skills||"Key Skills"} accent={accent} /><div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "6px" }}>{skills.map((s,i)=><span key={i} style={{ display:"inline-flex", alignItems:"center", gap:"4px", background:`${accent}10`, border:`1px solid ${accent}25`, color:"#333", padding:"2px 7px", borderRadius:"4px", fontSize:"8px" }}>{s.name}{resume.skillShowRating!==false&&<SkillDots rating={s.rating} accent={accent} size={5}/>}</span>)}</div></React.Fragment>,
+    education: () => (resume.education||[]).some(e=>e.institution||e.degree) && <React.Fragment key="education"><Sec title={sn.education||"Education"} accent={accent} />{(resume.education||[]).map(e=>(e.institution||e.degree)&&<EduItem key={e.id} edu={e} accent={accent} />)}</React.Fragment>,
+    certifications: () => (resume.certifications||[]).some(c=>c.name) && <React.Fragment key="certifications"><Sec title={sn.certifications||"Certifications"} accent={accent} />{(resume.certifications||[]).map(c=>c.name&&<p key={c.id} style={{ fontSize: "8.5px", color: "#444", marginBottom: "2px" }}>• {c.name}{c.issuer?` — ${c.issuer}`:""}{c.year?` (${c.year})`:""}</p>)}</React.Fragment>,
+    achievements: () => (resume.achievements||[]).some(a=>a.text) && <React.Fragment key="achievements"><Sec title={sn.achievements||"Achievements"} accent={accent} />{(resume.achievements||[]).map(a=>a.text&&<p key={a.id} style={{ fontSize: "8.5px", color: "#444", marginBottom: "2px" }}>• {a.text}</p>)}</React.Fragment>,
+    projects: () => (resume.projects||[]).some(p=>p.name) && <React.Fragment key="projects"><Sec title={sn.projects||"Projects"} accent={accent} />{(resume.projects||[]).map(p=>p.name&&<div key={p.id} style={{ marginBottom: "6px" }}><p style={{ fontWeight: "700", fontSize: "9px" }}>{p.name}{p.tech?` | ${p.tech}`:""}</p>{p.description&&<p style={{ fontSize: "8.5px", color: "#555" }}>{p.description}</p>}</div>)}</React.Fragment>,
+    languages: () => resume.languages && <React.Fragment key="languages"><Sec title={sn.languages||"Languages"} accent={accent} /><p style={{ fontSize: "8.5px", color: "#555" }}>{resume.languages}</p></React.Fragment>,
+    strengths: () => (resume.strengths||[]).some(s=>s.text) && <React.Fragment key="strengths"><Sec title={sn.strengths||"Core Strengths"} accent={accent} />{(resume.strengths||[]).filter(s=>s.text).map(s=><div key={s.id} style={{display:"flex",gap:"4px",marginBottom:"2px"}}><span style={{color:accent,fontWeight:"700",fontSize:"8px",flexShrink:0}}>▸</span><p style={{fontSize:"8px",color:"#444",lineHeight:1.4}}>{s.text}</p></div>)}</React.Fragment>,
+    hobbies: () => (resume.hobbies||[]).some(h=>h.name) && <React.Fragment key="hobbies"><Sec title={sn.hobbies||"Hobbies & Interests"} accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:"#444",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"8px"}}>·</span>,el],[])}</div></React.Fragment>,
+    interests: () => resume.interests && <React.Fragment key="interests"><Sec title={sn.interests||"Interests"} accent={accent} /><p style={{ fontSize: "8.5px", color: "#555" }}>{resume.interests}</p></React.Fragment>,
+    other: () => resume.other && <React.Fragment key="other"><Sec title="Other Information" accent={accent} /><p style={{ fontSize: "8.5px", color: "#555" }}>{resume.other}</p></React.Fragment>,
+    custom: () => <CustomSectionsBlock key="custom" resume={resume} accent={accent} />,
+  };
+
+  const DEFAULT_ORDER = ["summary","experience","education","skills","projects","certifications","achievements","strengths","hobbies","interests","languages","other","custom"];
+  const order = (resume.sectionOrder && resume.sectionOrder.length > 0) ? resume.sectionOrder : DEFAULT_ORDER;
+
   return (
-    <div id="resume-preview" style={{ background: "#fff", fontFamily: "Arial, sans-serif", fontSize: "10px", color: "#111", lineHeight: 1.5, padding: "28px 30px", boxShadow: "0 4px 24px rgba(0,0,0,0.18)", borderRadius: "6px" , minHeight: "1123px", width: "794px", boxSizing: "border-box"}}>
-      {/* ATS Header — plain text, no background boxes */}
+    <div id="resume-preview" style={{ background: "#fff", fontFamily: "Arial, sans-serif", fontSize: "10px", color: "#111", lineHeight: 1.5, padding: pad, boxShadow: "0 4px 24px rgba(0,0,0,0.18)", borderRadius: "6px", minHeight: "1123px", width: "794px", boxSizing: "border-box" }}>
+      {/* ATS Header */}
       <div style={{ borderBottom: `2px solid ${accent}`, paddingBottom: "10px", marginBottom: "12px" }}>
         <h1 style={{ fontSize: "20px", fontWeight: "700", color: accent, marginBottom: "2px", letterSpacing: "-0.3px" }}>{resume.name || "Your Name"}</h1>
         <p style={{ fontSize: "11px", color: "#444", marginBottom: "5px" }}>{resume.title || "Professional Title"}</p>
@@ -3893,26 +4247,26 @@ function ATSLayout({ resume, accent, pro }) {
           {resume.website && <span>🌐 {resume.website}</span>}
         </div>
       </div>
-      {resume.summary && <><Sec title="Professional Summary" accent={accent} /><p style={{ fontSize: "9px", color: "#333", lineHeight: 1.7, marginBottom: "8px" }}>{resume.summary}</p></>}
-      {(resume.experience||[]).some(e=>e.company||e.role) && <><Sec title="Work Experience" accent={accent} />{(resume.experience||[]).map(e=>(e.company||e.role)&&<ExpItem key={e.id} exp={e} accent={accent} border={pro} />)}</>}
-      {skills.length > 0 && <><Sec title="Key Skills" accent={accent} /><div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "6px" }}>{skills.map((s,i)=><span key={i} style={{ display:"inline-flex", alignItems:"center", gap:"4px", background:`${accent}10`, border:`1px solid ${accent}25`, color:"#333", padding:"2px 7px", borderRadius:"4px", fontSize:"8px" }}>{s.name}<SkillDots rating={s.rating} accent={accent} size={5}/></span>)}</div></>}
-      {(resume.education||[]).some(e=>e.institution||e.degree) && <><Sec title="Education" accent={accent} />{(resume.education||[]).map(e=>(e.institution||e.degree)&&<EduItem key={e.id} edu={e} accent={accent} />)}</>}
-      {(resume.certifications||[]).some(c=>c.name) && <><Sec title="Certifications" accent={accent} />{(resume.certifications||[]).map(c=>c.name&&<p key={c.id} style={{ fontSize: "8.5px", color: "#444", marginBottom: "2px" }}>• {c.name}{c.issuer?` — ${c.issuer}`:""}{c.year?` (${c.year})`:""}</p>)}</>}
-      {(resume.achievements||[]).some(a=>a.text) && <><Sec title="Achievements" accent={accent} />{(resume.achievements||[]).map(a=>a.text&&<p key={a.id} style={{ fontSize: "8.5px", color: "#444", marginBottom: "2px" }}>• {a.text}</p>)}</>}
-      {(resume.projects||[]).some(p=>p.name) && <><Sec title="Projects" accent={accent} />{(resume.projects||[]).map(p=>p.name&&<div key={p.id} style={{ marginBottom: "6px" }}><p style={{ fontWeight: "700", fontSize: "9px" }}>{p.name}{p.tech?` | ${p.tech}`:""}</p>{p.description&&<p style={{ fontSize: "8.5px", color: "#555" }}>{p.description}</p>}</div>)}</>}
-      {resume.languages && <><Sec title="Languages" accent={accent} /><p style={{ fontSize: "8.5px", color: "#555" }}>{resume.languages}</p></>}
-      {(resume.strengths||[]).some(s=>s.text) && <><Sec title="Core Strengths" accent={accent} />{(resume.strengths||[]).filter(s=>s.text).map(s=><div key={s.id} style={{display:"flex",gap:"4px",marginBottom:"2px"}}><span style={{color:accent,fontWeight:"700",fontSize:"8px",flexShrink:0}}>▸</span><p style={{fontSize:"8px",color:"#444",lineHeight:1.4}}>{s.text}</p></div>)}</>}
-      {(resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:"#444",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"8px"}}>·</span>,el],[])}</div></>}
-      {resume.interests && <><Sec title="Interests" accent={accent} /><p style={{ fontSize: "8.5px", color: "#555" }}>{resume.interests}</p></>}
-      {resume.other && <><Sec title="Other Information" accent={accent} /><p style={{ fontSize: "8.5px", color: "#555" }}>{resume.other}</p></>}
-      {(resume.customSections || []).filter(sec => sec.title && (sec.items || []).some(it => it.text)).map(sec => (
-        <React.Fragment key={sec.id}>
-          <Sec title={sec.title} accent={accent} />
-          {sec.items.filter(it => it.text).map(it => (
-            <p key={it.id} style={{ fontSize: "8.5px", color: "#444", marginBottom: "2px" }}>▸ {it.text}</p>
-          ))}
-        </React.Fragment>
-      ))}
+      {is2col ? (
+        /* 2-Column mode: sidebar (skills/certs/edu/langs/strengths/hobbies) | main (rest) */
+        (() => {
+          const SIDEBAR_KEYS = new Set(["skills","education","certifications","languages","strengths","hobbies","interests","other"]);
+          const mainKeys = order.filter(k => !SIDEBAR_KEYS.has(k));
+          const sideKeys = order.filter(k => SIDEBAR_KEYS.has(k));
+          return (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1.7fr", gap: "20px", alignItems: "start" }}>
+              <div style={{ borderRight: `1px solid ${accent}25`, paddingRight: "16px" }}>
+                {sideKeys.map(key => SECTION_RENDERERS[key] ? SECTION_RENDERERS[key]() : null)}
+              </div>
+              <div>
+                {mainKeys.map(key => SECTION_RENDERERS[key] ? SECTION_RENDERERS[key]() : null)}
+              </div>
+            </div>
+          );
+        })()
+      ) : (
+        order.map(key => SECTION_RENDERERS[key] ? SECTION_RENDERERS[key]() : null)
+      )}
     </div>
   );
 }
@@ -3920,12 +4274,12 @@ function ATSLayout({ resume, accent, pro }) {
 // ─────────────────────────────────────────────────────────
 // 3 — PARCHMENT (aged paper, sepia tones, serif font)
 // ─────────────────────────────────────────────────────────
-function VintageLayout({ resume, accent }) {
+function VintageLayout({ resume, accent, pageMargin = "standard" }) {
   const skills = skillList(resume.skills);
   const bg = "#f9f3e3"; const border = "#c8ad8f"; const ink = "#3d2b1f";
   if (!resume.name && !resume.summary) return <EmptyMsg />;
   return (
-    <div id="resume-preview" style={{ background: bg, fontFamily: "'Georgia', serif", fontSize: "10px", color: ink, lineHeight: 1.6, padding: "28px 30px", boxShadow: `0 4px 24px rgba(61,43,31,0.25)`, borderRadius: "4px", border: `2px solid ${border}` , minHeight: "1123px", width: "794px", boxSizing: "border-box"}}>
+    <div id="resume-preview" style={{ background: bg, fontFamily: "'Georgia', serif", fontSize: "10px", color: ink, lineHeight: 1.6, padding: { compact: "16px 18px", standard: "28px 30px", spacious: "40px 44px" }[pageMargin] || "28px 30px", boxShadow: `0 4px 24px rgba(61,43,31,0.25)`, borderRadius: "4px", border: `2px solid ${border}` , minHeight: "1123px", width: "794px", boxSizing: "border-box"}}>
       <div style={{ textAlign: "center", borderBottom: `1px solid ${border}`, paddingBottom: "12px", marginBottom: "14px" }}>
         <h1 style={{ fontFamily: "'Georgia',serif", fontSize: "22px", fontWeight: "700", color: ink, marginBottom: "3px", letterSpacing: "1px" }}>{resume.name || "Your Name"}</h1>
         <p style={{ fontSize: "10px", color: accent, fontStyle: "italic", marginBottom: "6px" }}>{resume.title || "Professional Title"}</p>
@@ -3945,6 +4299,7 @@ function VintageLayout({ resume, accent }) {
       {(resume.certifications||[]).some(c=>c.name) && <><p style={{ fontSize: "8px", fontWeight: "700", color: accent, textTransform: "uppercase", letterSpacing: "2px", borderBottom: `1px solid ${border}`, paddingBottom: "2px", marginBottom: "6px" }}>Certifications</p>{(resume.certifications||[]).map(c=>c.name&&<p key={c.id} style={{ fontSize: "8px", color: ink, marginBottom: "2px" }}>• {c.name}</p>)}</>}
       {(resume.strengths||[]).some(s=>s.text) && <><p style={{ fontSize: "8px", fontWeight: "700", color: accent, textTransform: "uppercase", letterSpacing: "2px", borderBottom: `1px solid ${border}`, paddingBottom: "2px", marginBottom: "6px" }}>Strengths</p>{(resume.strengths||[]).filter(s=>s.text).map(s=><p key={s.id} style={{fontSize:"8px",color:ink,marginBottom:"2px",fontStyle:"italic"}}>▸ {s.text}</p>)}</>}
       {(resume.hobbies||[]).some(h=>h.name) && <><p style={{ fontSize: "8px", fontWeight: "700", color: accent, textTransform: "uppercase", letterSpacing: "2px", borderBottom: `1px solid ${border}`, paddingBottom: "2px", marginBottom: "6px" }}>Hobbies</p><div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:ink,fontStyle:"italic"}}>{h.icon&&<span style={{marginRight:"2px"}}>{h.icon}</span>}{h.name}</span>)}</div></>}
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -3976,6 +4331,7 @@ function TypewriterLayout({ resume, accent }) {
       {(resume.certifications||[]).some(c=>c.name) && <><p style={{ fontSize: "8px", fontWeight: "bold", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "4px" }}>[ CERTIFICATIONS ]</p>{(resume.certifications||[]).map(c=>c.name&&<p key={c.id} style={{fontSize:"8.5px",marginBottom:"2px"}}>[{c.name}]</p>)}</>}
       {(resume.strengths||[]).some(s=>s.text) && <><p style={{ fontSize: "8px", fontWeight: "bold", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "4px" }}>[ STRENGTHS ]</p>{(resume.strengths||[]).filter(s=>s.text).map(s=><p key={s.id} style={{fontSize:"9px",lineHeight:1.7,marginBottom:"3px"}}>▸ {s.text}</p>)}</>}
       {(resume.hobbies||[]).some(h=>h.name) && <><p style={{ fontSize: "8px", fontWeight: "bold", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "4px" }}>[ HOBBIES ]</p><div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8.5px"}}>[{h.icon&&<span style={{marginRight:"2px"}}>{h.icon}</span>}{h.name}]</span>)}</div></>}
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4013,6 +4369,7 @@ function GazetteLayout({ resume, accent }) {
           {(resume.hobbies||[]).some(h=>h.name) && <><p style={{ fontSize: "7.5px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1.5px", color: rule, borderBottom: `1px solid ${rule}`, paddingBottom: "2px", marginBottom: "5px" }}>Hobbies</p><div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:"#555"}}>{h.icon&&<span style={{marginRight:"2px"}}>{h.icon}</span>}{h.name}</span>)}</div></>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4133,6 +4490,7 @@ function EditorialLayout({ resume, accent }) {
         {!strengthsLeft && (resume.strengths||[]).some(s=>s.text) && <><Sec title="Strengths" accent={accent} />{(resume.strengths||[]).filter(s=>s.text).map(s=><div key={s.id} style={{display:"flex",gap:"4px",marginBottom:"2px"}}><span style={{color:accent,fontWeight:"700",fontSize:"8px",flexShrink:0}}>▸</span><p style={{fontSize:"8px",color:"#444",lineHeight:1.4}}>{s.text}</p></div>)}</>}
         {!hobbiesLeft && (resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:"#444",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"8px"}}>·</span>,el],[])}</div></>}
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4187,6 +4545,7 @@ function VerdantLayout({ resume, accent }) {
           {hobbiesInPanel && (resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"4px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:"#444"}}>{h.name}</span>)}</div></>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4226,6 +4585,7 @@ function ModernistLayout({ resume, accent }) {
         {(resume.strengths||[]).some(s=>s.text) && <><Sec title="Core Strengths" accent={accent} />{(resume.strengths||[]).filter(s=>s.text).map(s=><div key={s.id} style={{display:"flex",gap:"4px",marginBottom:"2px"}}><span style={{color:accent,fontWeight:"700",fontSize:"8px",flexShrink:0}}>▸</span><p style={{fontSize:"8px",color:"#444",lineHeight:1.4}}>{s.text}</p></div>)}</>}
         {(resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:"#444",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"8px"}}>·</span>,el],[])}</div></>}
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4293,6 +4653,7 @@ function CreativeLayout({ resume, accent }) {
         {!strengthsLeft && (resume.strengths||[]).some(s=>s.text) && <><Sec title="Strengths" accent={accent} />{(resume.strengths||[]).filter(s=>s.text).map(s=><div key={s.id} style={{display:"flex",gap:"4px",marginBottom:"2px"}}><span style={{color:accent,fontWeight:"700",fontSize:"8px",flexShrink:0}}>▸</span><p style={{fontSize:"8px",color:"#444",lineHeight:1.4}}>{s.text}</p></div>)}</>}
         {!hobbiesLeft && (resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:"#444",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"8px"}}>·</span>,el],[])}</div></>}
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4347,6 +4708,7 @@ function ExecutiveLayout({ resume, accent }) {
           {hobbiesRight && (resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies & Interests" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"4px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"7.5px",color:"#555",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"7.5px"}}>·</span>,el],[])}</div></>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4404,6 +4766,7 @@ function SlateLayout({ resume, accent }) {
           {!hobbiesLeft && (resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"4px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"7.5px",color:"#555",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"7.5px"}}>·</span>,el],[])}</div></>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4463,16 +4826,17 @@ function NeonLayout({ resume, accent }) {
           {(resume.hobbies||[]).some(h=>h.name) && <><p style={{fontSize:"8px",fontWeight:"700",color:accent,letterSpacing:"2px",marginBottom:"4px",marginTop:"10px"}}>// HOBBIES</p><div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"7.5px",color:"#8b949e"}}>{h.icon&&<span style={{marginRight:"2px"}}>{h.icon}</span>}{h.name}</span>)}</div></>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
 
 // ── 13 ─ MINIMAL ───────────────────────────────────────────
-function MinimalLayout({ resume, accent }) {
+function MinimalLayout({ resume, accent, pageMargin = "standard" }) {
   const skills = skillList(resume.skills);
   if (!resume.name && !resume.summary) return <EmptyMsg />;
   return (
-    <div id="resume-preview" style={{ background: "#fff", fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: "10px", color: "#1a1a1a", lineHeight: 1.7, padding: "40px 44px" , minHeight: "1123px", width: "794px", boxSizing: "border-box"}}>
+    <div id="resume-preview" style={{ background: "#fff", fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: "10px", color: "#1a1a1a", lineHeight: 1.7, padding: { compact: "22px 26px", standard: "40px 44px", spacious: "52px 58px" }[pageMargin] || "40px 44px" , minHeight: "1123px", width: "794px", boxSizing: "border-box"}}>
       <h1 style={{ fontSize: "28px", fontWeight: "300", letterSpacing: "2px", color: "#111", marginBottom: "4px" }}>{resume.name || "Your Name"}</h1>
       <p style={{ fontSize: "11px", color: "#666", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "10px" }}>{resume.title || "Professional Title"}</p>
       <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", fontSize: "8px", color: "#888", marginBottom: "18px" }}>
@@ -4510,6 +4874,7 @@ function MinimalLayout({ resume, accent }) {
           {(resume.hobbies||[]).some(h=>h.name) && <><p style={{fontSize:"8px",fontWeight:"700",letterSpacing:"3px",textTransform:"uppercase",color:"#111",marginBottom:"8px",marginTop:"10px"}}>Hobbies</p><div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:"#555"}}>{h.icon&&<span style={{marginRight:"2px"}}>{h.icon}</span>}{h.name}</span>)}</div></>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4546,6 +4911,7 @@ function PrismLayout({ resume, accent }) {
           {(resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"7.5px",color:"#444",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"7.5px"}}>·</span>,el],[])}</div></>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4599,6 +4965,7 @@ function TokyoLayout({ resume, accent }) {
           </div>
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4637,6 +5004,7 @@ function CoralLayout({ resume, accent }) {
           {(resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"4px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"7.5px",color:"#444",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"7.5px"}}>·</span>,el],[])}</div></>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4677,6 +5045,7 @@ function SageLayout({ resume, accent }) {
         {(resume.strengths||[]).some(s=>s.text) && <><Sec title="Strengths" accent={accent} />{(resume.strengths||[]).filter(s=>s.text).map(s=><div key={s.id} style={{display:"flex",gap:"4px",marginBottom:"2px"}}><span style={{color:accent,fontWeight:"700",fontSize:"8px",flexShrink:0}}>▸</span><p style={{fontSize:"8px",color:"#444",lineHeight:1.4}}>{s.text}</p></div>)}</>}
         {(resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:"#444",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"8px"}}>·</span>,el],[])}</div></>}
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4733,6 +5102,7 @@ function BlueprintLayout({ resume, accent }) {
           </>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4771,6 +5141,7 @@ function LuminaLayout({ resume, accent }) {
           {(resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"7.5px",color:"#444",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"7.5px"}}>·</span>,el],[])}</div></>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4834,6 +5205,7 @@ function ObsidianLayout({ resume, accent }) {
           {(resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"4px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"7.5px",color:"#9ca3af",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#555",fontSize:"7.5px"}}>·</span>,el],[])}</div></>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4946,6 +5318,7 @@ function PhotoGermanLayout({ resume, accent }) {
           </div>
         </div>}
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -4984,6 +5357,7 @@ function PhotoModernLayout({ resume, accent }) {
           {(resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:"#555",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"8px"}}>·</span>,el],[])}</div></>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -5032,6 +5406,7 @@ function PhotoSidebarLayout({ resume, accent }) {
         {(resume.strengths||[]).some(s=>s.text) && <><Sec title="Strengths" accent={accent} />{(resume.strengths||[]).filter(s=>s.text).map(s=><div key={s.id} style={{display:"flex",gap:"4px",marginBottom:"2px"}}><span style={{color:accent,fontWeight:"700",fontSize:"8px",flexShrink:0}}>▸</span><p style={{fontSize:"8px",color:"#4b5563",lineHeight:1.4}}>{s.text}</p></div>)}</>}
         {(resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:"#555",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"8px"}}>·</span>,el],[])}</div></>}
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -5072,6 +5447,7 @@ function PhotoBoldLayout({ resume, accent }) {
           {(resume.hobbies||[]).some(h=>h.name) && <><Sec title="Hobbies" accent={accent} /><div style={{display:"flex",flexWrap:"wrap",gap:"5px",marginBottom:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8px",color:"#444",display:"flex",alignItems:"center",gap:"2px"}}>{h.icon&&<span>{h.icon}</span>}<span>{h.name}</span></span>).reduce((acc,el,i)=>[...acc,i>0&&<span key={"dot"+i} style={{color:"#ccc",fontSize:"8px"}}>·</span>,el],[])}</div></>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }
@@ -5118,6 +5494,7 @@ function PhotoMinimalLayout({ resume, accent }) {
           {(resume.hobbies||[]).some(h=>h.name) && <><h2 style={{fontSize:"9px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"2px",color:"#111",marginBottom:"6px",marginTop:"10px"}}>Hobbies</h2><div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>{(resume.hobbies||[]).filter(h=>h.name).map(h=><span key={h.id} style={{fontSize:"8.5px",color:"#555"}}>{h.icon&&<span style={{marginRight:"2px"}}>{h.icon}</span>}{h.name}</span>)}</div></>}
         </div>
       </div>
+      <CustomSectionsBlock resume={resume} accent={accent} />
     </div>
   );
 }

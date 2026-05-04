@@ -744,6 +744,27 @@ Return this EXACT JSON structure (fill every field you find):
         print(f"❌ Resume parse error: {e}")
         return {"status": "error", "error": str(e)}
 
+
+class ResumeParseTextRequest(BaseModel):
+    text: str
+    job_description: str = ""
+
+
+@app.post("/parse-resume-text")
+async def parse_resume_text(request: ResumeParseTextRequest):
+    """
+    Parses plain text pasted directly by the user (from ChatGPT, Google Docs, etc).
+    Reuses the same AI parsing prompt as /parse-resume.
+    """
+    # Reuse the ResumeParseRequest model + parse_resume logic by creating an equivalent object
+    parse_req = ResumeParseRequest(
+        resume_text=request.text,
+        job_description=request.job_description,
+    )
+    result = await parse_resume(parse_req)
+    return result.get("data", result) if isinstance(result, dict) and "data" in result else result
+
+
 # ── NEW: Generate summary from user context (when summary is empty) ──────────
 class SummaryContextRequest(BaseModel):
     job_title: str = ""
