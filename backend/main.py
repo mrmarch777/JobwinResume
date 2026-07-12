@@ -105,6 +105,10 @@ def home():
         }
     }
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.get("/jobs")
 async def get_jobs(role: str, city: str, num_results: int = 20, plan: str = "free"):
     if not role or not city:
