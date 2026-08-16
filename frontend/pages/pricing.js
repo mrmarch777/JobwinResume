@@ -105,6 +105,12 @@ export default function Pricing() {
     if (!user) { router.push("/login"); return; }
     if (plan.id === "free" || plan.id === currentPlan) return;
 
+    // ── PAYMENTS TEMPORARILY DISABLED DURING DEVELOPMENT ──
+    alert(`🚀 The ${plan.name} plan will be available for purchase very soon! We're putting the finishing touches on our platform. Stay tuned!`);
+    return;
+
+    // ── ORIGINAL RAZORPAY PAYMENT CODE (re-enable when ready) ──
+    /*
     // Validate plan-specific promo before proceeding (monthly)
     if (appliedPromo && appliedPromo.plan && appliedPromo.plan !== plan.id) {
       alert(`⚠️ The promo code "${appliedPromo.code}" is only valid for the ${appliedPromo.plan.charAt(0).toUpperCase() + appliedPromo.plan.slice(1)} plan.`);
@@ -165,6 +171,7 @@ export default function Pricing() {
       alert("Payment failed. Please try again.");
       setLoading(null);
     }
+    */
   };
 
   const firstName = user?.email?.split("@")[0] || "";
