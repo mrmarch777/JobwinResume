@@ -92,6 +92,9 @@ export default function App({ Component, pageProps }) {
     <ThemeContext.Provider value={{ theme, themeName, setTheme }}>
       <PlanContext.Provider value={{ plan, limits, canAccess, loadingPlan, refreshPlan: loadPlan }}>
         <Head>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <link rel="icon" href="/favicon.ico" />
+          <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=Noto+Serif:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />

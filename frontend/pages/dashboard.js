@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
+import PageHead from "../components/PageHead";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabase";
 import { useTheme, THEMES, usePlan, PLAN_LIMITS } from "../lib/contexts";
 import Sidebar from "../components/Sidebar";
+import { SkeletonPulse, SkeletonCard, shimmerKeyframes } from '../components/Skeleton';
 
 function CountUp({ end, duration = 1500, prefix = "", suffix = "", decimals = 0, format = false }) {
   const [count, setCount] = useState(0);
@@ -151,8 +153,21 @@ export default function Dashboard() {
   };
 
   if (!user) return (
-    <div style={{ minHeight: "100vh", background: "#09090f", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ color: "#6C63FF", fontFamily: "DM Sans, sans-serif" }}>Loading...</div>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#09090f' }}>
+      <style>{shimmerKeyframes}</style>
+      <div style={{ width: '240px', background: '#0d0d14', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
+        <SkeletonPulse width="140px" height="28px" style={{ margin: '24px' }} />
+        {[...Array(6)].map((_, i) => (
+          <SkeletonPulse key={i} width="180px" height="18px" style={{ margin: '12px 24px' }} />
+        ))}
+      </div>
+      <main style={{ flex: 1, padding: '32px' }}>
+        <SkeletonPulse width="300px" height="40px" style={{ marginBottom: '12px' }} />
+        <SkeletonPulse width="400px" height="16px" style={{ marginBottom: '32px' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+          {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
+        </div>
+      </main>
     </div>
   );
 
@@ -161,6 +176,7 @@ export default function Dashboard() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: t.bg, color: t.text, fontFamily: "'DM Sans', Arial, sans-serif", transition: "all 0.4s ease" }}>
+      <PageHead title="Dashboard" description="Your career command centre. Track applications, manage resumes, and accelerate your job search." />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Serif:ital,wght@0,600;0,700;1,600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -198,6 +214,8 @@ export default function Dashboard() {
             <div className="desktop-hide" style={{ display: "flex", gap: "6px", alignItems: "center", marginRight: "4px" }}>
                {Object.entries(THEMES).map(([thm, data]) => (
                   <div key={thm} onClick={() => setTheme(thm)}
+                     role="button"
+                     aria-label={`Switch to ${thm} theme`}
                      title={thm}
                      style={{
                         width: "16px", height: "16px", borderRadius: "50%", cursor: "pointer",
@@ -210,10 +228,10 @@ export default function Dashboard() {
               {planLabel.toUpperCase()} PLAN
             </div>
             <div style={{ position: "relative", cursor: "pointer" }}>
-              <div style={{ width: "36px", height: "36px", background: "rgba(255,255,255,0.05)", border: `1px solid ${t.border}`, borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>🔔</div>
+              <div role="button" aria-label="Notifications" style={{ width: "36px", height: "36px", background: "rgba(255,255,255,0.05)", border: `1px solid ${t.border}`, borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>🔔</div>
               {notifications > 0 && <div style={{ position: "absolute", top: "-4px", right: "-4px", width: "16px", height: "16px", background: "#FF6584", borderRadius: "50%", fontSize: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "700" }}>{notifications}</div>}
             </div>
-            <div style={{ width: "36px", height: "36px", background: "rgba(255,255,255,0.05)", border: `1px solid ${t.border}`, borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", cursor: "pointer" }}>⚙️</div>
+            <div role="button" aria-label="Settings" style={{ width: "36px", height: "36px", background: "rgba(255,255,255,0.05)", border: `1px solid ${t.border}`, borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", cursor: "pointer" }}>⚙️</div>
             <button className="action-btn" onClick={() => router.push("/pricing")}
               style={{ padding: "9px 20px", background: "linear-gradient(135deg, #6C63FF, #FF6584)", color: "white", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", transition: "all 0.3s" }}>
               ⚡ Upgrade
@@ -424,10 +442,11 @@ export default function Dashboard() {
               {showActivity && (
                 <div style={{ marginTop: "20px" }}>
                   {activities.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "24px 0" }}>
-                      <div style={{ fontSize: "40px", marginBottom: "10px" }}>📋</div>
-                      <p style={{ color: t.muted, fontSize: "13px", marginBottom: "12px" }}>No applications yet.<br/>Start applying to track your pipeline!</p>
-                      <button onClick={(e) => { e.stopPropagation(); router.push("/apply"); }} style={{ padding: "9px 20px", background: "rgba(108,99,255,0.12)", color: "#A29BFE", border: "1px solid rgba(108,99,255,0.25)", borderRadius: "8px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>Start Applying →</button>
+                    <div style={{ textAlign: 'center', padding: '32px 20px' }}>
+                      <div style={{ width: '64px', height: '64px', background: 'rgba(108,99,255,0.08)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', margin: '0 auto 16px' }}>📋</div>
+                      <h4 style={{ fontFamily: "'Noto Serif', serif", fontSize: '16px', fontWeight: '600', color: '#E8E6F0', marginBottom: '8px' }}>No Activity Yet</h4>
+                      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', marginBottom: '16px', lineHeight: '1.5' }}>Start applying to jobs to see your<br/>application pipeline here.</p>
+                      <button onClick={(e) => { e.stopPropagation(); router.push('/apply'); }} style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #6C63FF, #FF6584)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Start Applying →</button>
                     </div>
                   ) : (
                     <div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import PageHead from "../components/PageHead";
 
 const THEMES = {
   nocturnal: { bg: "#09090f", card: "#13131a", border: "#2a2a3a", text: "#f0f0ff", sub: "#8888aa", accent: "#7c6ff7", accentB: "#ff6eb4" },
@@ -690,6 +691,7 @@ export default function ResumeAI() {
   if (screen === "intro") {
     return (
       <div style={s.page}>
+        <PageHead title="AI Resume Builder" description="Create your resume through an interactive AI conversation." />
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Serif:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
         <Topbar />
         <div style={s.introWrap}>
@@ -713,6 +715,7 @@ export default function ResumeAI() {
 
   return (
     <div style={s.page}>
+      <PageHead title="AI Resume Builder" description="Create your resume through an interactive AI conversation." />
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Serif:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
       <Topbar />
       <div style={s.chatWrap}>

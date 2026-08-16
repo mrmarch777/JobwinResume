@@ -42,6 +42,7 @@ export const THEMES = {
 
 // ── PLAN LIMITS ───────────────────────────────────────────────────────────────
 // 🚧 DEV MODE: All features unlocked — restore per-plan limits before launch
+const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
 export const PLAN_LIMITS = {
   free:     { resumes: 1,        searches: 3,        templates: 5,   apply: false, interview: false, atsOptimise: false, hrFinder: false, label: "Free"     },
   basic:    { resumes: Infinity, searches: 10,       templates: 14,  apply: false, interview: false, atsOptimise: true,  hrFinder: false, label: "Basic"    },
@@ -51,13 +52,13 @@ export const PLAN_LIMITS = {
 
 // Feature keys users can check against
 export const FEATURES = {
-  interview:    p => PLAN_LIMITS[p]?.interview    ?? true,
-  apply:        p => PLAN_LIMITS[p]?.apply        ?? true,
-  atsOptimise:  p => PLAN_LIMITS[p]?.atsOptimise  ?? true,
-  hrFinder:     p => PLAN_LIMITS[p]?.hrFinder     ?? true,
-  resumeCount:  p => PLAN_LIMITS[p]?.resumes      ?? Infinity,
-  searchCount:  p => PLAN_LIMITS[p]?.searches     ?? Infinity,
-  templateCount:p => PLAN_LIMITS[p]?.templates    ?? Infinity,
+  interview:    p => isDevMode || (PLAN_LIMITS[p]?.interview    ?? true),
+  apply:        p => isDevMode || (PLAN_LIMITS[p]?.apply        ?? true),
+  atsOptimise:  p => isDevMode || (PLAN_LIMITS[p]?.atsOptimise  ?? true),
+  hrFinder:     p => isDevMode || (PLAN_LIMITS[p]?.hrFinder     ?? true),
+  resumeCount:  p => isDevMode ? Infinity : (PLAN_LIMITS[p]?.resumes      ?? Infinity),
+  searchCount:  p => isDevMode ? Infinity : (PLAN_LIMITS[p]?.searches     ?? Infinity),
+  templateCount:p => isDevMode ? Infinity : (PLAN_LIMITS[p]?.templates    ?? Infinity),
 };
 
 // ── CONTEXTS ──────────────────────────────────────────────────────────────────

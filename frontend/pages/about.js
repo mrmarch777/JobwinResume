@@ -1,4 +1,4 @@
-import Head from "next/head";
+import PageHead from "../components/PageHead";
 import { useRouter } from "next/router";
 import { useState } from "react";
 
@@ -8,11 +8,7 @@ export default function About() {
 
   return (
     <div style={{ background: "#0a0a1a", color: "white", minHeight: "100vh", fontFamily: "'DM Sans', Arial, sans-serif" }}>
-      <Head>
-        <title>About Us | JobwinResume</title>
-        <meta name="description" content="Learn about JobwinResume's team and the legal owner behind India's smartest job search platform." />
-      </Head>
-
+      <PageHead title="About Us" description="Learn about JobwinResume's team and the legal owner behind India's smartest job search platform." />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }

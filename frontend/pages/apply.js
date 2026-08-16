@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Head from "next/head";
+import PageHead from "../components/PageHead";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabase";
 import { useTheme, THEMES, usePlan, PLAN_LIMITS } from "../lib/contexts";
@@ -158,6 +158,7 @@ export default function Apply() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: t.bg, color: t.text, fontFamily: "'DM Sans', Arial, sans-serif", transition: "all 0.4s" }}>
+      <PageHead title="One-Click Apply" description="Instantly apply to your dream jobs with AI-generated cover letters." />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Serif:ital,wght@0,600;0,700;1,600&display=swap');
         * { box-sizing:border-box; margin:0; padding:0; }

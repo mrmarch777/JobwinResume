@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import PageHead from "../components/PageHead";
 import { supabase } from "../lib/supabase";
 import { extractTextFromPDF, extractTextFromDOCX } from "../lib/resumeParser";
 
@@ -93,6 +94,7 @@ export default function ResumeTailor() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f5f5f5" }}>
+      <PageHead title="Resume Tailor & ATS Analyzer" description="Tailor your resume to specific job descriptions and check ATS compatibility." />
       <div style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", padding: "20px 40px" }}>
         <h1 onClick={() => router.push("/")} style={{ color: "white", margin: 0, fontSize: "24px", cursor: "pointer" }}>🚀 JobwinResume</h1>
       </div>

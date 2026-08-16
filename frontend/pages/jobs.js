@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
+import PageHead from '../components/PageHead';
 
 export default function Jobs() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function Jobs() {
   
   return (
     <div style={{ minHeight: '100vh', background: '#09090f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <PageHead title="Jobs" description="Redirecting to job search..." />
       <div style={{ color: '#6C63FF', fontFamily: "DM Sans, sans-serif" }}>Redirecting to Job Search...</div>
     </div>
   );

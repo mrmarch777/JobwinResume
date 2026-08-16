@@ -123,7 +123,7 @@ export function validateAndCleanResume(resumeData) {
 
 export async function extractTextFromPDF(file) {
   try {
-    console.log(`📄 [PDF] Starting extraction from ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+    // console.log(`📄 [PDF] Starting extraction from ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
 
     const pdfjsLib = await import("pdfjs-dist/build/pdf.mjs");
 
@@ -139,7 +139,7 @@ export async function extractTextFromPDF(file) {
       try {
         pdfjsLib.GlobalWorkerOptions.workerSrc = url;
         workerSet = true;
-        console.log(`✅ [PDF] Worker configured: ${url.substring(0, 50)}...`);
+        // console.log(`✅ [PDF] Worker configured: ${url.substring(0, 50)}...`);
         break;
       } catch (e) {
         console.warn(`⚠️ [PDF] Worker URL failed: ${url.substring(0, 50)}...`);
@@ -166,7 +166,7 @@ export async function extractTextFromPDF(file) {
     for (const options of loadOptions) {
       try {
         pdf = await pdfjsLib.getDocument(options).promise;
-        console.log(`✅ [PDF] Loaded. Total pages: ${pdf.numPages}`);
+        // console.log(`✅ [PDF] Loaded. Total pages: ${pdf.numPages}`);
         break;
       } catch (err) {
         lastError = err;
@@ -183,7 +183,7 @@ export async function extractTextFromPDF(file) {
     let skippedPages = 0;
     const maxPages = Math.min(pdf.numPages, 50);
 
-    console.log(`📄 [PDF] Processing up to ${maxPages} pages...`);
+    // console.log(`📄 [PDF] Processing up to ${maxPages} pages...`);
 
     for (let i = 1; i <= maxPages; i++) {
       try {
@@ -220,7 +220,7 @@ export async function extractTextFromPDF(file) {
         let pageText = "";
 
         if (isTwoColumn) {
-          console.log(`📄 [PDF] Page ${i}: Two-column layout detected`);
+          // console.log(`📄 [PDF] Page ${i}: Two-column layout detected`);
           // Process left column first, then right column
           const leftCol = content.items.filter(item => (item.transform?.[4] || 0) < midX * 0.85);
           const rightCol = content.items.filter(item => (item.transform?.[4] || 0) >= midX * 0.85);
@@ -282,7 +282,7 @@ export async function extractTextFromPDF(file) {
         if (pageText.length > 0) {
           fullText += pageText + "\n\n";
           pageCount++;
-          console.log(`✅ [PDF] Page ${i}: ${pageText.length} chars | lineThreshold=${lineThreshold.toFixed(1)}px | twoCol=${isTwoColumn}`);
+          // console.log(`✅ [PDF] Page ${i}: ${pageText.length} chars | lineThreshold=${lineThreshold.toFixed(1)}px | twoCol=${isTwoColumn}`);
         }
       } catch (pageErr) {
         console.warn(`⚠️ [PDF] Page ${i} error: ${pageErr.message}`);
@@ -301,7 +301,7 @@ export async function extractTextFromPDF(file) {
       );
     }
 
-    console.log(`✅ [PDF] Complete: ${fullText.length} chars from ${pageCount} pages (${skippedPages} skipped)`);
+    // console.log(`✅ [PDF] Complete: ${fullText.length} chars from ${pageCount} pages (${skippedPages} skipped)`);
     return fullText.trim();
   } catch (err) {
     console.error("❌ [PDF] Extraction error:", err);
@@ -312,7 +312,7 @@ export async function extractTextFromPDF(file) {
 export async function extractTextFromDOCX(file) {
 
   try {
-    console.log(`📄 [DOCX] Starting extraction from ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+    // console.log(`📄 [DOCX] Starting extraction from ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
     
     const mammoth = await import("mammoth");
     const arrayBuffer = await file.arrayBuffer();
@@ -323,13 +323,13 @@ export async function extractTextFromDOCX(file) {
 
     // convertToHtml preserves heading tags and list items — far better section detection
     try {
-      console.log(`🔄 [DOCX] Attempting HTML conversion...`);
+      // console.log(`🔄 [DOCX] Attempting HTML conversion...`);
       const html = await mammoth.convertToHtml({ arrayBuffer });
       if (!html.value) {
         throw new Error("No content in document");
       }
       
-      console.log(`✅ [DOCX] HTML conversion successful: ${html.value.length} characters`);
+      // console.log(`✅ [DOCX] HTML conversion successful: ${html.value.length} characters`);
       
       // Strip HTML tags but preserve newlines for h1/h2/h3/p/li
       const text = html.value
@@ -354,7 +354,7 @@ export async function extractTextFromDOCX(file) {
         throw new Error("Document appears to be empty");
       }
       
-      console.log(`✅ [DOCX] Extraction complete: ${text.length} characters`);
+      // console.log(`✅ [DOCX] Extraction complete: ${text.length} characters`);
       return text;
     } catch (htmlErr) {
       // Fallback: raw text extraction
@@ -363,7 +363,7 @@ export async function extractTextFromDOCX(file) {
       if (!result.value) {
         throw new Error("Could not extract text from document");
       }
-      console.log(`✅ [DOCX] Raw text extraction successful: ${result.value.length} characters`);
+      // console.log(`✅ [DOCX] Raw text extraction successful: ${result.value.length} characters`);
       return result.value;
     }
   } catch (err) {
@@ -824,7 +824,7 @@ export async function processResumeFile(file, onProgress = null, jobDescription 
   
   const updateProgress = (stage, status, progress = 0) => {
     if (onProgress) onProgress({ stage, status, progress });
-    console.log(`[${stage}] ${status} (${progress}%)`);
+    // console.log(`[${stage}] ${status} (${progress}%)`);
   };
 
   const ext = file.name.toLowerCase().split(".").pop();

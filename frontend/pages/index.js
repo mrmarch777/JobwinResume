@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
+import PageHead from "../components/PageHead";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabase";
 
@@ -224,9 +225,8 @@ export default function Home() {
 
   return (
     <div style={{ fontFamily: "'DM Sans', Arial, sans-serif", background: "#0a0a1a", color: "white", overflowX: "hidden" }}>
+      <PageHead />
       <Head>
-        <title>JobwinResume — Professional AI Resume Builder | Get Hired Faster</title>
-        <meta name="description" content="Build a professional resume in minutes with JobwinResume. 25+ ATS-optimised templates, AI content writer, instant PDF export, and real-time ATS score checker. Free to start." />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />

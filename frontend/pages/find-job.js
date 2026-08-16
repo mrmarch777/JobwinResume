@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import Head from "next/head";
+import PageHead from "../components/PageHead";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabase";
 import { useTheme, THEMES, usePlan, PLAN_LIMITS } from "../lib/contexts";
 import Sidebar from "../components/Sidebar";
+import { SkeletonPulse, shimmerKeyframes } from '../components/Skeleton';
 
 export default function FindJob() {
   const router = useRouter();
@@ -156,42 +157,11 @@ export default function FindJob() {
   const firstName = user?.email?.split("@")[0] || "";
   const initials = firstName.slice(0, 2).toUpperCase();
 
-  // ── LOADING SCREEN ──
-  if (loading) return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: t.bg, color: t.text }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Serif:ital,wght@0,600;0,700;1,600&display=swap');
-        @keyframes float { 0%,100%{transform:translateY(0) rotate(-5deg)} 50%{transform:translateY(-20px) rotate(5deg)} }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(15px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-        .floating { animation: float 2.5s ease-in-out infinite; display:inline-block; }
-        .fade-in { animation: fadeIn 0.6s ease forwards; }
-        .bouncing { animation: bounce 1.2s ease-in-out infinite; }
-      `}</style>
-      <div style={{ textAlign: "center", maxWidth: "520px", padding: "40px 20px" }}>
-        <div style={{ fontSize: "90px", marginBottom: "8px" }}><span className="floating">{lt.icon}</span></div>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.06)", border: `1px solid ${lt.color}33`, padding: "4px 14px", borderRadius: "100px", marginBottom: "20px", fontSize: "12px", color: t.text === "#1a1a2e" ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.5)", fontFamily: "'DM Sans', sans-serif" }}>
-          JobwinResume {lt.label} is on the case!
-        </div>
-        <h2 className="fade-in" key={step} style={{ fontFamily: "'Noto Serif', serif", fontSize: "24px", fontWeight: "600", marginBottom: "10px", color: lt.color, lineHeight: "1.3" }}>
-          {lt.steps[step]}
-        </h2>
-        <p style={{ color: t.text === "#1a1a2e" ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.4)", fontSize: "14px", marginBottom: "28px", fontFamily: "'DM Sans', sans-serif" }}>
-          Searching <strong style={{ color: t.text === "#1a1a2e" ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.7)" }}>{searchRole}</strong> jobs in <strong style={{ color: "rgba(255,255,255,0.7)" }}>{locations.join(", ")}</strong>
-        </p>
-        <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: "100px", height: "6px", marginBottom: "8px", overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${progress}%`, background: `linear-gradient(90deg, ${lt.color}, #6C63FF)`, borderRadius: "100px", transition: "width 1s ease" }} />
-        </div>
-        <p style={{ color: "rgba(255,255,255,0.2)", fontSize: "11px", marginBottom: "28px", fontFamily: "'DM Sans', sans-serif" }}>{Math.round(progress)}% complete</p>
-        <div style={{ background: `${lt.color}15`, border: `1px solid ${lt.color}25`, borderRadius: "12px", padding: "14px 18px" }}>
-          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "13px", margin: 0, fontFamily: "'DM Sans', sans-serif" }}>{facts[fact]}</p>
-        </div>
-      </div>
-    </div>
-  );
+  // ── LOADING SCREEN REMOVED FOR INLINE SKELETONS ──
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: t.bg, color: t.text, fontFamily: "'DM Sans', Arial, sans-serif", transition: "all 0.4s" }}>
+      <PageHead title="Find Job" description="Refine your career search with high-fidelity listings, AI summaries, and one-click applications." />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Serif:ital,wght@0,600;0,700;1,600&display=swap');
         * { box-sizing:border-box; margin:0; padding:0; }
@@ -316,6 +286,23 @@ export default function FindJob() {
               <h3 style={{ color: '#FF6584', marginBottom: '8px', fontFamily: "'Noto Serif', serif" }}>Service Temporarily Unavailable</h3>
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', marginBottom: '16px' }}>Our job search service is temporarily unavailable. Please try again.</p>
               <button onClick={handleSearch} style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #6C63FF, #FF6584)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Try Again</button>
+            </div>
+          )}
+
+          {/* Loading state */}
+          {loading && (
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <style>{shimmerKeyframes}</style>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '24px' }}>
+                    <SkeletonPulse width="60%" height="20px" style={{ marginBottom: '10px' }} />
+                    <SkeletonPulse width="40%" height="14px" style={{ marginBottom: '16px' }} />
+                    <SkeletonPulse width="100%" height="12px" style={{ marginBottom: '6px' }} />
+                    <SkeletonPulse width="80%" height="12px" />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

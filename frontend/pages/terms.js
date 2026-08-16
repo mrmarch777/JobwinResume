@@ -1,4 +1,4 @@
-import Head from "next/head";
+import PageHead from "../components/PageHead";
 import { useRouter } from "next/router";
 
 export default function Terms() {
@@ -6,9 +6,7 @@ export default function Terms() {
 
   return (
     <div style={{ background: "#0a0a1a", color: "white", minHeight: "100vh", fontFamily: "'DM Sans', Arial, sans-serif" }}>
-      <Head>
-        <title>Terms &amp; Conditions | JobWinResume</title>
-      </Head>
+      <PageHead title="Terms & Conditions" description="Read our terms and conditions before using our services." />
       <nav style={{ padding: "20px 60px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", background: "rgba(10,10,26,0.92)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }} onClick={() => router.push("/")}>
           <span style={{ fontSize: "22px" }}>🚀</span>

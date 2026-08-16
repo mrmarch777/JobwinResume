@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import Head from "next/head";
+import PageHead from "../components/PageHead";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabase";
 import { useTheme, THEMES, usePlan, PLAN_LIMITS } from "../lib/contexts";
@@ -1337,6 +1337,7 @@ export default function Resume() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: t.bg, color: t.text, fontFamily: "'DM Sans',Arial,sans-serif", transition: "all 0.4s" }}>
+      <PageHead title="Resume Editor" description="Build, edit, and optimize your resume with AI." />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Serif:ital,wght@0,600;0,700;1,600&display=swap');
         * { box-sizing:border-box; margin:0; padding:0; }
@@ -1919,7 +1920,7 @@ export default function Resume() {
                 if (atsOptFile && !resumeText) {
                   try {
                     const ext = atsOptFile.name.toLowerCase().split(".").pop();
-                    console.log(`🔄 [ATS] Extracting ${ext} file...`);
+                    // console.log(`🔄 [ATS] Extracting ${ext} file...`);
                     if (ext === "pdf") {
                       resumeText = await extractTextFromPDF(atsOptFile);
                     } else if (ext === "docx" || ext === "doc") {
@@ -1929,7 +1930,7 @@ export default function Resume() {
                     } else {
                       throw new Error(`Unsupported file type: .${ext}. Please use PDF, DOCX, or TXT.`);
                     }
-                    console.log(`✅ [ATS] Extracted: ${resumeText.length} chars`);
+                    // console.log(`✅ [ATS] Extracted: ${resumeText.length} chars`);
                   } catch (extractErr) {
                     throw new Error(`File reading failed: ${extractErr.message || "Unknown error"}`);
                   }
@@ -1941,7 +1942,7 @@ export default function Resume() {
                 }
 
                 const apiUrl = getApiUrl();
-                console.log(`🔄 [ATS] Sending to ${apiUrl}/comprehensive-ats-analysis | Resume: ${resumeText.length} chars | JD: ${atsOptJD.length} chars`);
+                // console.log(`🔄 [ATS] Sending to ${apiUrl}/comprehensive-ats-analysis | Resume: ${resumeText.length} chars | JD: ${atsOptJD.length} chars`);
 
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 60000);
@@ -1965,7 +1966,7 @@ export default function Resume() {
                 }
 
                 const data = await res.json();
-                console.log(`✅ [ATS] Response:`, data);
+                // console.log(`✅ [ATS] Response:`, data);
 
                 if (data.error) throw new Error(data.error);
 
@@ -1974,7 +1975,7 @@ export default function Resume() {
                   throw new Error("Incomplete analysis response. Please try again.");
                 }
 
-                console.log(`🎉 [ATS] Score: ${data.overall_score}%`);
+                // console.log(`🎉 [ATS] Score: ${data.overall_score}%`);
                 setAtsOptResult(data);
 
               } catch (err) {
@@ -2782,7 +2783,7 @@ export default function Resume() {
                           <div style={{ background: resume.photo ? "rgba(67,217,162,0.08)" : "rgba(255,179,71,0.08)", border: `1px solid ${resume.photo ? "rgba(67,217,162,0.3)" : "rgba(255,179,71,0.3)"}`, borderRadius: "10px", padding: "10px 14px", fontSize: "12px" }}>
                             {resume.photo ? (
                               <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
-                                <img src={resume.photo} style={{ width:40, height:40, borderRadius:"50%", objectFit:"cover" }} />
+                                <img src={resume.photo} alt="Profile" style={{ width:40, height:40, borderRadius:"50%", objectFit:"cover" }} />
                                 <div>
                                   <p style={{ color:"#43D9A2", fontWeight:"600", fontSize:"11px" }}>✓ Photo added — looking great!</p>
                                   <p style={{ color: t.muted, fontSize:"10px" }}>Clear the URL below to remove it.</p>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import PageHead from "../components/PageHead";
 import { supabase } from "../lib/supabase";
 
 const TEMPLATES = [
@@ -237,6 +238,7 @@ export default function ResumeCreate() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f5f5f5", fontFamily: "Arial" }}>
+      <PageHead title="Create Resume" description="Build a professional, ATS-optimized resume with AI assistance." />
 
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", padding: "20px 40px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>

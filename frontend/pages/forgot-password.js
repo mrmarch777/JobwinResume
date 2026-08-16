@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Head from "next/head";
+import PageHead from "../components/PageHead";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabase";
 import { Mail, ArrowRight, ArrowLeft } from "lucide-react";
@@ -28,6 +28,7 @@ export default function ForgotPassword() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#09090b", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans', sans-serif", position: "relative", overflow: "hidden", padding: "20px" }}>
+      <PageHead title="Forgot Password" description="Reset your JobwinResume password to regain access to your account." />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Serif:ital,wght@0,600;0,700;1,600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }

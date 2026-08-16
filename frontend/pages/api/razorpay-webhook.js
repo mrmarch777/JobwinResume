@@ -69,7 +69,7 @@ export default async function handler(req, res) {
         } else {
           await supabaseAdmin.from('user_plans').insert({ email: userEmail, ...updateData });
         }
-        console.log(`Successfully upgraded ${userEmail} to plan ${plan} via webhook!`);
+        // console.log(`Successfully upgraded ${userEmail} to plan ${plan} via webhook!`);
       } else {
          console.warn("Payment captured but missing email or plan in metadata notes.");
       }

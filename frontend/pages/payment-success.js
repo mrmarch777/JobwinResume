@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PageHead from "../components/PageHead";
 import { useRouter } from "next/router";
 import { useTheme, THEMES, usePlan } from "../lib/contexts";
 
@@ -38,6 +39,7 @@ export default function PaymentSuccess() {
 
   return (
     <div style={{ minHeight: "100vh", background: t.bg, color: t.text, fontFamily: "'Manrope', Arial, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+      <PageHead title="Payment Successful" description="Your payment was successful and your plan is activated." />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,600;0,700;1,600&family=Manrope:wght@300;400;500;600;700&display=swap');
 

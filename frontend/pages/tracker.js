@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import PageHead from "../components/PageHead";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../lib/contexts";
 import Sidebar from "../components/Sidebar";
@@ -109,6 +110,7 @@ export default function Tracker() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: t.bg, color: t.text, fontFamily: "'DM Sans', Arial, sans-serif", transition: "all 0.4s" }}>
+      <PageHead title="Application Tracker" description="Monitor your job application journey from wishlist to offer." />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Noto+Serif:ital,wght@0,600;0,700;1,600&display=swap');
         * { box-sizing:border-box; margin:0; padding:0; }
