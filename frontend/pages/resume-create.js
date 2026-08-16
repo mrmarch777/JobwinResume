@@ -8,6 +8,92 @@ const TEMPLATES = [
   { id: "bold", name: "Bold", color: "#6D28D9", accent: "#6D28D9", desc: "Stand out from the crowd" },
 ];
 
+const ResumePreview = ({ resumeText, template, form }) => {
+  const sections = {
+    contact: [],
+    summary: [],
+    experience: [],
+    education: [],
+    skills: [],
+    achievements: []
+  };
+
+  const lines = resumeText.split('\n').map(l => l.trim()).filter(l => l);
+  let currentSection = 'contact';
+
+  lines.forEach(line => {
+    const upperLine = line.toUpperCase();
+    if (upperLine.includes('SUMMARY') || upperLine.includes('PROFESSIONAL SUMMARY')) {
+      currentSection = 'summary';
+    } else if (upperLine.includes('EXPERIENCE') || upperLine.includes('WORK EXPERIENCE')) {
+      currentSection = 'experience';
+    } else if (upperLine.includes('EDUCATION')) {
+      currentSection = 'education';
+    } else if (upperLine.includes('SKILLS')) {
+      currentSection = 'skills';
+    } else if (upperLine.includes('ACHIEVEMENTS') || upperLine.includes('KEY ACHIEVEMENTS')) {
+      currentSection = 'achievements';
+    } else {
+      if (currentSection) {
+        sections[currentSection].push(line);
+      }
+    }
+  });
+
+  const getTemplateStyle = () => {
+    switch (template) {
+      case 'modern':
+        return { accent: '#0B7B3E', bg: '#f0fdf4', font: 'Arial, sans-serif' };
+      case 'bold':
+        return { accent: '#6D28D9', bg: '#f5f3ff', font: 'Helvetica, sans-serif' };
+      default: // classic
+        return { accent: '#1a1a2e', bg: '#ffffff', font: 'Georgia, serif' };
+    }
+  };
+
+  const styles = getTemplateStyle();
+
+  return (
+    <div style={{ background: '#ccc', padding: '20px', borderRadius: '12px', overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
+      <div id="resume-preview" style={{ background: 'white', width: '210mm', minHeight: '297mm', padding: '20mm', boxSizing: 'border-box', fontFamily: styles.font, color: '#333', boxShadow: '0 0 15px rgba(0,0,0,0.2)', textAlign: 'left' }}>
+        {/* Header */}
+        <div style={{ textAlign: template === 'modern' ? 'left' : 'center', borderBottom: `2px solid ${styles.accent}`, paddingBottom: '20px', marginBottom: '20px', background: template === 'modern' ? styles.bg : 'transparent', padding: template === 'modern' ? '20px' : '0 0 20px 0' }}>
+          <h1 style={{ color: styles.accent, fontSize: '32px', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{form.fullName || sections.contact[0]}</h1>
+          <div style={{ fontSize: '14px', color: '#555', display: 'flex', gap: '15px', justifyContent: template === 'modern' ? 'flex-start' : 'center', flexWrap: 'wrap' }}>
+            {form.email && <span>{form.email}</span>}
+            {form.phone && <span>{form.phone}</span>}
+            {form.city && <span>{form.city}</span>}
+            {form.linkedin && <span>{form.linkedin}</span>}
+          </div>
+        </div>
+
+        {/* Sections */}
+        {[
+          { id: 'summary', title: 'Professional Summary' },
+          { id: 'experience', title: 'Work Experience' },
+          { id: 'education', title: 'Education' },
+          { id: 'skills', title: 'Skills' },
+          { id: 'achievements', title: 'Key Achievements' }
+        ].map(sec => {
+          if (!sections[sec.id] || sections[sec.id].length === 0) return null;
+          return (
+            <div key={sec.id} style={{ marginBottom: '20px' }}>
+              <h2 style={{ color: styles.accent, fontSize: '18px', borderBottom: template === 'bold' ? `2px solid ${styles.accent}` : '1px solid #ccc', paddingBottom: '5px', marginBottom: '10px', textTransform: 'uppercase', background: template === 'bold' ? styles.bg : 'transparent', padding: template === 'bold' ? '5px 10px' : '0 0 5px 0' }}>
+                {sec.title}
+              </h2>
+              <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                {sections[sec.id].map((line, i) => (
+                  <p key={i} style={{ margin: '0 0 8px 0' }}>{line}</p>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export default function ResumeCreate() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -15,6 +101,60 @@ export default function ResumeCreate() {
   const [loading, setLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("classic");
   const [generatedResume, setGeneratedResume] = useState("");
+  const [saveStatus, setSaveStatus] = useState(""); // '', 'saving', 'saved', 'error'
+  const [savedResumes, setSavedResumes] = useState([]);
+
+  const loadSavedResumes = async (userId) => {
+    try {
+      const { data } = await supabase
+        .from('resumes')
+        .select('id, title, template, updated_at')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(5);
+      if (data) setSavedResumes(data);
+    } catch (err) { console.error('Failed to load resumes:', err); }
+  };
+
+  const loadResume = async (resumeId) => {
+    try {
+      const { data } = await supabase.from('resumes').select('*').eq('id', resumeId).single();
+      if (data) {
+        if (data.form_data) {
+          try { setForm(JSON.parse(data.form_data)); } catch(e) {}
+        }
+        if (data.template) setSelectedTemplate(data.template);
+        if (data.content) {
+          setGeneratedResume(data.content);
+          setStep(3);
+        }
+      }
+    } catch (err) { console.error('Failed to load resume:', err); }
+  };
+
+  const saveDraft = async (contentToSave = generatedResume) => {
+    if (!user || !contentToSave) return;
+    setSaveStatus('saving');
+    try {
+      const { error } = await supabase.from('resumes').upsert({
+        user_id: user.id,
+        title: `${form.targetRole} Resume`,
+        content: contentToSave,
+        template: selectedTemplate,
+        form_data: JSON.stringify(form),
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id,title' });
+      if (!error) {
+        setSaveStatus('saved');
+        loadSavedResumes(user.id);
+      } else {
+        setSaveStatus('error');
+      }
+    } catch (err) {
+      console.error('Failed to save draft:', err);
+      setSaveStatus('error');
+    }
+  };
 
   const [form, setForm] = useState({
     fullName: "",
@@ -34,6 +174,7 @@ export default function ResumeCreate() {
       if (!session) { router.push("/login"); return; }
       setUser(session.user);
       setForm(f => ({ ...f, email: session.user.email }));
+      loadSavedResumes(session.user.id);
     });
   }, []);
 
@@ -57,10 +198,29 @@ export default function ResumeCreate() {
       const data = await response.json();
       setGeneratedResume(data.resume);
       setStep(3);
+      saveDraft(data.resume);
     } catch (err) {
       alert("Error generating resume. Please try again.");
     }
     setLoading(false);
+  };
+
+  const downloadPDF = async () => {
+    const html2pdf = (await import('html2pdf.js')).default;
+    const element = document.getElementById('resume-preview');
+    const opt = {
+      margin: 0,
+      filename: `${form.fullName.replace(/ /g, '_')}_Resume.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+  };
+
+  const copyText = () => {
+    navigator.clipboard.writeText(generatedResume);
+    alert("Resume text copied to clipboard!");
   };
 
   const downloadResume = () => {
@@ -68,7 +228,7 @@ export default function ResumeCreate() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${form.fullName.replace(" ", "_")}_Resume.txt`;
+    a.download = `${form.fullName.replace(/ /g, "_")}_Resume.txt`;
     a.click();
     alert("Resume downloaded! You can copy the text into a Word document and format it with your chosen template.");
   };
@@ -100,6 +260,24 @@ export default function ResumeCreate() {
         {/* STEP 1 — Details form */}
         {step === 1 && (
           <div style={{ background: "white", borderRadius: "20px", padding: "40px", boxShadow: "0 2px 15px rgba(0,0,0,0.08)" }}>
+            {savedResumes.length > 0 && (
+              <div style={{ marginBottom: '24px', padding: '20px', background: 'rgba(108,99,255,0.05)', border: '1px solid rgba(108,99,255,0.15)', borderRadius: '14px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '600', color: '#333', marginBottom: '12px' }}>📋 Your Saved Resumes</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {savedResumes.map(r => (
+                    <div key={r.id} onClick={() => loadResume(r.id)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s' }}
+                      onMouseOver={e => e.currentTarget.style.borderColor = '#667eea'}
+                      onMouseOut={e => e.currentTarget.style.borderColor = '#e0e0e0'}>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: '500', color: '#1a1a2e' }}>{r.title}</div>
+                        <div style={{ fontSize: '11px', color: '#999' }}>Last edited: {new Date(r.updated_at).toLocaleDateString()}</div>
+                      </div>
+                      <span style={{ color: '#667eea', fontSize: '13px', fontWeight: '600' }}>Open →</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <h2 style={{ color: "#1a1a2e", marginBottom: "24px" }}>Tell us about yourself</h2>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
@@ -190,13 +368,21 @@ export default function ResumeCreate() {
         {step === 3 && (
           <div style={{ background: "white", borderRadius: "20px", padding: "40px", boxShadow: "0 2px 15px rgba(0,0,0,0.08)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-              <h2 style={{ color: "#1a1a2e", margin: 0 }}>✅ Your Resume is Ready!</h2>
-              <button onClick={downloadResume} style={{ background: "#0B7B3E", color: "white", border: "none", padding: "12px 24px", borderRadius: "10px", fontSize: "15px", fontWeight: "bold", cursor: "pointer" }}>📥 Download</button>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <h2 style={{ color: "#1a1a2e", margin: 0 }}>✅ Your Resume is Ready!</h2>
+                {saveStatus === 'saved' && <span style={{ color: '#0B7B3E', fontSize: '12px' }}>✅ Saved to cloud</span>}
+                {saveStatus === 'saving' && <span style={{ color: '#667eea', fontSize: '12px' }}>💾 Saving...</span>}
+                {saveStatus === 'error' && <span style={{ color: '#ff4444', fontSize: '12px' }}>⚠️ Save failed</span>}
+              </div>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button onClick={() => saveDraft()} style={{ background: "#f5f5f5", color: "#333", border: "1px solid #ddd", padding: "10px 16px", borderRadius: "8px", fontSize: "14px", fontWeight: "bold", cursor: "pointer" }}>💾 Save</button>
+                <button onClick={copyText} style={{ background: "#f5f5f5", color: "#333", border: "1px solid #ddd", padding: "10px 16px", borderRadius: "8px", fontSize: "14px", fontWeight: "bold", cursor: "pointer" }}>📋 Copy Text</button>
+                <button onClick={downloadResume} style={{ background: "#f5f5f5", color: "#333", border: "1px solid #ddd", padding: "10px 16px", borderRadius: "8px", fontSize: "14px", fontWeight: "bold", cursor: "pointer" }}>📄 Download .txt</button>
+                <button onClick={downloadPDF} style={{ background: "#0B7B3E", color: "white", border: "none", padding: "10px 20px", borderRadius: "8px", fontSize: "14px", fontWeight: "bold", cursor: "pointer" }}>📥 Download PDF</button>
+              </div>
             </div>
 
-            <div style={{ background: "#f8f9ff", borderRadius: "12px", padding: "30px", fontFamily: "Georgia, serif", fontSize: "14px", lineHeight: "1.8", color: "#333", whiteSpace: "pre-wrap", maxHeight: "500px", overflowY: "auto", border: "1px solid #e0e0e0" }}>
-              {generatedResume}
-            </div>
+            <ResumePreview resumeText={generatedResume} template={selectedTemplate} form={form} />
 
             <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
               <button onClick={() => router.push("/resume-tailor")} style={{ flex: 1, padding: "12px", background: "#667eea", color: "white", border: "none", borderRadius: "10px", fontSize: "14px", cursor: "pointer" }}>🎯 Tailor this for a specific job</button>

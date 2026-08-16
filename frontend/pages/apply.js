@@ -18,6 +18,8 @@ export default function Apply() {
   const [sending, setSending] = useState({});
   const [sent, setSent] = useState({});
   const [hrEmail, setHrEmail] = useState({});
+  const [genErrors, setGenErrors] = useState({});
+  const [sendErrors, setSendErrors] = useState({});
   const [activeJob, setActiveJob] = useState(null);
   const [yourName, setYourName] = useState("");
   const [yourRole, setYourRole] = useState("");
@@ -107,9 +109,10 @@ export default function Apply() {
       const letter = data.cover_letter || data.letter || "";
       if (!letter) throw new Error("Empty response from AI");
       setCoverLetters(prev => ({ ...prev, [index]: letter }));
+      setGenErrors(prev => ({ ...prev, [index]: false }));
     } catch (err) {
       console.error("Cover letter error:", err);
-      setCoverLetters(prev => ({ ...prev, [index]: `Error: ${err.message}. Make sure the backend is running at ${process.env.NEXT_PUBLIC_API_URL}` }));
+      setGenErrors(prev => ({ ...prev, [index]: true }));
     }
     setGenerating(prev => ({ ...prev, [index]: false }));
   };
@@ -139,11 +142,12 @@ export default function Apply() {
       });
       if (res.ok) {
         setSent({ ...sent, [index]: true });
+        setSendErrors(prev => ({ ...prev, [index]: false }));
       } else {
-        alert("Failed to send email. Please try again.");
+        setSendErrors(prev => ({ ...prev, [index]: true }));
       }
     } catch (err) {
-      alert("Error sending email. Check backend is running.");
+      setSendErrors(prev => ({ ...prev, [index]: true }));
     }
     setSending({ ...sending, [index]: false });
   };
@@ -327,13 +331,22 @@ export default function Apply() {
                                 {generating[idx] ? "✨ Generating..." : coverLetters[idx] ? "🔄 Regenerate" : "✨ Generate"}
                               </button>
                             </div>
-                            <textarea
-                              value={coverLetters[idx] || ""}
-                              onChange={e => setCoverLetters({ ...coverLetters, [idx]: e.target.value })}
-                              placeholder="Click 'Generate' to create an AI cover letter, or type your own..."
-                              rows={10}
-                              style={{ width: "100%", padding: "14px 16px", background: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "10px", fontSize: "13px", lineHeight: "1.7", resize: "vertical", outline: "none", fontFamily: "'DM Sans',sans-serif" }}
-                            />
+                            {genErrors[idx] ? (
+                              <div style={{ background: 'rgba(255,101,132,0.08)', border: '1px solid rgba(255,101,132,0.25)', borderRadius: '16px', padding: '24px', textAlign: 'center', margin: '20px 0' }}>
+                                <div style={{ fontSize: '32px', marginBottom: '12px' }}>⚠️</div>
+                                <h3 style={{ color: '#FF6584', marginBottom: '8px', fontFamily: "'Noto Serif', serif" }}>Service Temporarily Unavailable</h3>
+                                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', marginBottom: '16px' }}>Our servers are warming up. Please try again shortly.</p>
+                                <button onClick={() => generateCoverLetter(job, idx)} style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #6C63FF, #FF6584)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Try Again</button>
+                              </div>
+                            ) : (
+                              <textarea
+                                value={coverLetters[idx] || ""}
+                                onChange={e => setCoverLetters({ ...coverLetters, [idx]: e.target.value })}
+                                placeholder="Click 'Generate' to create an AI cover letter, or type your own..."
+                                rows={10}
+                                style={{ width: "100%", padding: "14px 16px", background: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "10px", fontSize: "13px", lineHeight: "1.7", resize: "vertical", outline: "none", fontFamily: "'DM Sans',sans-serif" }}
+                              />
+                            )}
                           </div>
 
                           {/* Send options */}
@@ -344,10 +357,18 @@ export default function Apply() {
                               <input type="email" placeholder="HR email address" value={hrEmail[idx] || ""}
                                 onChange={e => setHrEmail({ ...hrEmail, [idx]: e.target.value })}
                                 style={{ width: "100%", padding: "9px 12px", background: t.card, border: `1px solid ${t.border}`, borderRadius: "8px", fontSize: "13px", marginBottom: "10px", outline: "none" }} />
-                              <button onClick={() => sendEmail(job, idx)} disabled={sending[idx] || sent[idx]}
-                                style={{ width: "100%", padding: "10px", background: sent[idx] ? "rgba(67,217,162,0.15)" : sending[idx] ? t.border : "linear-gradient(135deg,#6C63FF,#FF6584)", color: sent[idx] ? "#43D9A2" : sending[idx] ? t.muted : "white", border: `1px solid ${sent[idx] ? "rgba(67,217,162,0.3)" : "transparent"}`, borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: sent[idx] || sending[idx] ? "not-allowed" : "pointer", transition: "all 0.3s" }}>
-                                {sent[idx] ? "✓ Email Sent!" : sending[idx] ? "Sending..." : "Send Email →"}
-                              </button>
+                              {sendErrors[idx] ? (
+                                <div style={{ background: 'rgba(255,101,132,0.08)', border: '1px solid rgba(255,101,132,0.25)', borderRadius: '16px', padding: '16px', textAlign: 'center', margin: '10px 0' }}>
+                                  <h3 style={{ color: '#FF6584', marginBottom: '8px', fontSize: '14px', fontFamily: "'Noto Serif', serif" }}>Service Temporarily Unavailable</h3>
+                                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '12px' }}>Our servers are warming up.</p>
+                                  <button onClick={() => sendEmail(job, idx)} style={{ padding: '6px 16px', background: 'linear-gradient(135deg, #6C63FF, #FF6584)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Try Again</button>
+                                </div>
+                              ) : (
+                                <button onClick={() => sendEmail(job, idx)} disabled={sending[idx] || sent[idx]}
+                                  style={{ width: "100%", padding: "10px", background: sent[idx] ? "rgba(67,217,162,0.15)" : sending[idx] ? t.border : "linear-gradient(135deg,#6C63FF,#FF6584)", color: sent[idx] ? "#43D9A2" : sending[idx] ? t.muted : "white", border: `1px solid ${sent[idx] ? "rgba(67,217,162,0.3)" : "transparent"}`, borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: sent[idx] || sending[idx] ? "not-allowed" : "pointer", transition: "all 0.3s" }}>
+                                  {sent[idx] ? "✓ Email Sent!" : sending[idx] ? "Sending..." : "Send Email →"}
+                                </button>
+                              )}
                             </div>
 
                             {/* Apply directly */}

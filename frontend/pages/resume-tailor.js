@@ -100,7 +100,14 @@ export default function ResumeTailor() {
       <div style={{ maxWidth: "900px", margin: "0 auto", padding: "30px 20px" }}>
         <h2>🎯 ATS Analyzer & Resume Tailor</h2>
 
-        {error && <div style={{ background: "#FFE5E5", padding: "12px", borderRadius: "6px", marginBottom: "15px", color: "#991B1B" }}>❌ {error}</div>}
+        {error && (
+          <div style={{ background: 'rgba(255,101,132,0.08)', border: '1px solid rgba(255,101,132,0.25)', borderRadius: '16px', padding: '24px', textAlign: 'center', margin: '20px 0' }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>⚠️</div>
+            <h3 style={{ color: '#FF6584', marginBottom: '8px', fontFamily: "'Noto Serif', serif" }}>Service Temporarily Unavailable</h3>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', marginBottom: '16px' }}>Our servers are warming up. Please try again shortly.</p>
+            <button onClick={() => { if (error.includes('Analysis')) checkATS(); else tailor(); }} style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #6C63FF, #FF6584)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Try Again</button>
+          </div>
+        )}
         {status && <div style={{ background: "#E0E7FF", padding: "12px", borderRadius: "6px", marginBottom: "15px", color: "#5B21B6", textAlign: "center" }}>{status}</div>}
 
         <div style={{ background: "white", borderRadius: "8px", padding: "15px", marginBottom: "15px" }}>

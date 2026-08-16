@@ -113,7 +113,7 @@ export default function Interview() {
       // Use fallback questions if backend fails
       const fallback = generateFallbackQuestions(jobTitle, company, level);
       setQuestions(fallback);
-      setError("");
+      setError("fallback");
     }
     setLoading(false);
   };
@@ -314,6 +314,14 @@ export default function Interview() {
                 </div>
 
                 {/* Questions list */}
+                {error === "fallback" && (
+                  <div style={{ background: 'rgba(255,101,132,0.08)', border: '1px solid rgba(255,101,132,0.25)', borderRadius: '16px', padding: '24px', textAlign: 'center', margin: '20px 0' }}>
+                    <div style={{ fontSize: '32px', marginBottom: '12px' }}>⚠️</div>
+                    <h3 style={{ color: '#FF6584', marginBottom: '8px', fontFamily: "'Noto Serif', serif" }}>Service Temporarily Unavailable</h3>
+                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', marginBottom: '16px' }}>Our servers are warming up. We've loaded static questions for now.</p>
+                    <button onClick={generateQuestions} style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #6C63FF, #FF6584)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Try Again</button>
+                  </div>
+                )}
                 {questions.length > 0 && (
                   <div className="fade-up">
                     <div style={{ display: "flex", gap: "6px", marginBottom: "14px", flexWrap: "wrap", alignItems: "center" }}>

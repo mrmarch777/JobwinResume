@@ -138,43 +138,22 @@ export default function Pricing() {
           theme: { color: "#6C63FF" },
           handler: async (response) => {
             localStorage.setItem("jobwin_plan", plan.id);
-            try {
-              const updateData = {
-                plan: plan.id,
-                payment_id: response.razorpay_payment_id,
-                amount: finalPrice,
-                billing: is10Day ? "10day" : "monthly",
-                activated_at: new Date().toISOString(),
-              };
-              const checkExisting = await supabase.from("user_plans").select("email").eq("email", user.email).maybeSingle();
-              if (checkExisting?.data) {
-                await supabase.from("user_plans").update(updateData).eq("email", user.email);
-              } else {
-                await supabase.from("user_plans").insert({ email: user.email, ...updateData });
+            setLoading("activating");
+            let attempts = 0;
+            const pollTimer = setInterval(async () => {
+              attempts++;
+              await refreshPlan();
+              const { data } = await supabase.from("user_plans").select("plan").eq("email", user.email).maybeSingle();
+              if (data && data.plan === plan.id) {
+                clearInterval(pollTimer);
+                router.push("/payment-success");
+              } else if (attempts >= 5) {
+                clearInterval(pollTimer);
+                alert("Payment received! Your plan will activate shortly. Please refresh in a moment.");
+                setLoading(null);
+                router.push("/dashboard");
               }
-            } catch (dbErr) {
-              console.warn("Frontend Supabase update failed (webhook will handle it):", dbErr);
-            }
-            try {
-              const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-              if (apiUrl && !apiUrl.includes("localhost")) {
-                fetch(`${apiUrl}/payment-success`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    payment_id: response.razorpay_payment_id,
-                    plan: plan.id,
-                    email: user.email,
-                    amount: finalPrice,
-                    billing: is10Day ? "10day" : "monthly",
-                    promo_code: appliedPromo?.code || null,
-                  }),
-                }).catch(() => {});
-              }
-            } catch (e) { /* ignore */ }
-            await refreshPlan();
-            alert(`🎉 Payment successful! Welcome to JobwinResume ${plan.name}! Your ${is10Day ? "10-day" : "monthly"} plan is now active.`);
-            router.push("/dashboard");
+            }, 2000);
           },
           modal: { ondismiss: () => setLoading(null) },
         };
@@ -210,6 +189,13 @@ export default function Pricing() {
         @keyframes pulse-badge { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.85;transform:scale(1.04)} }
         .promo-badge { animation: pulse-badge 2.5s ease-in-out infinite; }
       `}</style>
+
+      {loading === "activating" && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "24px", flexDirection: "column" }}>
+          <div className="promo-badge" style={{ fontSize: "40px", marginBottom: "20px" }}>⏳</div>
+          <div style={{ fontFamily: "'Noto Serif', serif" }}>Activating your plan...</div>
+        </div>
+      )}
 
       {/* ── SIDEBAR ── */}
       <Sidebar activeId="pricing" collapsed={collapsed} setCollapsed={setCollapsed} user={user} />

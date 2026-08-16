@@ -43,6 +43,62 @@ export default function Dashboard() {
   const themes = THEMES;
   const [searching, setSearching] = useState(false);
   const [notifications, setNotifications] = useState(0);
+  const [stats, setStats] = useState({ applied: 0, interviews: 0, offers: 0, saved: 0 });
+
+  const fetchStats = async (userId) => {
+    try {
+      const { data } = await supabase.from('applications').select('status').eq('user_id', userId);
+      if (data) {
+        const counts = { applied: 0, interviews: 0, offers: 0, saved: 0 };
+        data.forEach(app => {
+          if (app.status === 'applied') counts.applied++;
+          else if (app.status === 'interviewing') counts.interviews++;
+          else if (app.status === 'offered') counts.offers++;
+          else if (app.status === 'saved') counts.saved++;
+        });
+        setStats(counts);
+      }
+    } catch (err) { console.error('Failed to fetch stats:', err); }
+  };
+
+  const getTimeAgo = (dateStr) => {
+    if (!dateStr) return '';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
+  const fetchActivities = async (userId) => {
+    try {
+      const { data } = await supabase
+        .from('applications')
+        .select('company, role, status, updated_at')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(5);
+      if (data && data.length > 0) {
+        const statusColors = {
+          saved: '#FF6584',
+          applied: '#6C63FF', 
+          interviewing: '#FFB347',
+          offered: '#43D9A2',
+          rejected: '#FF4444'
+        };
+        setActivities(data.map(a => ({
+          company: a.company || 'Unknown',
+          role: a.role || 'Unknown Role',
+          status: a.status?.charAt(0).toUpperCase() + a.status?.slice(1) || 'Saved',
+          statusColor: statusColors[a.status] || '#6C63FF',
+          time: getTimeAgo(a.updated_at)
+        })));
+      }
+    } catch (err) { console.error('Failed to fetch activities:', err); }
+  };
+
   const navItems = [
     { id: "home", icon: "⊞", label: "Home" },
     { id: "resume", icon: "📄", label: "Resume Builder" },
@@ -53,10 +109,10 @@ export default function Dashboard() {
     { id: "pricing", icon: "⚡", label: "Upgrade" },
   ];
 
-  const activities = [];
+  const [activities, setActivities] = useState([]);
   const [showChecklist, setShowChecklist] = useState(false);
   const [showPulse, setShowPulse] = useState(false);
-  const [showActivity, setShowActivity] = useState(false);
+  const [showActivity, setShowActivity] = useState(true);
   const checklist = [
     { id: "resume", label: "Build your resume", done: false, path: "/resume", icon: "📄" },
     { id: "jobs", label: "Search your first job", done: false, path: "/find-job", icon: "🔍" },
@@ -68,6 +124,8 @@ export default function Dashboard() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { router.push("/login"); return; }
       setUser(session.user);
+      fetchStats(session.user.id);
+      fetchActivities(session.user.id);
     });
   }, []);
 
@@ -193,6 +251,46 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {plan === 'free' && (
+            <div className="dash-card" onClick={() => router.push('/pricing')} style={{ 
+              background: 'linear-gradient(135deg, rgba(108,99,255,0.15), rgba(255,101,132,0.15))',
+              border: '1px solid rgba(108,99,255,0.25)',
+              borderRadius: '20px',
+              padding: '24px 28px',
+              marginBottom: '20px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+              position: 'relative',
+              zIndex: 1
+            }}>
+              <div>
+                <h3 style={{ fontFamily: "'Noto Serif', serif", fontSize: '18px', fontWeight: '700', color: t.text, marginBottom: '6px' }}>
+                  ⚡ Unlock the Full Power of JobWin
+                </h3>
+                <p style={{ color: t.muted, fontSize: '13px', lineHeight: '1.5' }}>
+                  Upgrade to get unlimited resumes, one-click apply, AI interview prep, and more.
+                </p>
+              </div>
+              <button style={{ 
+                padding: '12px 28px', 
+                background: 'linear-gradient(135deg, #6C63FF, #FF6584)', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '12px', 
+                fontSize: '14px', 
+                fontWeight: '700', 
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 4px 20px rgba(108,99,255,0.35)'
+              }}>
+                View Plans →
+              </button>
+            </div>
+          )}
+
           {/* Primary grid */}
           <div className="mobile-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "16px", position: "relative", zIndex: 1, alignItems: "stretch" }}>
 
@@ -213,11 +311,11 @@ export default function Dashboard() {
                     <circle cx="50" cy="50" r="40" fill="none" stroke="#43D9A2" strokeWidth="8" strokeDasharray="251.2" strokeDashoffset="25" strokeLinecap="round" style={{ transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}/>
                   </svg>
                   <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", textAlign: "center" }}>
-                    <div style={{ fontFamily: "'Noto Serif', serif", fontSize: "22px", fontWeight: "700", color: "#43D9A2" }}><CountUp end={92} /></div>
+                    <div style={{ fontFamily: "'Noto Serif', serif", fontSize: "22px", fontWeight: "700", color: "#43D9A2" }}>--</div>
                     <div style={{ fontSize: "10px", color: t.muted }}>/ 100</div>
                   </div>
                 </div>
-                <p style={{ color: t.muted, fontSize: "12px", marginTop: "8px" }}>ATS Score <span style={{fontSize:"10px",opacity:0.5}}>(run ATS tool to get real score)</span></p>
+                <p style={{ color: t.muted, fontSize: "12px", marginTop: "8px" }}>ATS Score <span style={{fontSize:"10px",opacity:0.5}}>(Build a resume to see score)</span></p>
               </div>
               <button style={{ width: "100%", padding: "11px", background: "rgba(67,217,162,0.1)", color: "#43D9A2", border: "1px solid rgba(67,217,162,0.2)", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
                 Optimize Now →
@@ -234,7 +332,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" }}>
-                {[[14, "Applied", "#6C63FF"], [5, "Interviews", "#FFB347"], [2, "Offers", "#43D9A2"], [18, "Saved", "#FF6584"]].map(([n, l, c]) => (
+                {[[stats.applied, "Applied", "#6C63FF"], [stats.interviews, "Interviews", "#FFB347"], [stats.offers, "Offers", "#43D9A2"], [stats.saved, "Saved", "#FF6584"]].map(([n, l, c]) => (
                   <div key={l} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "12px", padding: "14px", textAlign: "center", border: `1px solid ${t.border}` }}>
                     <div style={{ fontFamily: "'Noto Serif', serif", fontSize: "22px", fontWeight: "700", color: c }}><CountUp end={n} /></div>
                     <div style={{ color: t.muted, fontSize: "11px", marginTop: "2px" }}>{l}</div>
@@ -300,7 +398,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" }}>
-                {[[14, "Sent", "#6C63FF"], [5, "Opened", "#FFB347"], [2, "Replies", "#43D9A2"], [18, "Saved", "#FF6584"]].map(([n, l, c]) => (
+                {[[0, "Sent", "#6C63FF"], [0, "Opened", "#FFB347"], [0, "Replies", "#43D9A2"], [0, "Saved", "#FF6584"]].map(([n, l, c]) => (
                   <div key={l} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "12px", padding: "14px", textAlign: "center", border: `1px solid ${t.border}` }}>
                     <div style={{ fontFamily: "'Noto Serif', serif", fontSize: "22px", fontWeight: "700", color: c }}><CountUp end={n} /></div>
                     <div style={{ color: t.muted, fontSize: "11px", marginTop: "2px" }}>{l}</div>
