@@ -41,8 +41,8 @@ export const THEMES = {
 };
 
 // ── PLAN LIMITS ───────────────────────────────────────────────────────────────
-// 🚧 DEV MODE: All features unlocked — restore per-plan limits before launch
-const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
+// 🚧 DEV MODE: All features unlocked for testing — switch back before launch
+const isDevMode = true; // process.env.NEXT_PUBLIC_DEV_MODE === 'true';
 export const PLAN_LIMITS = {
   free:     { resumes: 1,        searches: 3,        templates: 5,   apply: false, interview: false, atsOptimise: false, hrFinder: false, label: "Free"     },
   basic:    { resumes: Infinity, searches: 10,       templates: 14,  apply: false, interview: false, atsOptimise: true,  hrFinder: false, label: "Basic"    },
