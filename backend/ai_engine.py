@@ -11,7 +11,7 @@ load_dotenv()
 
 client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 MODEL = "claude-haiku-4-5-20251001"
-MODEL_ADVANCED = "claude-sonnet-4-20250514"  # Used for ATS analysis — needs higher accuracy
+MODEL_ADVANCED = "claude-sonnet-5"  # Used for ATS analysis — needs higher accuracy
 
 
 async def summarise_job(job: dict) -> dict:
