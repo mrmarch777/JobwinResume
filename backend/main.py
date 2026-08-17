@@ -18,6 +18,7 @@ from ai_engine import (
     tailor_resume,
     write_cover_letter,
     generate_interview_prep,
+    extract_text,
     client,
     MODEL,
     MODEL_ADVANCED,
@@ -318,7 +319,7 @@ Use clean formatting with clear section headers.
             max_tokens=2000,
             messages=[{"role": "user", "content": prompt}]
         )
-        return {"resume": response.content[0].text}
+        return {"resume": extract_text(response)}
     except Exception as e:
         return {"resume": f"Error generating resume: {str(e)}"}
 
@@ -457,12 +458,12 @@ If the submission contains inappropriate content, return an empty array: []
         import anthropic
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=MODEL_ADVANCED,
             max_tokens=2000,
             messages=[{"role": "user", "content": prompt}]
         )
         import json
-        result = json.loads(message.content[0].text)
+        result = json.loads(extract_text(message))
         return {"processed": result, "count": len(result), "status": "success"}
     except Exception as e:
         return {"processed": [], "count": 0, "status": "error", "error": str(e)}
@@ -481,8 +482,8 @@ Return ONLY JSON like:
     try:
         import anthropic, json
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        msg = client.messages.create(model="claude-sonnet-4-20250514", max_tokens=2000, messages=[{"role":"user","content":prompt}])
-        return {"status":"success","data":json.loads(msg.content[0].text)}
+        msg = client.messages.create(model=MODEL_ADVANCED, max_tokens=2000, messages=[{"role":"user","content":prompt}])
+        return {"status":"success","data":json.loads(extract_text(msg))}
     except Exception as e:
         return {"status":"error","error":str(e)}
 
@@ -518,11 +519,11 @@ IMPROVED VERSION:"""
         import anthropic
         client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
         msg = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=MODEL_ADVANCED,
             max_tokens=1000,
             messages=[{"role": "user", "content": prompt}]
         )
-        return {"status": "success", "improved": msg.content[0].text.strip()}
+        return {"status": "success", "improved": extract_text(msg).strip()}
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
@@ -637,12 +638,12 @@ Return this EXACT JSON structure (fill every field you find):
         import anthropic, json
         ai_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
         msg = ai_client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=MODEL_ADVANCED,
             max_tokens=4096,
             messages=[{"role": "user", "content": prompt}]
         )
 
-        raw = msg.content[0].text.strip()
+        raw = extract_text(msg).strip()
 
         # Strip markdown code fences if Claude wrapped in them
         if raw.startswith("```"):
@@ -820,11 +821,11 @@ Write the summary now:"""
         import anthropic
         ai_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
         msg = ai_client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=MODEL_ADVANCED,
             max_tokens=400,
             messages=[{"role": "user", "content": prompt}]
         )
-        summary = msg.content[0].text.strip()
+        summary = extract_text(msg).strip()
         return {"status": "success", "summary": summary}
     except Exception as e:
         return {"status": "error", "error": str(e)}
@@ -918,11 +919,11 @@ JSON array only:"""
         import anthropic, json as _json2
         ai_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
         msg = ai_client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=MODEL_ADVANCED,
             max_tokens=2000,
             messages=[{"role": "user", "content": prompt}]
         )
-        raw = msg.content[0].text.strip()
+        raw = extract_text(msg).strip()
         # Strip markdown fences if Claude wrapped in them
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
@@ -1056,7 +1057,7 @@ JSON STRUCTURE:
             max_tokens=4000,
             messages=[{"role": "user", "content": prompt}]
         )
-        raw = response.content[0].text.strip()
+        raw = extract_text(response).strip()
         # Strip markdown fences if present
         if raw.startswith("```"):
             lines = raw.split("\n")

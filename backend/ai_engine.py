@@ -14,6 +14,14 @@ MODEL = "claude-haiku-4-5-20251001"
 MODEL_ADVANCED = "claude-sonnet-5"  # Used for ATS analysis — needs higher accuracy
 
 
+def extract_text(response):
+    """Extract text from Claude response, skipping ThinkingBlock objects."""
+    for block in response.content:
+        if hasattr(block, 'text'):
+            return block.text
+    return ""
+
+
 async def summarise_job(job: dict) -> dict:
     prompt = f"""
 You are a job search assistant. Read this job description and extract key information.
@@ -35,7 +43,7 @@ DIFFICULTY: [Easy / Medium / Competitive]
             max_tokens=400,
             messages=[{"role": "user", "content": prompt}]
         )
-        raw = response.content[0].text
+        raw = extract_text(response)
         lines = raw.strip().split("\n")
         result = {}
         for line in lines:
@@ -156,7 +164,7 @@ Respond with ONLY valid JSON (no markdown, no explanation, no code fences):
             max_tokens=800,
             messages=[{"role": "user", "content": prompt}]
         )
-        raw = response.content[0].text.strip()
+        raw = extract_text(response).strip()
         print(f"✅ Claude ATS response: {raw[:120]}...")
 
         import json
@@ -314,7 +322,7 @@ Return ONLY valid JSON (no markdown, no code fences):
             max_tokens=2500,
             messages=[{"role": "user", "content": prompt}]
         )
-        raw = response.content[0].text.strip()
+        raw = extract_text(response).strip()
 
         import json
         json_start = raw.find('{')
@@ -357,7 +365,7 @@ Write the complete tailored resume now:
             max_tokens=2000,
             messages=[{"role": "user", "content": prompt}]
         )
-        return response.content[0].text
+        return extract_text(response)
     except Exception as e:
         print(f"❌ Resume tailoring error: {e}")
         return resume_text
@@ -392,7 +400,7 @@ Write the cover letter now:
             max_tokens=400,
             messages=[{"role": "user", "content": prompt}]
         )
-        return response.content[0].text
+        return extract_text(response)
     except Exception as e:
         print(f"❌ Cover letter error: {e}")
         return "Could not generate cover letter."
@@ -419,7 +427,7 @@ Generate all 10 now:
             max_tokens=2000,
             messages=[{"role": "user", "content": prompt}]
         )
-        raw = response.content[0].text
+        raw = extract_text(response)
         qa_pairs = []
         lines = raw.strip().split("\n")
         current_q = ""
