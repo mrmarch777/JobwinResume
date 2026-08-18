@@ -116,7 +116,7 @@ async def get_jobs(role: str, city: str, num_results: int = 20, plan: str = "fre
         raise HTTPException(status_code=400, detail="role and city are required")
     
     # Enforce limits on the backend for security
-    limit_map = {"free": 10, "basic": 20, "standard": 50, "pro": 100}
+    limit_map = {"free": 10, "basic": 20, "standard": 50, "pro": 100, "premium": 100}
     max_allowed = limit_map.get(plan.lower(), 10)
     
     # Use the smaller of requested vs allowed

@@ -103,7 +103,7 @@ export default function FindJob() {
     const limit = numResults || maxResults;
     try {
       // Pass the current plan to the backend for tier-enforcement
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jobs?role=${encodeURIComponent(role)}&city=${encodeURIComponent(city)}&num_results=${limit}&plan=${plan}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jobs?role=${encodeURIComponent(role)}&city=${encodeURIComponent(city)}&num_results=${limit}&plan=premium`);
       const data = await res.json();
       setProgress(100);
       setTimeout(() => { setJobs(data.jobs || []); setLoading(false); setSearched(true); }, 500);
