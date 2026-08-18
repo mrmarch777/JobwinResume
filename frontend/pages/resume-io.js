@@ -31,8 +31,9 @@ export default function ResumeIO() {
   const { theme } = useTheme();
   const router = useRouter();
   
-  const handleSelectTemplate = (templateId) => {
+  const handleSelectTemplate = (templateId, accentColor) => {
     switchTemplate(templateId);
+    if (accentColor) updateSettings({ accentColor });
     setView('editor');
   };
   
