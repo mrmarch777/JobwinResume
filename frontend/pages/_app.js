@@ -85,7 +85,10 @@ export default function App({ Component, pageProps }) {
   };
 
   const theme = THEMES[themeName];
-  const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
+  // When dev mode is ON (isDevMode=true in contexts.js), FEATURES.interview("free") returns true
+  // This means all features are unlocked, so use premium limits for everything
+  const devModeActive = FEATURES.interview("free");
+  const limits = devModeActive ? PLAN_LIMITS.premium : (PLAN_LIMITS[plan] || PLAN_LIMITS.free);
   const canAccess = (feature) => typeof FEATURES[feature] === "function" ? FEATURES[feature](plan) : false;
 
   return (
