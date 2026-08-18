@@ -12,6 +12,7 @@ export default function Sidebar({ activeId, collapsed, setCollapsed, user }) {
   const navItems = [
     { id: "home", icon: "⊞", label: "Home", href: "/dashboard" },
     { id: "resume", icon: "📄", label: "Resume Builder", href: "/resume" },
+    { id: "resume-io", icon: "✨", label: "Resume IO", href: "/resume-io", badge: "NEW" },
     { id: "tracker", icon: "📊", label: "Application Tracker", href: "/tracker" },
     { id: "cover", icon: "✉️", label: "Cover Letter Generator", href: "/apply" },
     { id: "interview", icon: "🎯", label: "Interview Prep", href: "/interview" },
@@ -105,7 +106,16 @@ export default function Sidebar({ activeId, collapsed, setCollapsed, user }) {
                 justifyContent: collapsed ? "center" : "flex-start" 
               }}>
               <span style={{ fontSize: "16px", flexShrink: 0 }}>{item.icon}</span>
-              {!collapsed && <span style={{ fontSize: "13px", fontWeight: activeId === item.id ? "600" : "400", whiteSpace: "nowrap" }}>{item.label}</span>}
+              {!collapsed && (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", overflow: "hidden" }}>
+                  <span style={{ fontSize: "13px", fontWeight: activeId === item.id ? "600" : "400", whiteSpace: "nowrap" }}>{item.label}</span>
+                  {item.badge && (
+                    <span style={{ background: "linear-gradient(135deg, #6C63FF, #FF6584)", color: "white", fontSize: "9px", fontWeight: "bold", padding: "2px 6px", borderRadius: "10px", letterSpacing: "0.5px" }}>
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </nav>
