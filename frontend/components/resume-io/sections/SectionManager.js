@@ -103,7 +103,8 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
                 <div style={contentStyle}>
                   <Component 
                     data={resume[sectionKey]} 
-                    onChange={(data) => updateSection(sectionKey, data)} 
+                    onChange={(data) => updateSection(sectionKey, data)}
+                    resumeContext={resume}
                   />
                 </div>
               )}

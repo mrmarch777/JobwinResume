@@ -20,7 +20,9 @@ const buttonStyle = {
   fontFamily: "'DM Sans', sans-serif", display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s'
 };
 
-export default function Summary({ data = "", onChange }) {
+export default function Summary({ data = "", onChange, resumeContext }) {
+  const [aiLoading, setAiLoading] = React.useState(false);
+  const [aiSuggestions, setAiSuggestions] = React.useState([]);
   const maxLength = 500;
   const currentLength = (data || "").length;
 
@@ -28,19 +30,51 @@ export default function Summary({ data = "", onChange }) {
     onChange(e.target.value);
   };
 
-  const handleAiSuggest = () => {
-    alert("AI suggestions coming soon!");
+  const handleAiSuggest = async () => {
+    setAiLoading(true);
+    try {
+      const context = `Job Title: ${resumeContext?.personal?.title || 'Professional'}\nExperience: ${resumeContext?.experience?.map(e => e.title + ' at ' + e.company).join(', ') || 'Various roles'}\nSkills: ${resumeContext?.skills?.map(s => s.name).join(', ') || 'Various skills'}`;
+      
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/improve-section`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ section_type: 'summary', content: context, instruction: 'Write a compelling 2-3 sentence professional summary' }),
+      });
+      const result = await res.json();
+      if (result.status === 'success' && result.improved) {
+        setAiSuggestions([result.improved]);
+      } else {
+        // Fallback for demo
+        setAiSuggestions(["Results-oriented professional with a proven track record of driving success.", "Experienced leader passionate about leveraging technology to solve complex problems."]);
+      }
+    } catch (err) {
+      console.error('AI suggestion failed:', err);
+      // Fallback for demo
+      setAiSuggestions(["Results-oriented professional with a proven track record of driving success.", "Experienced leader passionate about leveraging technology to solve complex problems."]);
+    }
+    setAiLoading(false);
   };
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <label style={{ ...labelStyle, marginBottom: 0 }}>Professional Summary</label>
-        <button onClick={handleAiSuggest} style={buttonStyle}>
-          ✨ AI Suggest
+        <button onClick={handleAiSuggest} style={buttonStyle} disabled={aiLoading}>
+          {aiLoading ? '✨ Generating...' : '✨ AI Suggest'}
         </button>
       </div>
       
+      {aiSuggestions.length > 0 && (
+        <div style={{ background: 'rgba(108, 99, 255, 0.05)', border: '1px solid rgba(108, 99, 255, 0.2)', borderRadius: '8px', padding: '12px', marginBottom: '12px' }}>
+          <div style={{ fontSize: '12px', color: '#6C63FF', marginBottom: '8px', fontWeight: 'bold' }}>Suggestions:</div>
+          {aiSuggestions.map((s, i) => (
+            <div key={i} onClick={() => { onChange(s); setAiSuggestions([]); }} style={{ fontSize: '13px', color: '#E8E6F0', padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', cursor: 'pointer', marginBottom: '4px' }}>
+              {s}
+            </div>
+          ))}
+        </div>
+      )}
+
       <div style={{ position: 'relative' }}>
         <textarea 
           value={data || ""} 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../lib/contexts';
 
-export default function EditorLayout({ formPanel, previewPanel, onBack }) {
+export default function EditorLayout({ formPanel, previewPanel, toolbar, onBack }) {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('form'); // 'form' | 'preview'
   const [isMobile, setIsMobile] = useState(false);
@@ -97,7 +97,9 @@ export default function EditorLayout({ formPanel, previewPanel, onBack }) {
           ← Back to Templates
         </button>
         <div style={{ fontFamily: "'Noto Serif', serif", fontWeight: '700', fontSize: '18px' }}>Resume IO</div>
-        <div style={{ width: '100px' }} /> {/* Spacer for centering */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {toolbar}
+        </div>
       </div>
 
       <div style={tabContainerStyle}>

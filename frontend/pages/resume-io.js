@@ -9,25 +9,19 @@ import ExportPanel from '../components/resume-io/ExportPanel';
 import useResumeState from '../components/resume-io/hooks/useResumeState';
 import Sidebar from '../components/Sidebar';
 
-// Stub components for SectionManager and TemplateRenderer until they are built
-const SectionManager = ({ resume, updateSection, updateSettings, addSection, removeSection, reorderSections }) => (
-  <div style={{ padding: '20px', color: '#fff' }}>
-    <h3>Editor Sections</h3>
-    <p>Sections placeholder</p>
-  </div>
-);
-
-const TemplateRenderer = ({ resume }) => (
-  <div style={{ padding: '40px' }}>
-    <h1 style={{ color: resume.accentColor, fontFamily: resume.fontFamily }}>{resume.personal?.name || 'Your Name'}</h1>
-    <p>Template ID: {resume.templateId}</p>
-    <p>This is a placeholder for the template renderer.</p>
-  </div>
-);
+import SectionManager from '../components/resume-io/sections/SectionManager';
+import TemplateRenderer from '../components/resume-io/templates/TemplateRenderer';
+import ResumeUpload from '../components/resume-io/ResumeUpload';
+import ATSChecker from '../components/resume-io/ATSChecker';
+import JDOptimizer from '../components/resume-io/JDOptimizer';
 
 export default function ResumeIO() {
   const [view, setView] = useState('gallery'); // 'gallery' | 'editor'
-  const { resume, updateSection, updateSettings, addSection, removeSection, reorderSections, switchTemplate } = useResumeState();
+  const [showUpload, setShowUpload] = useState(false);
+  const [showATS, setShowATS] = useState(false);
+  const [showOptimizer, setShowOptimizer] = useState(false);
+  
+  const { resume, updateSection, updateSettings, addSection, removeSection, reorderSections, switchTemplate, setResumeData } = useResumeState();
   const { theme } = useTheme();
   const router = useRouter();
   
@@ -35,6 +29,19 @@ export default function ResumeIO() {
     switchTemplate(templateId);
     if (accentColor) updateSettings({ accentColor });
     setView('editor');
+  };
+
+  const handleDataExtracted = (parsedData) => {
+    // Assuming useResumeState exposes a way to bulk update sections, or we update them individually
+    if (parsedData.personal) updateSection('personal', parsedData.personal);
+    if (parsedData.summary) updateSection('summary', parsedData.summary);
+    if (parsedData.experience) updateSection('experience', parsedData.experience);
+    if (parsedData.education) updateSection('education', parsedData.education);
+    if (parsedData.skills) updateSection('skills', parsedData.skills);
+  };
+
+  const handleApplyOptimization = (suggestions) => {
+    // Optimization handling
   };
   
   if (view === 'gallery') {
@@ -56,6 +63,13 @@ export default function ResumeIO() {
       <main style={{ flex: 1, overflow: 'hidden', marginLeft: '240px' }}>
         <EditorLayout
           onBack={() => setView('gallery')}
+          toolbar={
+            <>
+              <button onClick={() => setShowUpload(true)} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>📄 Import Resume</button>
+              <button onClick={() => setShowATS(true)} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>🎯 ATS Check</button>
+              <button onClick={() => setShowOptimizer(true)} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>✨ Optimize for JD</button>
+            </>
+          }
           formPanel={
             <SectionManager
               resume={resume}
@@ -77,6 +91,10 @@ export default function ResumeIO() {
           }
         />
       </main>
+      
+      {showUpload && <ResumeUpload onDataExtracted={handleDataExtracted} onClose={() => setShowUpload(false)} />}
+      {showATS && <ATSChecker resume={resume} onClose={() => setShowATS(false)} />}
+      {showOptimizer && <JDOptimizer resume={resume} onApplyOptimization={handleApplyOptimization} onClose={() => setShowOptimizer(false)} />}
     </div>
   );
 }

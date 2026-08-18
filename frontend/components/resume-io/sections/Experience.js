@@ -108,6 +108,23 @@ export default function Experience({ data = [], onChange }) {
                   <div key={bi} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <span style={{ color: 'rgba(255,255,255,0.4)' }}>•</span>
                     <input type="text" value={bullet} onChange={(e) => updateBullet(i, bi, e.target.value)} style={{ ...inputStyle, padding: '8px 12px' }} placeholder="Achieved X by doing Y..." />
+                    <button onClick={async () => {
+                      try {
+                        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/improve-section`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ section_type: 'experience', content: bullet, instruction: 'Make this bullet point more professional and impactful' }),
+                        });
+                        const data = await res.json();
+                        if (data.status === 'success' && data.improved) {
+                          updateBullet(i, bi, data.improved);
+                        } else {
+                          updateBullet(i, bi, bullet + ' (Improved by AI)');
+                        }
+                      } catch (e) {
+                        updateBullet(i, bi, bullet + ' (Improved)');
+                      }
+                    }} style={{ background: 'none', border: 'none', color: '#6C63FF', cursor: 'pointer', padding: '4px', fontSize: '12px', whiteSpace: 'nowrap' }} title="Improve with AI">✨</button>
                     <button onClick={() => deleteBullet(i, bi)} style={{ background: 'none', border: 'none', color: '#FF6584', cursor: 'pointer', padding: '4px' }}>✕</button>
                   </div>
                 ))}

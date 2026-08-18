@@ -6,6 +6,20 @@ import CreativeTemplate from './templates/CreativeTemplate';
 import MinimalTemplate from './templates/MinimalTemplate';
 import ExecutiveTemplate from './templates/ExecutiveTemplate';
 import ATSOptimizedTemplate from './templates/ATSOptimizedTemplate';
+import PhotoModernTemplate from './templates/PhotoModernTemplate';
+import PhotoSidebarTemplate from './templates/PhotoSidebarTemplate';
+import PhotoBoldTemplate from './templates/PhotoBoldTemplate';
+import PhotoMinimalTemplate from './templates/PhotoMinimalTemplate';
+import PhotoExecutiveTemplate from './templates/PhotoExecutiveTemplate';
+import TraditionalTemplate from './templates/TraditionalTemplate';
+import PrimeATSTemplate from './templates/PrimeATSTemplate';
+import CleanTemplate from './templates/CleanTemplate';
+import CorporateTemplate from './templates/CorporateTemplate';
+import ElegantTemplate from './templates/ElegantTemplate';
+import BoldTemplate from './templates/BoldTemplate';
+import IndustrialTemplate from './templates/IndustrialTemplate';
+import SpecialistTemplate from './templates/SpecialistTemplate';
+import TwoColumnTemplate from './templates/TwoColumnTemplate';
 
 const sampleResume = {
   templateId: 'classic',
@@ -98,15 +112,32 @@ const sampleResume = {
 };
 
 const templatesData = [
-  { id: 'classic', name: 'Classic', category: 'Professional', desc: 'A traditional layout with clean structure.', component: ClassicTemplate, colors: ['#2c3e50', '#6C63FF', '#1a7abf', '#2D6A4F'] },
-  { id: 'modern', name: 'Modern', category: 'Modern', desc: 'A sleek sidebar layout for a modern look.', component: ModernTemplate, colors: ['#6C63FF', '#0B7B3E', '#E63946', '#F59E0B'] },
-  { id: 'creative', name: 'Creative', category: 'Creative', desc: 'Bold headers and unique typography.', component: CreativeTemplate, colors: ['#7C3AED', '#FF6584', '#00D4FF', '#F59E0B'] },
-  { id: 'minimal', name: 'Minimal', category: 'Simple', desc: 'Ultra-clean focus on content.', component: MinimalTemplate, colors: ['#111111', '#34495E', '#444444'] },
-  { id: 'executive', name: 'Executive', category: 'Professional', desc: 'Two-column elegant header.', component: ExecutiveTemplate, colors: ['#0A4A6B', '#8B4513', '#2c3e50'] },
+  // Original 6
+  { id: 'classic', name: 'Classic', category: 'Professional', desc: 'Classically structured for a robust career history.', component: ClassicTemplate, colors: ['#2c3e50','#6C63FF','#1a7abf','#2D6A4F'] },
+  { id: 'modern', name: 'Modern', category: 'Modern', desc: 'A sleek sidebar layout for a modern look.', component: ModernTemplate, colors: ['#6C63FF','#0B7B3E','#E63946','#F59E0B'] },
+  { id: 'creative', name: 'Creative', category: 'Creative', desc: 'Bold headers and unique typography.', component: CreativeTemplate, colors: ['#7C3AED','#FF6584','#00D4FF','#F59E0B'] },
+  { id: 'minimal', name: 'Minimal', category: 'Simple', desc: 'Ultra-clean focus on content.', component: MinimalTemplate, colors: ['#111111','#34495E','#444444'] },
+  { id: 'executive', name: 'Executive', category: 'Professional', desc: 'Two-column elegant header.', component: ExecutiveTemplate, colors: ['#0A4A6B','#8B4513','#2c3e50'] },
   { id: 'ats', name: 'ATS Optimized', category: 'ATS', desc: 'Simple single column for software parsing.', component: ATSOptimizedTemplate, colors: [] },
+  // Photo templates (5)
+  { id: 'photo-modern', name: 'Photo Modern', category: 'With Photo', desc: 'Modern sidebar with your professional photo.', component: PhotoModernTemplate, colors: ['#6C63FF','#0B7B3E','#E63946','#2c3e50'] },
+  { id: 'photo-sidebar', name: 'Photo Sidebar', category: 'With Photo', desc: 'Dark sidebar with square photo placement.', component: PhotoSidebarTemplate, colors: ['#1a1a2e','#2c3e50','#0A4A6B'] },
+  { id: 'photo-bold', name: 'Photo Bold', category: 'With Photo', desc: 'Full-width header with centered photo.', component: PhotoBoldTemplate, colors: ['#6C63FF','#E63946','#7C3AED','#0B7B3E'] },
+  { id: 'photo-minimal', name: 'Photo Minimal', category: 'With Photo', desc: 'Clean layout with a small profile photo.', component: PhotoMinimalTemplate, colors: ['#111111','#34495E','#2D6A4F'] },
+  { id: 'photo-executive', name: 'Photo Executive', category: 'With Photo', desc: 'Elegant executive style with headshot.', component: PhotoExecutiveTemplate, colors: ['#0A4A6B','#8B4513','#2c3e50'] },
+  // Standard templates (9)
+  { id: 'traditional', name: 'Traditional', category: 'Professional', desc: 'Conservative layout for traditional industries.', component: TraditionalTemplate, colors: ['#111111','#2c3e50','#8B4513'] },
+  { id: 'prime-ats', name: 'Prime ATS', category: 'ATS', desc: 'Streamlined for maximum ATS compatibility.', component: PrimeATSTemplate, colors: [] },
+  { id: 'clean', name: 'Clean', category: 'Simple', desc: 'Modern and clean with bold section dividers.', component: CleanTemplate, colors: ['#6C63FF','#0B7B3E','#E63946','#F59E0B'] },
+  { id: 'corporate', name: 'Corporate', category: 'Professional', desc: 'Business-formal for corporate environments.', component: CorporateTemplate, colors: ['#2c3e50','#0A4A6B','#34495E'] },
+  { id: 'elegant', name: 'Elegant', category: 'Creative', desc: 'Refined and sophisticated design.', component: ElegantTemplate, colors: ['#6C63FF','#8B4513','#7C3AED','#E63946'] },
+  { id: 'bold', name: 'Bold', category: 'Creative', desc: 'Strong typography and high impact.', component: BoldTemplate, colors: ['#E63946','#6C63FF','#0B7B3E','#F59E0B'] },
+  { id: 'industrial', name: 'Industrial', category: 'Modern', desc: 'Structured grid layout with technical feel.', component: IndustrialTemplate, colors: ['#1a1a2e','#2c3e50','#34495E'] },
+  { id: 'specialist', name: 'Specialist', category: 'Professional', desc: 'Skills-focused layout for technical roles.', component: SpecialistTemplate, colors: ['#6C63FF','#0B7B3E','#E63946'] },
+  { id: 'two-column', name: 'Two Column', category: 'Modern', desc: 'Balanced two-column professional layout.', component: TwoColumnTemplate, colors: ['#6C63FF','#2c3e50','#0A4A6B','#7C3AED'] },
 ];
 
-const categories = ['All Templates', 'Professional', 'Modern', 'Creative', 'Simple', 'ATS'];
+const categories = ['All Templates', 'Professional', 'Modern', 'Creative', 'Simple', 'ATS', 'With Photo'];
 
 export default function TemplateGallery({ onSelect }) {
   const { theme } = useTheme();
