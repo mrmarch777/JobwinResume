@@ -1,9 +1,9 @@
 import React from 'react';
 
 const inputStyle = {
-  width: '100%', padding: '12px 16px 12px 40px', background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px',
-  color: '#E8E6F0', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
+  width: '100%', padding: '12px 16px 12px 40px', background: 'var(--theme-input-bg)',
+  border: '1px solid var(--theme-border)', borderRadius: '10px',
+  color: 'var(--theme-text)', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
   outline: 'none', transition: 'border 0.2s', boxSizing: 'border-box'
 };
 const btnStyle = {

@@ -52,10 +52,10 @@ export default function ResumeUpload({ onDataExtracted, onClose }) {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#09090f', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '32px', width: '90%', maxWidth: '500px', position: 'relative', fontFamily: "'DM Sans', sans-serif" }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#E8E6F0', cursor: 'pointer', fontSize: '20px' }}>✕</button>
-        <h2 style={{ fontFamily: "'Noto Serif', serif", color: '#E8E6F0', marginTop: 0 }}>Import Your Resume</h2>
-        <p style={{ color: 'rgba(255,255,255,0.4)', marginBottom: '24px' }}>Upload your existing resume to pre-fill the editor</p>
+      <div style={{ background: 'var(--theme-bg)', border: '1px solid var(--theme-border)', borderRadius: '16px', padding: '32px', width: '90%', maxWidth: '500px', position: 'relative', fontFamily: "'DM Sans', sans-serif" }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--theme-text)', cursor: 'pointer', fontSize: '20px' }}>✕</button>
+        <h2 style={{ fontFamily: "'Noto Serif', serif", color: 'var(--theme-text)', marginTop: 0 }}>Import Your Resume</h2>
+        <p style={{ color: 'var(--theme-muted)', marginBottom: '24px' }}>Upload your existing resume to pre-fill the editor</p>
         
         <div style={{ border: '2px dashed rgba(255,255,255,0.2)', borderRadius: '12px', padding: '40px 20px', textAlign: 'center', position: 'relative' }}>
           <div style={{ fontSize: '40px', marginBottom: '16px' }}>📄</div>
@@ -63,7 +63,7 @@ export default function ResumeUpload({ onDataExtracted, onClose }) {
             <div style={{ color: '#6C63FF' }}>Parsing PDF...</div>
           ) : (
             <>
-              <div style={{ marginBottom: '12px', color: '#E8E6F0' }}>Drag & Drop or click to upload</div>
+              <div style={{ marginBottom: '12px', color: 'var(--theme-text)' }}>Drag & Drop or click to upload</div>
               <input type="file" accept=".pdf" onChange={handleFileUpload} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0, cursor: 'pointer' }} />
               <button style={{ background: '#6C63FF', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>Choose File</button>
             </>

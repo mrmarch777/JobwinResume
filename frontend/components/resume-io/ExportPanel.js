@@ -53,8 +53,8 @@ export default function ExportPanel({ resume }) {
   };
 
   const containerStyle = {
-    background: 'rgba(255,255,255,0.03)',
-    border: `1px solid rgba(255,255,255,0.06)`, // Keeping dark theme elements on light bg is tricky, let's use standard light theme styling since it's in the preview panel
+    background: 'var(--theme-card)',
+    border: `1px solid var(--theme-border)`, // Keeping dark theme elements on light bg is tricky, let's use standard light theme styling since it's in the preview panel
     borderRadius: '12px',
     padding: '16px',
     display: 'flex',

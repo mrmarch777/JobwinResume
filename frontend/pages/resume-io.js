@@ -44,9 +44,19 @@ export default function ResumeIO() {
     // Optimization handling
   };
   
+  const themeVars = {
+    '--theme-bg': theme.bg,
+    '--theme-card': theme.card,
+    '--theme-border': theme.border,
+    '--theme-text': theme.text,
+    '--theme-muted': theme.muted,
+    '--theme-accent': theme.accent,
+    '--theme-input-bg': theme.inputBg,
+  };
+
   if (view === 'gallery') {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', background: theme.bg }}>
+      <div style={{ display: 'flex', minHeight: '100vh', background: theme.bg, ...themeVars }}>
         <PageHead title="Resume IO" description="Build a professional resume with our advanced builder" />
         <Sidebar activeId="resume-io" />
         <main style={{ flex: 1, overflow: 'auto', marginLeft: '240px' }}>
@@ -57,7 +67,7 @@ export default function ResumeIO() {
   }
   
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: theme.bg }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: theme.bg, ...themeVars }}>
       <PageHead title="Resume IO — Editor" />
       <Sidebar activeId="resume-io" />
       <main style={{ flex: 1, overflow: 'hidden', marginLeft: '240px' }}>

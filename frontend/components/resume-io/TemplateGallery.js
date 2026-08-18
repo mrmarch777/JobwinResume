@@ -167,7 +167,7 @@ export default function TemplateGallery({ onSelect }) {
     color: theme.text,
     fontFamily: "'DM Sans', sans-serif",
     minHeight: '100vh',
-    background: '#09090f'
+    background: 'var(--theme-bg)'
   };
 
   const headerStyle = {
@@ -186,7 +186,7 @@ export default function TemplateGallery({ onSelect }) {
   const getTabStyle = (isActive) => ({
     padding: '8px 20px',
     borderRadius: '20px',
-    background: isActive ? theme.accent : 'rgba(255,255,255,0.05)',
+    background: isActive ? theme.accent : 'var(--theme-input-bg)',
     color: isActive ? '#fff' : theme.text,
     border: `1px solid ${isActive ? theme.accent : 'rgba(255,255,255,0.1)'}`,
     cursor: 'pointer',
@@ -204,8 +204,8 @@ export default function TemplateGallery({ onSelect }) {
   const getCardStyle = (id) => {
     const isHovered = hoveredId === id;
     return {
-      background: 'rgba(255,255,255,0.03)',
-      border: `1px solid rgba(255,255,255,0.06)`,
+      background: 'var(--theme-card)',
+      border: `1px solid var(--theme-border)`,
       borderRadius: '12px',
       overflow: 'hidden',
       cursor: 'pointer',
@@ -221,7 +221,7 @@ export default function TemplateGallery({ onSelect }) {
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
-        <h1 style={{ fontFamily: "'Noto Serif', serif", fontSize: '42px', marginBottom: '16px', color: '#E8E6F0' }}>Choose a Template</h1>
+        <h1 style={{ fontFamily: "'Noto Serif', serif", fontSize: '42px', marginBottom: '16px', color: 'var(--theme-text)' }}>Choose a Template</h1>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>Select from our professionally designed templates to get started building your resume.</p>
       </div>
 
@@ -257,7 +257,7 @@ export default function TemplateGallery({ onSelect }) {
                 overflow: 'hidden', 
                 position: 'relative',
                 background: '#fff',
-                borderBottom: '1px solid rgba(255,255,255,0.06)'
+                borderBottom: '1px solid var(--theme-border)'
               }}>
                 <div style={{
                   transform: 'scale(0.35)',
@@ -331,13 +331,13 @@ export default function TemplateGallery({ onSelect }) {
               
               <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                  <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0, color: '#E8E6F0', fontFamily: "'Noto Serif', serif" }}>{template.name}</h3>
+                  <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0, color: 'var(--theme-text)', fontFamily: "'Noto Serif', serif" }}>{template.name}</h3>
                   <span style={{ fontSize: '12px', padding: '4px 12px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px', color: 'rgba(255,255,255,0.8)' }}>
                     {template.category}
                   </span>
                 </div>
                 
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', margin: '0 0 20px 0', flex: 1, lineHeight: '1.5' }}>
+                <p style={{ color: 'var(--theme-muted)', fontSize: '14px', margin: '0 0 20px 0', flex: 1, lineHeight: '1.5' }}>
                   {template.desc}
                 </p>
 

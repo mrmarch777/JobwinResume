@@ -22,17 +22,17 @@ const sectionComponents = {
 };
 
 const cardStyle = {
-  background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+  background: 'var(--theme-card)', border: '1px solid var(--theme-border)',
   borderRadius: '16px', marginBottom: '16px', overflow: 'hidden'
 };
 
 const headerStyle = {
   padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-  cursor: 'pointer', background: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.06)'
+  cursor: 'pointer', background: 'var(--theme-card)', borderBottom: '1px solid var(--theme-border)'
 };
 
 const titleStyle = {
-  display: 'flex', alignItems: 'center', gap: '12px', color: '#E8E6F0',
+  display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--theme-text)',
   fontSize: '16px', fontWeight: '600', fontFamily: "'Noto Serif', serif"
 };
 
@@ -41,15 +41,15 @@ const contentStyle = {
 };
 
 const labelStyle = {
-  display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '12px',
+  display: 'block', color: 'var(--theme-muted)', fontSize: '12px',
   fontWeight: '500', marginBottom: '6px', fontFamily: "'DM Sans', sans-serif",
   textTransform: 'uppercase', letterSpacing: '0.5px',
 };
 
 const selectStyle = {
-  width: '100%', padding: '12px 16px', background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px',
-  color: '#E8E6F0', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
+  width: '100%', padding: '12px 16px', background: 'var(--theme-input-bg)',
+  border: '1px solid var(--theme-border)', borderRadius: '10px',
+  color: 'var(--theme-text)', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
   outline: 'none', transition: 'border 0.2s', boxSizing: 'border-box',
   appearance: 'none', backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23E8E6F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")',
   backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px top 50%', backgroundSize: '10px auto'
@@ -93,7 +93,7 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
                       ✕
                     </button>
                   )}
-                  <span style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s', color: 'rgba(255,255,255,0.5)' }}>
+                  <span style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s', color: 'var(--theme-muted)' }}>
                     ▼
                   </span>
                 </div>
@@ -130,7 +130,7 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
           {showAddMenu && (
             <div style={{
               position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '8px',
-              background: '#09090f', border: '1px solid rgba(255,255,255,0.1)',
+              background: 'var(--theme-bg)', border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: '12px', padding: '8px', zIndex: 10,
               boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
             }}>
@@ -140,9 +140,9 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
                   onClick={() => { addSection(key); setShowAddMenu(false); setExpandedSection(key); }}
                   style={{
                     padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px',
-                    cursor: 'pointer', borderRadius: '8px', color: '#E8E6F0', fontSize: '14px'
+                    cursor: 'pointer', borderRadius: '8px', color: 'var(--theme-text)', fontSize: '14px'
                   }}
-                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'var(--theme-input-bg)'}
                   onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                 >
                   <span>{sectionComponents[key].icon}</span>
@@ -182,11 +182,11 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
               onChange={(e) => updateSettings({ fontFamily: e.target.value })}
               style={selectStyle}
             >
-              <option value="DM Sans" style={{background: '#09090f'}}>DM Sans</option>
-              <option value="Inter" style={{background: '#09090f'}}>Inter</option>
-              <option value="Noto Serif" style={{background: '#09090f'}}>Noto Serif</option>
-              <option value="Georgia" style={{background: '#09090f'}}>Georgia</option>
-              <option value="Roboto" style={{background: '#09090f'}}>Roboto</option>
+              <option value="DM Sans" style={{background: 'var(--theme-bg)'}}>DM Sans</option>
+              <option value="Inter" style={{background: 'var(--theme-bg)'}}>Inter</option>
+              <option value="Noto Serif" style={{background: 'var(--theme-bg)'}}>Noto Serif</option>
+              <option value="Georgia" style={{background: 'var(--theme-bg)'}}>Georgia</option>
+              <option value="Roboto" style={{background: 'var(--theme-bg)'}}>Roboto</option>
             </select>
           </div>
         </div>
@@ -199,9 +199,9 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
               onChange={(e) => updateSettings({ fontSize: e.target.value })}
               style={selectStyle}
             >
-              <option value="small" style={{background: '#09090f'}}>Small</option>
-              <option value="medium" style={{background: '#09090f'}}>Medium</option>
-              <option value="large" style={{background: '#09090f'}}>Large</option>
+              <option value="small" style={{background: 'var(--theme-bg)'}}>Small</option>
+              <option value="medium" style={{background: 'var(--theme-bg)'}}>Medium</option>
+              <option value="large" style={{background: 'var(--theme-bg)'}}>Large</option>
             </select>
           </div>
           <div>
@@ -211,9 +211,9 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
               onChange={(e) => updateSettings({ spacing: e.target.value })}
               style={selectStyle}
             >
-              <option value="compact" style={{background: '#09090f'}}>Compact</option>
-              <option value="normal" style={{background: '#09090f'}}>Normal</option>
-              <option value="spacious" style={{background: '#09090f'}}>Spacious</option>
+              <option value="compact" style={{background: 'var(--theme-bg)'}}>Compact</option>
+              <option value="normal" style={{background: 'var(--theme-bg)'}}>Normal</option>
+              <option value="spacious" style={{background: 'var(--theme-bg)'}}>Spacious</option>
             </select>
           </div>
         </div>
@@ -228,8 +228,8 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
                 style={{
                   minWidth: '100px', height: '140px', borderRadius: '8px', cursor: 'pointer',
                   border: resume.templateId === template ? '2px solid #6C63FF' : '1px solid rgba(255,255,255,0.1)',
-                  background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: resume.templateId === template ? '#6C63FF' : 'rgba(255,255,255,0.5)',
+                  background: 'var(--theme-input-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: resume.templateId === template ? '#6C63FF' : 'var(--theme-muted)',
                   textTransform: 'capitalize', fontSize: '14px', fontWeight: '500'
                 }}
               >

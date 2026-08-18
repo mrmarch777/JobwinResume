@@ -84,7 +84,7 @@ export default function EditorLayout({ formPanel, previewPanel, toolbar, onBack 
     padding: '12px',
     textAlign: 'center',
     cursor: 'pointer',
-    background: activeTab === tabId ? 'rgba(255,255,255,0.05)' : 'transparent',
+    background: activeTab === tabId ? 'var(--theme-input-bg)' : 'transparent',
     borderBottom: activeTab === tabId ? `2px solid ${theme.accent}` : '2px solid transparent',
     color: activeTab === tabId ? theme.accent : theme.muted,
     fontWeight: activeTab === tabId ? '600' : 'normal'
@@ -93,7 +93,7 @@ export default function EditorLayout({ formPanel, previewPanel, toolbar, onBack 
   return (
     <div style={layoutStyle}>
       <div style={topBarStyle}>
-        <button style={backBtnStyle} onClick={onBack} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseOut={e => e.currentTarget.style.background = 'none'}>
+        <button style={backBtnStyle} onClick={onBack} onMouseOver={e => e.currentTarget.style.background = 'var(--theme-input-bg)'} onMouseOut={e => e.currentTarget.style.background = 'none'}>
           ← Back to Templates
         </button>
         <div style={{ fontFamily: "'Noto Serif', serif", fontWeight: '700', fontSize: '18px' }}>Resume IO</div>

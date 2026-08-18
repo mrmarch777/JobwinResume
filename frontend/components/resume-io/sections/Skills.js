@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 
 const inputStyle = {
-  width: '100%', padding: '12px 16px', background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px',
-  color: '#E8E6F0', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
+  width: '100%', padding: '12px 16px', background: 'var(--theme-input-bg)',
+  border: '1px solid var(--theme-border)', borderRadius: '10px',
+  color: 'var(--theme-text)', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
   outline: 'none', transition: 'border 0.2s', boxSizing: 'border-box'
 };
 
 const tagStyle = {
-  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+  background: 'var(--theme-input-bg)', border: '1px solid rgba(255,255,255,0.1)',
   borderRadius: '20px', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '12px',
-  color: '#E8E6F0', fontSize: '13px'
+  color: 'var(--theme-text)', fontSize: '13px'
 };
 
 const dotStyle = (active) => ({
@@ -68,7 +68,7 @@ export default function Skills({ data = [], onChange }) {
                 />
               ))}
             </div>
-            <button onClick={() => deleteSkill(i)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 0, marginLeft: '4px' }}>✕</button>
+            <button onClick={() => deleteSkill(i)} style={{ background: 'none', border: 'none', color: 'var(--theme-muted)', cursor: 'pointer', padding: 0, marginLeft: '4px' }}>✕</button>
           </div>
         ))}
       </div>

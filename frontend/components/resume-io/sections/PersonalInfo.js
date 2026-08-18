@@ -1,13 +1,13 @@
 import React, { useRef } from 'react';
 
 const inputStyle = {
-  width: '100%', padding: '12px 16px', background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px',
-  color: '#E8E6F0', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
+  width: '100%', padding: '12px 16px', background: 'var(--theme-input-bg)',
+  border: '1px solid var(--theme-border)', borderRadius: '10px',
+  color: 'var(--theme-text)', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
   outline: 'none', transition: 'border 0.2s', boxSizing: 'border-box'
 };
 const labelStyle = {
-  display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '12px',
+  display: 'block', color: 'var(--theme-muted)', fontSize: '12px',
   fontWeight: '500', marginBottom: '6px', fontFamily: "'DM Sans', sans-serif",
   textTransform: 'uppercase', letterSpacing: '0.5px',
 };
@@ -43,7 +43,7 @@ export default function PersonalInfo({ data = {}, onChange }) {
         <div 
           onClick={() => fileInputRef.current.click()}
           style={{
-            width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)',
+            width: '80px', height: '80px', borderRadius: '50%', background: 'var(--theme-input-bg)',
             border: '2px dashed rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center',
             justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0
           }}
@@ -54,7 +54,7 @@ export default function PersonalInfo({ data = {}, onChange }) {
             <span style={{ fontSize: '24px', opacity: 0.5 }}>📷</span>
           )}
         </div>
-        <div style={{ flex: 1, fontSize: '14px', color: 'rgba(255,255,255,0.5)' }}>
+        <div style={{ flex: 1, fontSize: '14px', color: 'var(--theme-muted)' }}>
           Click to upload a profile photo (optional).
           <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" style={{ display: 'none' }} />
         </div>

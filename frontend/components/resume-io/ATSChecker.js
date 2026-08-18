@@ -51,18 +51,18 @@ export default function ATSChecker({ resume, onClose }) {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#09090f', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '32px', width: '90%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', fontFamily: "'DM Sans', sans-serif" }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#E8E6F0', cursor: 'pointer', fontSize: '20px' }}>✕</button>
-        <h2 style={{ fontFamily: "'Noto Serif', serif", color: '#E8E6F0', marginTop: 0 }}>🎯 ATS Score Checker</h2>
+      <div style={{ background: 'var(--theme-bg)', border: '1px solid var(--theme-border)', borderRadius: '16px', padding: '32px', width: '90%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', fontFamily: "'DM Sans', sans-serif" }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--theme-text)', cursor: 'pointer', fontSize: '20px' }}>✕</button>
+        <h2 style={{ fontFamily: "'Noto Serif', serif", color: 'var(--theme-text)', marginTop: 0 }}>🎯 ATS Score Checker</h2>
         
         {!result ? (
           <>
-            <p style={{ color: 'rgba(255,255,255,0.4)', marginBottom: '16px' }}>Paste the Job Description below to check your resume's ATS compatibility.</p>
+            <p style={{ color: 'var(--theme-muted)', marginBottom: '16px' }}>Paste the Job Description below to check your resume's ATS compatibility.</p>
             <textarea 
               value={jd} 
               onChange={e => setJd(e.target.value)}
               placeholder="Paste job description here..."
-              style={{ width: '100%', height: '200px', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#E8E6F0', outline: 'none', fontFamily: 'inherit', resize: 'vertical' }}
+              style={{ width: '100%', height: '200px', padding: '12px', background: 'var(--theme-input-bg)', border: '1px solid var(--theme-border)', borderRadius: '8px', color: 'var(--theme-text)', outline: 'none', fontFamily: 'inherit', resize: 'vertical' }}
             />
             <button 
               onClick={checkATS} 
@@ -80,21 +80,21 @@ export default function ATSChecker({ resume, onClose }) {
               </div>
             </div>
             
-            <h4 style={{ color: '#E8E6F0', marginBottom: '8px' }}>Matched Keywords</h4>
+            <h4 style={{ color: 'var(--theme-text)', marginBottom: '8px' }}>Matched Keywords</h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
               {(result.matched_keywords || []).map((kw, i) => (
                 <span key={i} style={{ background: 'rgba(76, 175, 80, 0.1)', color: '#4CAF50', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>{kw}</span>
               ))}
             </div>
             
-            <h4 style={{ color: '#E8E6F0', marginBottom: '8px' }}>Missing Keywords</h4>
+            <h4 style={{ color: 'var(--theme-text)', marginBottom: '8px' }}>Missing Keywords</h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
               {(result.missing_keywords || []).map((kw, i) => (
                 <span key={i} style={{ background: 'rgba(255, 101, 132, 0.1)', color: '#FF6584', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>{kw}</span>
               ))}
             </div>
             
-            <h4 style={{ color: '#E8E6F0', marginBottom: '8px' }}>Suggestions</h4>
+            <h4 style={{ color: 'var(--theme-text)', marginBottom: '8px' }}>Suggestions</h4>
             <ul style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', paddingLeft: '20px' }}>
               {(result.suggestions || []).map((s, i) => <li key={i} style={{ marginBottom: '4px' }}>{s}</li>)}
             </ul>
