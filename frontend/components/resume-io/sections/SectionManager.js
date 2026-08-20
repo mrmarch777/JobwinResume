@@ -44,24 +44,55 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", padding: '0 16px 60px 16px', maxWidth: '800px', margin: '0 auto' }}>
       
+      {/* Import Resume Button */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+        <button onClick={onUploadResume} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#F3F4F6', color: '#374151', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s' }}>
+          <Upload size={16} /> Upload Resume (Auto-fill)
+        </button>
+      </div>
+
       {/* Progress Bar (Resume.io style) */}
-      <div style={{ padding: '24px 0', borderBottom: '1px solid #E5E7EB', marginBottom: '24px' }}>
+      <div style={{ padding: '0 0 24px 0', borderBottom: '1px solid #E5E7EB', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
           <div style={{ background: '#16A34A', color: 'white', fontWeight: 'bold', padding: '4px 8px', borderRadius: '4px', fontSize: '13px' }}>
             {completeness}%
           </div>
-          <span style={{ fontSize: '15px', color: '#6B7280', fontWeight: '500' }}>Resume completeness</span>
+          <div style={{ color: '#6B7280', fontSize: '14px', fontWeight: '500' }}>Resume completeness</div>
         </div>
-        <div style={{ height: '4px', background: '#E5E7EB', borderRadius: '2px', overflow: 'hidden' }}>
-          <div style={{ height: '100%', background: '#16A34A', width: `${completeness}%`, transition: 'width 0.3s ease' }}></div>
+        <div style={{ width: '100%', height: '4px', background: '#E5E7EB', borderRadius: '2px', overflow: 'hidden', marginBottom: '16px' }}>
+          <div style={{ width: `${completeness}%`, height: '100%', background: '#16A34A' }} />
         </div>
-        
-        {/* Quick Actions */}
-        <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
-          <button style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', background: '#F5F3FF', color: '#6D28D9', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', flex: 1, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            onClick={async () => {
+              const currentSummary = resume.summary || '';
+              updateSection('summary', currentSummary + (currentSummary ? '\n' : '') + '(Generating summary...)');
+              try {
+                const res = await fetch('/api/improve-section', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ section_type: 'summary', content: currentSummary, instruction: 'Write a professional summary from scratch based on my details.' }),
+                });
+                const resData = await res.json();
+                if (resData.status === 'success') {
+                  updateSection('summary', resData.improved);
+                  // Expand the summary section
+                  setExpandedSection('summary');
+                } else {
+                  updateSection('summary', currentSummary);
+                }
+              } catch (e) {
+                updateSection('summary', currentSummary);
+              }
+            }}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: '#F5F3FF', color: '#7C3AED', border: '1px solid #EDE9FE', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s' }}
+          >
             <Sparkles size={16} /> Try AI profile summary
           </button>
-          <button style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', background: '#EFF6FF', color: '#2563EB', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', flex: 1, justifyContent: 'center' }}>
+          <button 
+            onClick={() => window.location.href = '/apply'}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: '#EFF6FF', color: '#2563EB', border: '1px solid #DBEAFE', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s' }}
+          >
             <Sparkles size={16} /> Create quick cover letter
           </button>
         </div>

@@ -154,7 +154,29 @@ export default function Experience({ data = [], onChange }) {
                             style={{ ...STYLES.input, minHeight: '60px', resize: 'vertical' }} 
                             placeholder="e.g. Achieved X by doing Y..." 
                           />
-                          <button style={{ position: 'absolute', right: '8px', top: '8px', background: '#EFF6FF', color: '#2563EB', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }}>
+                          <button 
+                            onClick={async () => {
+                              const original = bullet;
+                              if (!original) return;
+                              updateBullet(i, bi, original + ' (Improving...)');
+                              try {
+                                const res = await fetch('/api/improve-section', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ section_type: 'experience_bullet', content: original })
+                                });
+                                const resData = await res.json();
+                                if (resData.status === 'success') {
+                                  updateBullet(i, bi, resData.improved);
+                                } else {
+                                  updateBullet(i, bi, original);
+                                }
+                              } catch (e) {
+                                updateBullet(i, bi, original);
+                              }
+                            }}
+                            style={{ position: 'absolute', right: '8px', top: '8px', background: '#EFF6FF', color: '#2563EB', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }}
+                          >
                             ✨ Improve
                           </button>
                         </div>

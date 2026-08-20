@@ -19,7 +19,7 @@ export default function Summary({ data = '', onChange, resumeContext }) {
 
   const handleAiWriter = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/improve-section`, {
+      const res = await fetch('/api/improve-section', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ section_type: 'summary', content: data, instruction: 'Write a professional summary', resumeContext }),
