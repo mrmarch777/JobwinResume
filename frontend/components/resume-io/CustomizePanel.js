@@ -196,23 +196,23 @@ export default function CustomizePanel({ resume, updateSettings, switchTemplate 
       borderRight: '1px solid #E5E7EB'
     }}>
       {/* Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #E5E7EB', padding: '0 16px' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid #E5E7EB' }}>
         {tabs.map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             style={{
-              padding: '16px 12px',
+              flex: 1,
+              padding: '16px 0',
               background: 'none',
               border: 'none',
-              borderBottom: activeTab === tab ? '2px solid #2563EB' : '2px solid transparent',
-              color: activeTab === tab ? '#2563EB' : '#6B7280',
-              fontWeight: activeTab === tab ? '600' : '400',
-              fontSize: '14px',
+              borderBottom: activeTab === tab ? '3px solid #2563EB' : '3px solid transparent',
+              color: activeTab === tab ? '#111827' : '#9CA3AF',
+              fontWeight: activeTab === tab ? '600' : '500',
+              fontSize: '15px',
               cursor: 'pointer',
               outline: 'none',
               transition: 'all 0.2s ease',
-              marginRight: '8px'
             }}
           >
             {tab}
@@ -221,140 +221,98 @@ export default function CustomizePanel({ resume, updateSettings, switchTemplate 
       </div>
 
       {/* Content */}
-      <div style={{ padding: '24px 16px', overflowY: 'auto', flex: 1 }}>
+      <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
         
         {/* TAB 1: Template & Colors */}
         {activeTab === 'Template & Colors' && (
           <div>
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '12px' }}>Main color</label>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                {colors.slice(0, 6).map((color, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleColorSelect(color)}
-                    style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      background: color,
-                      border: 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: 0,
-                      boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)'
-                    }}
-                  >
-                    {currentAccent === color && <Check size={14} color="#ffffff" strokeWidth={3} />}
-                  </button>
-                ))}
-                
-                <button
-                  onClick={handleCustomColorClick}
-                  style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '50%',
-                    background: '#F3F4F6',
-                    border: '1px solid #E5E7EB',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 0,
-                    color: '#4B5563'
-                  }}
-                >
-                  <Plus size={16} />
-                </button>
-                <input 
-                  type="color" 
-                  ref={customColorInputRef} 
-                  value={currentAccent}
-                  onChange={handleCustomColorChange}
-                  style={{ opacity: 0, position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px', marginBottom: '24px', scrollbarWidth: 'none' }}>
-              {FILTER_CATEGORIES.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveFilter(cat)}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '999px',
-                    background: activeFilter === cat ? '#DBEAFE' : 'transparent',
-                    color: activeFilter === cat ? '#2563EB' : '#4B5563',
-                    border: 'none',
-                    fontSize: '13px',
-                    fontWeight: activeFilter === cat ? '500' : '400',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {cat}
-                </button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '32px' }}>
+              <label style={{ fontSize: '15px', fontWeight: '500', color: '#111827' }}>Main color</label>
+              
+              <button style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#111827', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Check size={16} color="#ffffff" strokeWidth={3} />
+              </button>
+              
+              {/* Dummy locked colors to match screenshot */}
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#FFFFFF', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </div>
               ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ borderTop: '1px solid #E5E7EB', borderBottom: '1px solid #E5E7EB', padding: '24px 0', marginBottom: '32px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '12px' }}>
+                {FILTER_CATEGORIES.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveFilter(cat)}
+                    style={{
+                      padding: '8px 20px',
+                      borderRadius: '999px',
+                      background: '#FFFFFF',
+                      color: activeFilter === cat ? '#2563EB' : '#374151',
+                      border: activeFilter === cat ? '1px solid #2563EB' : '1px solid #E5E7EB',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '32px 24px' }}>
               {filteredTemplates.map(template => {
                 const TemplateComp = template.component;
                 const isActive = resume?.templateId === template.id;
+                
                 return (
-                  <div 
-                    key={template.id}
-                    onClick={() => switchTemplate(template.id)}
-                    style={{
-                      background: '#ffffff',
-                      border: isActive ? '3px solid #2563EB' : '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                      overflow: 'hidden',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      transition: 'box-shadow 0.2s ease',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)'}
-                    onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)'}
-                  >
-                    <div style={{ height: '160px', overflow: 'hidden', position: 'relative', background: '#f8f9fa' }}>
-                       <div style={{
-                          transform: 'scale(0.28)',
-                          transformOrigin: 'top left',
-                          width: '794px',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                       }}>
-                         <TemplateComp resume={{ ...sampleResume, templateId: template.id, accentColor: currentAccent }} />
-                       </div>
-                    </div>
-                    <div style={{ padding: '8px 12px', fontSize: '12px', fontWeight: '500', color: '#111827', textAlign: 'center', borderTop: '1px solid #E5E7EB' }}>
+                  <div key={template.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '500', color: '#111827', marginBottom: '12px' }}>
                       {template.name}
                     </div>
-                    {isActive && (
+                    
+                    <div 
+                      onClick={() => switchTemplate(template.id)}
+                      style={{
+                        width: '100%',
+                        aspectRatio: '210 / 297',
+                        background: '#ffffff',
+                        border: isActive ? '3px solid #2563EB' : '1px solid #E5E7EB',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        transition: 'all 0.2s ease',
+                        boxShadow: isActive ? '0 4px 12px rgba(37, 99, 235, 0.2)' : '0 2px 8px rgba(0,0,0,0.05)',
+                        overflow: 'hidden'
+                      }}
+                    >
                       <div style={{
+                        width: '794px',
+                        height: '1123px',
+                        transform: 'scale(0.23)',
+                        transformOrigin: 'top left',
                         position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        background: '#2563EB',
-                        borderRadius: '50%',
-                        width: '32px',
-                        height: '32px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        top: 0,
+                        left: 0,
                       }}>
-                        <Check size={20} color="#ffffff" strokeWidth={3} />
+                        <TemplateComp resume={{ ...sampleResume, templateId: template.id, accentColor: currentAccent }} />
                       </div>
-                    )}
+                      
+                      {isActive && (
+                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#2563EB', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 8px rgba(0,0,0,0.2)' }}>
+                          <Check size={24} color="#ffffff" strokeWidth={3} />
+                        </div>
+                      )}
+                      
+                      <div style={{ position: 'absolute', bottom: '8px', right: '8px', display: 'flex', gap: '4px' }}>
+                        <span style={{ background: '#F59E0B', color: '#FFFFFF', fontSize: '10px', fontWeight: '700', padding: '2px 6px', borderRadius: '2px' }}>PDF</span>
+                        <span style={{ background: '#F59E0B', color: '#FFFFFF', fontSize: '10px', fontWeight: '700', padding: '2px 6px', borderRadius: '2px' }}>DOCX</span>
+                      </div>
+                    </div>
                   </div>
                 )
               })}
