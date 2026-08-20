@@ -3,11 +3,40 @@ import { useState, useCallback } from 'react';
 const generateId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 
 const defaultResume = {
+  // Template & Color settings
   templateId: 'classic',
   accentColor: '#6C63FF',
-  fontFamily: 'DM Sans',
+  
+  // Text settings
+  primaryFont: 'Lato',
+  secondaryFont: 'PT Serif',
   fontSize: 'medium',
+  lineHeight: 100,
+  
+  // Layout settings
   spacing: 'normal',
+  margins: {
+    headerFooter: 0.5,
+    topBottom: 1,
+    leftRight: 1,
+    betweenSections: 24,
+    betweenTitleContent: 24,
+    betweenContentBlocks: 12,
+    insideContentBlock: 8,
+  },
+  headerAlignment: 'left',
+  dateAlignment: 'right',
+  locationAlignment: 'left',
+  skillsLayout: 'inline',
+  skillsColumns: 4,
+  educationLayout: 'stacked',
+  showSkillLevel: true,
+  paperFormat: 'a4',
+
+  // Legacy compat
+  fontFamily: 'DM Sans',
+
+  // Content sections
   personal: { name: '', title: '', email: '', phone: '', location: '', linkedin: '', website: '', photo: null },
   summary: '',
   experience: [{ id: generateId('exp'), title: '', company: '', location: '', startDate: '', endDate: '', current: false, bullets: [''] }],

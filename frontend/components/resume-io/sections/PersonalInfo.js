@@ -1,25 +1,20 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 
-const inputStyle = {
-  width: '100%', padding: '12px 16px', background: 'var(--theme-input-bg)',
-  border: '1px solid var(--theme-border)', borderRadius: '10px',
-  color: 'var(--theme-text)', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
-  outline: 'none', transition: 'border 0.2s', boxSizing: 'border-box'
-};
-const labelStyle = {
-  display: 'block', color: 'var(--theme-muted)', fontSize: '12px',
-  fontWeight: '500', marginBottom: '6px', fontFamily: "'DM Sans', sans-serif",
-  textTransform: 'uppercase', letterSpacing: '0.5px',
-};
-const rowStyle = {
-  display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px'
-};
-const fieldStyle = {
-  marginBottom: '16px'
+const STYLES = {
+  label: { display: 'block', color: '#374151', fontSize: '12px', fontWeight: '600', marginBottom: '6px', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase', letterSpacing: '0.3px' },
+  input: { width: '100%', padding: '10px 14px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', color: '#111827', fontSize: '14px', fontFamily: "'Inter', sans-serif", outline: 'none', boxSizing: 'border-box', transition: 'border 0.15s' },
+  inputFocus: { borderColor: '#2563EB' },
+  row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' },
+  field: { marginBottom: '16px' },
+  addButton: { display: 'flex', alignItems: 'center', gap: '6px', color: '#2563EB', fontSize: '14px', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', fontFamily: "'Inter', sans-serif" },
+  removeButton: { background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '4px', borderRadius: '4px' },
+  helperText: { color: '#9CA3AF', fontSize: '12px', marginTop: '4px', fontFamily: "'Inter', sans-serif" },
+  sectionSubtext: { color: '#6B7280', fontSize: '13px', marginBottom: '16px', lineHeight: '1.5', fontFamily: "'Inter', sans-serif" },
 };
 
 export default function PersonalInfo({ data = {}, onChange }) {
   const fileInputRef = useRef(null);
+  const [showMore, setShowMore] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,65 +33,70 @@ export default function PersonalInfo({ data = {}, onChange }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', alignItems: 'center' }}>
+    <div>
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+        <div style={{ flex: 1 }}>
+          <div style={STYLES.row}>
+            <div>
+              <label style={STYLES.label}>Full Name</label>
+              <input type="text" name="name" value={data.name || ''} onChange={handleChange} style={STYLES.input} />
+            </div>
+            <div>
+              <label style={STYLES.label}>Job Title</label>
+              <input type="text" name="title" value={data.title || ''} onChange={handleChange} style={STYLES.input} />
+            </div>
+          </div>
+        </div>
         <div 
           onClick={() => fileInputRef.current.click()}
           style={{
-            width: '80px', height: '80px', borderRadius: '50%', background: 'var(--theme-input-bg)',
-            border: '2px dashed rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0
+            width: '80px', height: '80px', borderRadius: '4px', background: '#F9FAFB',
+            border: '1px dashed #E5E7EB', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0,
+            marginTop: '22px'
           }}
         >
           {data.photo ? (
             <img src={data.photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            <span style={{ fontSize: '24px', opacity: 0.5 }}>📷</span>
+            <span style={{ fontSize: '24px', color: '#9CA3AF' }}>👤</span>
           )}
         </div>
-        <div style={{ flex: 1, fontSize: '14px', color: 'var(--theme-muted)' }}>
-          Click to upload a profile photo (optional).
-          <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" style={{ display: 'none' }} />
+        <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" style={{ display: 'none' }} />
+      </div>
+
+      <div style={STYLES.row}>
+        <div>
+          <label style={STYLES.label}>Email</label>
+          <input type="email" name="email" value={data.email || ''} onChange={handleChange} style={STYLES.input} />
+        </div>
+        <div>
+          <label style={STYLES.label}>Phone</label>
+          <input type="tel" name="phone" value={data.phone || ''} onChange={handleChange} style={STYLES.input} />
         </div>
       </div>
 
-      <div style={rowStyle}>
-        <div>
-          <label style={labelStyle}>Full Name</label>
-          <input type="text" name="name" value={data.name || ''} onChange={handleChange} style={inputStyle} placeholder="Jane Doe" required />
-        </div>
-        <div>
-          <label style={labelStyle}>Job Title</label>
-          <input type="text" name="title" value={data.title || ''} onChange={handleChange} style={inputStyle} placeholder="Software Engineer" />
-        </div>
+      <div style={STYLES.field}>
+        <label style={STYLES.label}>City / State</label>
+        <input type="text" name="location" value={data.location || ''} onChange={handleChange} style={STYLES.input} />
       </div>
 
-      <div style={rowStyle}>
-        <div>
-          <label style={labelStyle}>Email</label>
-          <input type="email" name="email" value={data.email || ''} onChange={handleChange} style={inputStyle} placeholder="jane@example.com" />
+      {!showMore ? (
+        <button onClick={() => setShowMore(true)} style={STYLES.addButton}>
+          Add more details ▼
+        </button>
+      ) : (
+        <div style={STYLES.row}>
+          <div>
+            <label style={STYLES.label}>LinkedIn URL</label>
+            <input type="url" name="linkedin" value={data.linkedin || ''} onChange={handleChange} style={STYLES.input} />
+          </div>
+          <div>
+            <label style={STYLES.label}>Portfolio / Website</label>
+            <input type="url" name="website" value={data.website || ''} onChange={handleChange} style={STYLES.input} />
+          </div>
         </div>
-        <div>
-          <label style={labelStyle}>Phone</label>
-          <input type="tel" name="phone" value={data.phone || ''} onChange={handleChange} style={inputStyle} placeholder="+1 (555) 123-4567" />
-        </div>
-      </div>
-
-      <div style={fieldStyle}>
-        <label style={labelStyle}>Location</label>
-        <input type="text" name="location" value={data.location || ''} onChange={handleChange} style={inputStyle} placeholder="New York, NY" />
-      </div>
-
-      <div style={rowStyle}>
-        <div>
-          <label style={labelStyle}>LinkedIn URL</label>
-          <input type="url" name="linkedin" value={data.linkedin || ''} onChange={handleChange} style={inputStyle} placeholder="https://linkedin.com/in/jane" />
-        </div>
-        <div>
-          <label style={labelStyle}>Portfolio / Website</label>
-          <input type="url" name="website" value={data.website || ''} onChange={handleChange} style={inputStyle} placeholder="https://janedoe.com" />
-        </div>
-      </div>
+      )}
     </div>
   );
 }

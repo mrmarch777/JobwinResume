@@ -1,77 +1,81 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { GripVertical } from 'lucide-react';
 
-const inputStyle = {
-  width: '100%', padding: '12px 16px', background: 'var(--theme-input-bg)',
-  border: '1px solid var(--theme-border)', borderRadius: '10px',
-  color: 'var(--theme-text)', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
-  outline: 'none', transition: 'border 0.2s', boxSizing: 'border-box'
+const STYLES = {
+  label: { display: 'block', color: '#374151', fontSize: '12px', fontWeight: '600', marginBottom: '6px', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase', letterSpacing: '0.3px' },
+  input: { width: '100%', padding: '10px 14px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', color: '#111827', fontSize: '14px', fontFamily: "'Inter', sans-serif", outline: 'none', boxSizing: 'border-box', transition: 'border 0.15s' },
+  inputFocus: { borderColor: '#2563EB' },
+  row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' },
+  field: { marginBottom: '16px' },
+  addButton: { display: 'flex', alignItems: 'center', gap: '6px', color: '#2563EB', fontSize: '14px', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', fontFamily: "'Inter', sans-serif" },
+  removeButton: { background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '4px', borderRadius: '4px' },
+  helperText: { color: '#9CA3AF', fontSize: '12px', marginTop: '4px', fontFamily: "'Inter', sans-serif" },
+  sectionSubtext: { color: '#6B7280', fontSize: '13px', marginBottom: '16px', lineHeight: '1.5', fontFamily: "'Inter', sans-serif" },
 };
 
-const tagStyle = {
-  background: 'var(--theme-input-bg)', border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: '20px', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '12px',
-  color: 'var(--theme-text)', fontSize: '13px'
-};
-
-const dotStyle = (active) => ({
-  width: '8px', height: '8px', borderRadius: '50%',
-  background: active ? '#6C63FF' : 'rgba(255,255,255,0.1)',
-  cursor: 'pointer', transition: 'background 0.2s'
-});
-
-export default function Skills({ data = [], onChange }) {
-  const [inputValue, setInputValue] = useState('');
-
-  const addSkill = (e) => {
-    e.preventDefault();
-    if (inputValue.trim()) {
-      onChange([...data, { name: inputValue.trim(), level: 3 }]);
-      setInputValue('');
-    }
+export default function Skills({ data = { items: [], hideExperienceLevel: false }, onChange }) {
+  const updateEntry = (index, field, value) => {
+    const newItems = [...(data.items || [])];
+    newItems[index] = { ...newItems[index], [field]: value };
+    onChange({ ...data, items: newItems });
   };
 
-  const deleteSkill = (index) => {
-    onChange(data.filter((_, i) => i !== index));
+  const addEntry = () => {
+    onChange({ ...data, items: [...(data.items || []), { id: `skill-${Date.now()}`, name: '', level: 'Skillful' }] });
   };
 
-  const setLevel = (index, level) => {
-    const newData = [...data];
-    newData[index].level = level;
-    onChange(newData);
+  const deleteEntry = (index) => {
+    const newItems = (data.items || []).filter((_, i) => i !== index);
+    onChange({ ...data, items: newItems });
   };
+
+  const levels = ['Novice', 'Beginner', 'Skillful', 'Experienced', 'Expert'];
 
   return (
     <div>
-      <form onSubmit={addSkill} style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-        <input 
-          type="text" 
-          value={inputValue} 
-          onChange={(e) => setInputValue(e.target.value)} 
-          style={inputStyle} 
-          placeholder="e.g. JavaScript, React, Node.js (Press Enter to add)" 
-        />
-        <button type="submit" style={{ background: '#6C63FF', color: '#fff', border: 'none', borderRadius: '10px', padding: '0 20px', cursor: 'pointer', fontWeight: '500' }}>
-          Add
-        </button>
-      </form>
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#374151', cursor: 'pointer' }}>
+          <input 
+            type="checkbox" 
+            checked={data.hideExperienceLevel || false} 
+            onChange={(e) => onChange({ ...data, hideExperienceLevel: e.target.checked })} 
+          />
+          Don't show experience level
+        </label>
+      </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-        {data.map((skill, i) => (
-          <div key={i} style={tagStyle}>
-            <span>{skill.name}</span>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {[1, 2, 3, 4, 5].map((lvl) => (
-                <div 
-                  key={lvl} 
-                  style={dotStyle(lvl <= skill.level)} 
-                  onClick={() => setLevel(i, lvl)}
-                />
-              ))}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+        {(data.items || []).map((entry, i) => (
+          <div key={entry.id || i} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ color: '#9CA3AF', cursor: 'grab' }}>
+              <GripVertical size={16} />
             </div>
-            <button onClick={() => deleteSkill(i)} style={{ background: 'none', border: 'none', color: 'var(--theme-muted)', cursor: 'pointer', padding: 0, marginLeft: '4px' }}>✕</button>
+            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: data.hideExperienceLevel ? '1fr' : '1fr 1fr', gap: '12px' }}>
+              <input 
+                type="text" 
+                value={entry.name || ''} 
+                onChange={(e) => updateEntry(i, 'name', e.target.value)} 
+                style={STYLES.input} 
+                placeholder="e.g. JavaScript" 
+              />
+              {!data.hideExperienceLevel && (
+                <select 
+                  value={entry.level || 'Skillful'} 
+                  onChange={(e) => updateEntry(i, 'level', e.target.value)} 
+                  style={{ ...STYLES.input, appearance: 'none', background: '#F9FAFB url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%236B7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E") no-repeat right 10px center', backgroundSize: '16px' }}
+                >
+                  {levels.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+              )}
+            </div>
+            <button onClick={() => deleteEntry(i)} style={STYLES.removeButton}>✕</button>
           </div>
         ))}
       </div>
+
+      <button onClick={addEntry} style={STYLES.addButton}>
+        + Add one more skill
+      </button>
     </div>
   );
 }

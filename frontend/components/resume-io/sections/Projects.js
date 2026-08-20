@@ -1,28 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
 
-const inputStyle = {
-  width: '100%', padding: '12px 16px', background: 'var(--theme-input-bg)',
-  border: '1px solid var(--theme-border)', borderRadius: '10px',
-  color: 'var(--theme-text)', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
-  outline: 'none', transition: 'border 0.2s', boxSizing: 'border-box'
-};
-const labelStyle = {
-  display: 'block', color: 'var(--theme-muted)', fontSize: '12px',
-  fontWeight: '500', marginBottom: '6px', fontFamily: "'DM Sans', sans-serif",
-  textTransform: 'uppercase', letterSpacing: '0.5px',
-};
-const cardStyle = {
-  background: 'var(--theme-card)', border: '1px solid var(--theme-border)',
-  borderRadius: '16px', padding: '20px', marginBottom: '12px', boxSizing: 'border-box',
-  display: 'flex', gap: '12px'
-};
-const btnStyle = {
-  background: 'transparent', border: '1px dashed rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.7)',
-  padding: '12px', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', width: '100%',
-  fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s'
+const STYLES = {
+  label: { display: 'block', color: '#374151', fontSize: '12px', fontWeight: '600', marginBottom: '6px', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase', letterSpacing: '0.3px' },
+  input: { width: '100%', padding: '10px 14px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', color: '#111827', fontSize: '14px', fontFamily: "'Inter', sans-serif", outline: 'none', boxSizing: 'border-box', transition: 'border 0.15s' },
+  inputFocus: { borderColor: '#2563EB' },
+  row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' },
+  field: { marginBottom: '16px' },
+  addButton: { display: 'flex', alignItems: 'center', gap: '6px', color: '#2563EB', fontSize: '14px', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', fontFamily: "'Inter', sans-serif" },
+  removeButton: { background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '4px', borderRadius: '4px' },
+  helperText: { color: '#9CA3AF', fontSize: '12px', marginTop: '4px', fontFamily: "'Inter', sans-serif" },
+  sectionSubtext: { color: '#6B7280', fontSize: '13px', marginBottom: '16px', lineHeight: '1.5', fontFamily: "'Inter', sans-serif" },
 };
 
 export default function Projects({ data = [], onChange }) {
+  const [expandedIndex, setExpandedIndex] = useState(0);
+
   const updateEntry = (index, field, value) => {
     const newData = [...data];
     newData[index] = { ...newData[index], [field]: value };
@@ -30,7 +23,8 @@ export default function Projects({ data = [], onChange }) {
   };
 
   const addEntry = () => {
-    onChange([...data, { id: `proj-${Date.now()}`, name: '', description: '', technologies: '', url: '' }]);
+    onChange([...data, { id: `proj-${Date.now()}`, title: '', subtitle: '', url: '', description: '' }]);
+    setExpandedIndex(data.length);
   };
 
   const deleteEntry = (index) => {
@@ -40,40 +34,70 @@ export default function Projects({ data = [], onChange }) {
 
   return (
     <div>
-      {data.map((entry, i) => (
-        <div key={entry.id || i} style={cardStyle}>
-          <div style={{ color: 'rgba(255,255,255,0.2)', cursor: 'grab', paddingTop: '10px' }}>⠿</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ marginBottom: '16px' }}>
-              <label style={labelStyle}>Project Name</label>
-              <input type="text" value={entry.name} onChange={(e) => updateEntry(i, 'name', e.target.value)} style={inputStyle} placeholder="E-commerce Platform" />
+      {data.map((entry, i) => {
+        const isExpanded = expandedIndex === i;
+        return (
+          <div key={entry.id || i} style={{ border: '1px solid #E5E7EB', borderRadius: '8px', marginBottom: '16px', background: '#FFFFFF' }}>
+            <div 
+              onClick={() => setExpandedIndex(isExpanded ? null : i)}
+              style={{ padding: '16px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+            >
+              <div style={{ color: '#9CA3AF', cursor: 'grab', marginRight: '12px' }} onClick={e => e.stopPropagation()}>
+                <GripVertical size={16} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '600', color: '#111827', fontSize: '14px' }}>
+                  {entry.title || '(Not specified)'}
+                </div>
+                <div style={{ color: '#6B7280', fontSize: '13px', marginTop: '2px' }}>
+                  {entry.subtitle}
+                </div>
+              </div>
+              <div style={{ color: '#9CA3AF' }}>
+                {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              </div>
             </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={labelStyle}>Description</label>
-              <textarea rows={3} value={entry.description} onChange={(e) => updateEntry(i, 'description', e.target.value)} style={{ ...inputStyle, resize: 'vertical' }} placeholder="Built a full-stack e-commerce app..." />
-            </div>
+            {isExpanded && (
+              <div style={{ padding: '0 16px 16px 16px', borderTop: '1px solid #E5E7EB', paddingTop: '16px' }}>
+                <div style={STYLES.row}>
+                  <div>
+                    <label style={STYLES.label}>Project Title</label>
+                    <input type="text" value={entry.title || ''} onChange={(e) => updateEntry(i, 'title', e.target.value)} style={STYLES.input} />
+                  </div>
+                  <div>
+                    <label style={STYLES.label}>Subtitle / Tech Stack</label>
+                    <input type="text" value={entry.subtitle || ''} onChange={(e) => updateEntry(i, 'subtitle', e.target.value)} style={STYLES.input} />
+                  </div>
+                </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={labelStyle}>Technologies Used</label>
-              <input type="text" value={entry.technologies} onChange={(e) => updateEntry(i, 'technologies', e.target.value)} style={inputStyle} placeholder="React, Node.js, MongoDB" />
-            </div>
+                <div style={STYLES.field}>
+                  <label style={STYLES.label}>Project URL</label>
+                  <input type="url" value={entry.url || ''} onChange={(e) => updateEntry(i, 'url', e.target.value)} style={STYLES.input} />
+                </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={labelStyle}>Project URL (Optional)</label>
-              <input type="url" value={entry.url} onChange={(e) => updateEntry(i, 'url', e.target.value)} style={inputStyle} placeholder="https://github.com/..." />
-            </div>
+                <div style={STYLES.field}>
+                  <label style={STYLES.label}>Description</label>
+                  <textarea 
+                    value={entry.description || ''} 
+                    onChange={(e) => updateEntry(i, 'description', e.target.value)} 
+                    style={{ ...STYLES.input, minHeight: '80px', resize: 'vertical' }} 
+                  />
+                </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-              <button onClick={() => deleteEntry(i)} style={{ background: 'rgba(255, 101, 132, 0.1)', color: '#FF6584', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
-                Delete Entry
-              </button>
-            </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+                  <button onClick={() => deleteEntry(i)} style={{ color: '#EF4444', background: 'none', border: 'none', fontSize: '13px', cursor: 'pointer', padding: '8px' }}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      ))}
-      <button onClick={addEntry} style={btnStyle}>
-        + Add Project
+        );
+      })}
+
+      <button onClick={addEntry} style={STYLES.addButton}>
+        + Add one more project
       </button>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ChevronDown, ChevronUp, X, Plus, Upload, GripVertical } from 'lucide-react';
 import PersonalInfo from './PersonalInfo';
 import Summary from './Summary';
 import Experience from './Experience';
@@ -10,63 +11,71 @@ import Languages from './Languages';
 import Achievements from './Achievements';
 
 const sectionComponents = {
-  personal: { component: PersonalInfo, icon: '👤', title: 'Personal Information', required: true },
-  summary: { component: Summary, icon: '📝', title: 'Professional Summary', required: true },
-  experience: { component: Experience, icon: '💼', title: 'Work Experience', required: false },
-  education: { component: Education, icon: '🎓', title: 'Education', required: false },
-  skills: { component: Skills, icon: '⚡', title: 'Skills', required: false },
-  projects: { component: Projects, icon: '🚀', title: 'Projects', required: false },
-  certifications: { component: Certifications, icon: '📜', title: 'Certifications', required: false },
-  languages: { component: Languages, icon: '🌐', title: 'Languages', required: false },
-  achievements: { component: Achievements, icon: '🏆', title: 'Achievements', required: false },
+  personal: { component: PersonalInfo, icon: '👤', title: 'Personal Information', required: true, helperText: 'Add your contact information.' },
+  summary: { component: Summary, icon: '📝', title: 'Professional Summary', required: true, helperText: 'Write 2-4 short, energetic sentences. Mention your role and what you did.' },
+  experience: { component: Experience, icon: '💼', title: 'Employment History', required: false, helperText: 'Show your relevant experience (last 10 years).' },
+  education: { component: Education, icon: '🎓', title: 'Education', required: false, helperText: 'A varied education shows the value that your learnings will bring to job.' },
+  skills: { component: Skills, icon: '⚡', title: 'Skills', required: false, helperText: 'List your technical and soft skills.' },
+  projects: { component: Projects, icon: '🚀', title: 'Projects', required: false, helperText: 'Highlight your notable projects.' },
+  certifications: { component: Certifications, icon: '📜', title: 'Certifications', required: false, helperText: 'List your certifications.' },
+  languages: { component: Languages, icon: '🌐', title: 'Languages', required: false, helperText: 'List languages you speak.' },
+  achievements: { component: Achievements, icon: '🏆', title: 'Achievements', required: false, helperText: 'List your achievements and awards.' },
 };
 
-const cardStyle = {
-  background: 'var(--theme-card)', border: '1px solid var(--theme-border)',
-  borderRadius: '16px', marginBottom: '16px', overflow: 'hidden'
+const STYLES = {
+  label: { display: 'block', color: '#374151', fontSize: '12px', fontWeight: '600', marginBottom: '6px', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase', letterSpacing: '0.3px' },
+  input: { width: '100%', padding: '10px 14px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', color: '#111827', fontSize: '14px', fontFamily: "'Inter', sans-serif", outline: 'none', boxSizing: 'border-box', transition: 'border 0.15s' },
+  inputFocus: { borderColor: '#2563EB' },
+  row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' },
+  field: { marginBottom: '16px' },
+  addButton: { display: 'flex', alignItems: 'center', gap: '6px', color: '#2563EB', fontSize: '14px', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', fontFamily: "'Inter', sans-serif" },
+  removeButton: { background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '4px', borderRadius: '4px' },
+  helperText: { color: '#9CA3AF', fontSize: '12px', marginTop: '4px', fontFamily: "'Inter', sans-serif" },
+  sectionSubtext: { color: '#6B7280', fontSize: '13px', marginBottom: '16px', lineHeight: '1.5', fontFamily: "'Inter', sans-serif" },
 };
 
-const headerStyle = {
-  padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-  cursor: 'pointer', background: 'var(--theme-card)', borderBottom: '1px solid var(--theme-border)'
-};
-
-const titleStyle = {
-  display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--theme-text)',
-  fontSize: '16px', fontWeight: '600', fontFamily: "'Noto Serif', serif"
-};
-
-const contentStyle = {
-  padding: '20px'
-};
-
-const labelStyle = {
-  display: 'block', color: 'var(--theme-muted)', fontSize: '12px',
-  fontWeight: '500', marginBottom: '6px', fontFamily: "'DM Sans', sans-serif",
-  textTransform: 'uppercase', letterSpacing: '0.5px',
-};
-
-const selectStyle = {
-  width: '100%', padding: '12px 16px', background: 'var(--theme-input-bg)',
-  border: '1px solid var(--theme-border)', borderRadius: '10px',
-  color: 'var(--theme-text)', fontSize: '14px', fontFamily: "'DM Sans', sans-serif",
-  outline: 'none', transition: 'border 0.2s', boxSizing: 'border-box',
-  appearance: 'none', backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23E8E6F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")',
-  backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px top 50%', backgroundSize: '10px auto'
-};
-
-export default function SectionManager({ resume, updateSection, updateSettings, addSection, removeSection, reorderSections }) {
+export default function SectionManager({ resume, updateSection, updateSettings, addSection, removeSection, reorderSections, onUploadResume }) {
   const [expandedSection, setExpandedSection] = useState('personal');
-  const [showAddMenu, setShowAddMenu] = useState(false);
+
+  // Calculate completeness
+  let completedFields = 0;
+  let totalFields = 6;
+  if (resume.personal?.name) completedFields++;
+  if (resume.personal?.title) completedFields++;
+  if (resume.personal?.email) completedFields++;
+  if (resume.summary?.length > 20) completedFields++;
+  if (resume.experience?.some(e => e.title)) completedFields++;
+  if (resume.education?.length > 0) completedFields++;
+  
+  const completeness = Math.round((completedFields / totalFields) * 100);
 
   const availableSections = Object.keys(sectionComponents).filter(
     key => !resume.enabledSections.includes(key)
   );
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", paddingBottom: '40px' }}>
+      {/* Import Resume Button */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+        <button onClick={onUploadResume} style={{ ...STYLES.addButton, background: '#F3F4F6', padding: '8px 16px', borderRadius: '8px', color: '#374151' }}>
+          <Upload size={16} /> 📄 Import Resume
+        </button>
+      </div>
+
+      {/* Progress Bar */}
       <div style={{ marginBottom: '24px' }}>
-        {resume.sectionOrder.map((sectionKey, index) => {
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>Resume Completeness</span>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#16A34A' }}>{completeness}%</span>
+        </div>
+        <div style={{ height: '8px', background: '#E5E7EB', borderRadius: '4px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', background: '#16A34A', width: `${completeness}%`, transition: 'width 0.3s ease' }}></div>
+        </div>
+      </div>
+
+      {/* Sections */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
+        {resume.sectionOrder.map((sectionKey) => {
           if (!resume.enabledSections.includes(sectionKey)) return null;
           
           const sectionConfig = sectionComponents[sectionKey];
@@ -76,31 +85,35 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
           const isExpanded = expandedSection === sectionKey;
           
           return (
-            <div key={sectionKey} style={cardStyle}>
-              <div style={headerStyle} onClick={() => setExpandedSection(isExpanded ? null : sectionKey)}>
-                <div style={titleStyle}>
-                  <span style={{ color: 'rgba(255,255,255,0.2)', cursor: 'grab', marginRight: '8px' }} onClick={(e) => e.stopPropagation()}>⠿</span>
-                  <span>{sectionConfig.icon}</span>
-                  <span>{sectionConfig.title}</span>
-                </div>
+            <div key={sectionKey} style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden' }}>
+              <div 
+                style={{ padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: '#FFFFFF' }}
+                onClick={() => setExpandedSection(isExpanded ? null : sectionKey)}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '20px' }}>{sectionConfig.icon}</span>
+                  <span style={{ fontSize: '18px', fontWeight: '600', color: '#111827' }}>{sectionConfig.title}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {!sectionConfig.required && (
                     <button 
                       onClick={(e) => { e.stopPropagation(); removeSection(sectionKey); }}
-                      style={{ background: 'none', border: 'none', color: '#FF6584', cursor: 'pointer', fontSize: '18px' }}
-                      title="Remove section"
+                      style={STYLES.removeButton}
                     >
-                      ✕
+                      <X size={20} />
                     </button>
                   )}
-                  <span style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s', color: 'var(--theme-muted)' }}>
-                    ▼
-                  </span>
+                  <div style={{ color: '#9CA3AF' }}>
+                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </div>
                 </div>
               </div>
               
               {isExpanded && (
-                <div style={contentStyle}>
+                <div style={{ padding: '0 20px 20px 20px' }}>
+                  {sectionConfig.helperText && (
+                    <div style={STYLES.sectionSubtext}>{sectionConfig.helperText}</div>
+                  )}
                   <Component 
                     data={resume[sectionKey]} 
                     onChange={(data) => updateSection(sectionKey, data)}
@@ -113,132 +126,30 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
         })}
       </div>
 
+      {/* Add Section Grid */}
       {availableSections.length > 0 && (
-        <div style={{ position: 'relative', marginBottom: '32px' }}>
-          <button 
-            onClick={() => setShowAddMenu(!showAddMenu)}
-            style={{
-              width: '100%', padding: '16px', background: 'rgba(108, 99, 255, 0.1)',
-              color: '#6C63FF', border: '1px dashed rgba(108, 99, 255, 0.3)',
-              borderRadius: '16px', cursor: 'pointer', fontSize: '14px', fontWeight: '600',
-              fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s'
-            }}
-          >
-            + Add Section
-          </button>
-          
-          {showAddMenu && (
-            <div style={{
-              position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '8px',
-              background: 'var(--theme-bg)', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '12px', padding: '8px', zIndex: 10,
-              boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
-            }}>
-              {availableSections.map(key => (
-                <div 
-                  key={key} 
-                  onClick={() => { addSection(key); setShowAddMenu(false); setExpandedSection(key); }}
-                  style={{
-                    padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px',
-                    cursor: 'pointer', borderRadius: '8px', color: 'var(--theme-text)', fontSize: '14px'
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.background = 'var(--theme-input-bg)'}
-                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  <span>{sectionComponents[key].icon}</span>
-                  <span>{sectionComponents[key].title}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      <div style={{ ...cardStyle, padding: '24px' }}>
-        <h3 style={{ ...titleStyle, marginBottom: '20px', fontSize: '18px' }}>⚙️ Document Settings</h3>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-          <div>
-            <label style={labelStyle}>Accent Color</label>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input 
-                type="color" 
-                value={resume.accentColor || '#6C63FF'} 
-                onChange={(e) => updateSettings({ accentColor: e.target.value })}
-                style={{ width: '40px', height: '40px', padding: 0, border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'transparent' }}
-              />
-              <input 
-                type="text" 
-                value={resume.accentColor || '#6C63FF'} 
-                onChange={(e) => updateSettings({ accentColor: e.target.value })}
-                style={{ ...selectStyle, flex: 1 }}
-              />
-            </div>
-          </div>
-          <div>
-            <label style={labelStyle}>Font Family</label>
-            <select 
-              value={resume.fontFamily || 'DM Sans'} 
-              onChange={(e) => updateSettings({ fontFamily: e.target.value })}
-              style={selectStyle}
-            >
-              <option value="DM Sans" style={{background: 'var(--theme-bg)'}}>DM Sans</option>
-              <option value="Inter" style={{background: 'var(--theme-bg)'}}>Inter</option>
-              <option value="Noto Serif" style={{background: 'var(--theme-bg)'}}>Noto Serif</option>
-              <option value="Georgia" style={{background: 'var(--theme-bg)'}}>Georgia</option>
-              <option value="Roboto" style={{background: 'var(--theme-bg)'}}>Roboto</option>
-            </select>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-          <div>
-            <label style={labelStyle}>Font Size</label>
-            <select 
-              value={resume.fontSize || 'medium'} 
-              onChange={(e) => updateSettings({ fontSize: e.target.value })}
-              style={selectStyle}
-            >
-              <option value="small" style={{background: 'var(--theme-bg)'}}>Small</option>
-              <option value="medium" style={{background: 'var(--theme-bg)'}}>Medium</option>
-              <option value="large" style={{background: 'var(--theme-bg)'}}>Large</option>
-            </select>
-          </div>
-          <div>
-            <label style={labelStyle}>Spacing</label>
-            <select 
-              value={resume.spacing || 'normal'} 
-              onChange={(e) => updateSettings({ spacing: e.target.value })}
-              style={selectStyle}
-            >
-              <option value="compact" style={{background: 'var(--theme-bg)'}}>Compact</option>
-              <option value="normal" style={{background: 'var(--theme-bg)'}}>Normal</option>
-              <option value="spacious" style={{background: 'var(--theme-bg)'}}>Spacious</option>
-            </select>
-          </div>
-        </div>
-
         <div>
-          <label style={labelStyle}>Template Style</label>
-          <div style={{ display: 'flex', overflowX: 'auto', gap: '12px', paddingBottom: '12px' }}>
-            {['classic', 'modern', 'minimal', 'professional', 'creative', 'executive'].map(template => (
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '16px' }}>Add Section</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            {availableSections.map(key => (
               <div 
-                key={template}
-                onClick={() => updateSettings({ templateId: template })}
+                key={key} 
+                onClick={() => { addSection(key); setExpandedSection(key); }}
                 style={{
-                  minWidth: '100px', height: '140px', borderRadius: '8px', cursor: 'pointer',
-                  border: resume.templateId === template ? '2px solid #6C63FF' : '1px solid rgba(255,255,255,0.1)',
-                  background: 'var(--theme-input-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: resume.templateId === template ? '#6C63FF' : 'var(--theme-muted)',
-                  textTransform: 'capitalize', fontSize: '14px', fontWeight: '500'
+                  display: 'flex', alignItems: 'center', gap: '12px', padding: '16px',
+                  background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px',
+                  cursor: 'pointer', transition: 'border-color 0.2s'
                 }}
+                onMouseOver={(e) => e.currentTarget.style.borderColor = '#2563EB'}
+                onMouseOut={(e) => e.currentTarget.style.borderColor = '#E5E7EB'}
               >
-                {template}
+                <span style={{ fontSize: '24px' }}>{sectionComponents[key].icon}</span>
+                <span style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>{sectionComponents[key].title}</span>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

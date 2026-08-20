@@ -1,62 +1,89 @@
-import React, { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
-import PageHead from '../components/PageHead';
 import { useTheme } from '../lib/contexts';
+import useResumeState from '../components/resume-io/hooks/useResumeState';
+import PageHead from '../components/PageHead';
+import Sidebar from '../components/Sidebar';
 import TemplateGallery from '../components/resume-io/TemplateGallery';
-import EditorLayout from '../components/resume-io/EditorLayout';
+import EditorShell from '../components/resume-io/EditorShell';
+import SectionManager from '../components/resume-io/sections/SectionManager';
 import LivePreview from '../components/resume-io/LivePreview';
 import ExportPanel from '../components/resume-io/ExportPanel';
-import useResumeState from '../components/resume-io/hooks/useResumeState';
-import Sidebar from '../components/Sidebar';
-
-import SectionManager from '../components/resume-io/sections/SectionManager';
-import TemplateRenderer from '../components/resume-io/templates/TemplateRenderer';
 import ResumeUpload from '../components/resume-io/ResumeUpload';
-import ATSChecker from '../components/resume-io/ATSChecker';
-import JDOptimizer from '../components/resume-io/JDOptimizer';
+
+// Lazy-loaded tab panels
+import dynamic from 'next/dynamic';
+const CustomizePanel = dynamic(() => import('../components/resume-io/CustomizePanel'), { ssr: false });
+const AIReviewPanel = dynamic(() => import('../components/resume-io/AIReviewPanel'), { ssr: false });
+const TailorPanel = dynamic(() => import('../components/resume-io/TailorPanel'), { ssr: false });
+const TailorJobDetail = dynamic(() => import('../components/resume-io/TailorJobDetail'), { ssr: false });
 
 export default function ResumeIO() {
-  const [view, setView] = useState('gallery'); // 'gallery' | 'editor'
-  const [showUpload, setShowUpload] = useState(false);
-  const [showATS, setShowATS] = useState(false);
-  const [showOptimizer, setShowOptimizer] = useState(false);
-  
-  const { resume, updateSection, updateSettings, addSection, removeSection, reorderSections, switchTemplate, setResumeData } = useResumeState();
-  const { theme } = useTheme();
   const router = useRouter();
-  
+  const { theme } = useTheme();
+  const {
+    resume, updateSection, updateSettings,
+    addSection, removeSection, reorderSections,
+    switchTemplate, setResume,
+  } = useResumeState();
+
+  const [view, setView] = useState('gallery'); // 'gallery' | 'editor'
+  const [activeTab, setActiveTab] = useState('edit');
+  const [showUpload, setShowUpload] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
+
+  // Template selection from gallery
   const handleSelectTemplate = (templateId, accentColor) => {
     switchTemplate(templateId);
     if (accentColor) updateSettings({ accentColor });
     setView('editor');
   };
 
+  // Resume upload handler
   const handleDataExtracted = (parsedData) => {
-    // Assuming useResumeState exposes a way to bulk update sections, or we update them individually
-    if (parsedData.personal) updateSection('personal', parsedData.personal);
+    if (parsedData.personal) updateSection('personal', { ...resume.personal, ...parsedData.personal });
     if (parsedData.summary) updateSection('summary', parsedData.summary);
-    if (parsedData.experience) updateSection('experience', parsedData.experience);
-    if (parsedData.education) updateSection('education', parsedData.education);
-    if (parsedData.skills) updateSection('skills', parsedData.skills);
+    if (parsedData.experience?.length) updateSection('experience', parsedData.experience);
+    if (parsedData.education?.length) updateSection('education', parsedData.education);
+    if (parsedData.skills?.length) updateSection('skills', parsedData.skills);
+    setShowUpload(false);
   };
 
+  // Export handler
+  const handleExport = async (format) => {
+    const el = document.getElementById('resume-preview');
+    if (!el) return;
+    if (format === 'pdf') {
+      const html2pdf = (await import('html2pdf.js')).default;
+      html2pdf().set({
+        margin: 0, filename: `${resume.personal.name || 'Resume'}_Resume.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      }).from(el).save();
+    } else {
+      const html = el.innerHTML;
+      const blob = new Blob(
+        [`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"></head><body>${html}</body></html>`],
+        { type: 'application/msword' }
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${resume.personal.name || 'Resume'}_Resume.doc`;
+      a.click(); URL.revokeObjectURL(url);
+    }
+  };
+
+  // Apply tailor suggestions
   const handleApplyOptimization = (suggestions) => {
-    // Optimization handling
-  };
-  
-  const themeVars = {
-    '--theme-bg': theme.bg,
-    '--theme-card': theme.card,
-    '--theme-border': theme.border,
-    '--theme-text': theme.text,
-    '--theme-muted': theme.muted,
-    '--theme-accent': theme.accent,
-    '--theme-input-bg': theme.inputBg,
+    if (suggestions?.summary) updateSection('summary', suggestions.summary);
+    if (suggestions?.experience) updateSection('experience', suggestions.experience);
   };
 
+  // ─── Gallery View ────────────────────────────────────────
   if (view === 'gallery') {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', background: theme.bg, ...themeVars }}>
+      <div style={{ display: 'flex', minHeight: '100vh', background: theme.bg }}>
         <PageHead title="Resume IO" description="Build a professional resume with our advanced builder" />
         <Sidebar activeId="resume-io" />
         <main style={{ flex: 1, overflow: 'auto', marginLeft: '240px' }}>
@@ -65,46 +92,103 @@ export default function ResumeIO() {
       </div>
     );
   }
-  
+
+  // ─── Editor View ─────────────────────────────────────────
+  // Determine left and right panels based on active tab
+  let leftPanel, rightPanel;
+
+  switch (activeTab) {
+    case 'edit':
+      leftPanel = (
+        <SectionManager
+          resume={resume}
+          updateSection={updateSection}
+          updateSettings={updateSettings}
+          addSection={addSection}
+          removeSection={removeSection}
+          reorderSections={reorderSections}
+          onUploadResume={() => setShowUpload(true)}
+        />
+      );
+      rightPanel = (
+        <>
+          <LivePreview resume={resume} />
+          <ExportPanel resume={resume} />
+        </>
+      );
+      break;
+
+    case 'customize':
+      leftPanel = (
+        <CustomizePanel
+          resume={resume}
+          updateSettings={updateSettings}
+          switchTemplate={switchTemplate}
+        />
+      );
+      rightPanel = <LivePreview resume={resume} />;
+      break;
+
+    case 'ai-review':
+      leftPanel = (
+        <SectionManager
+          resume={resume}
+          updateSection={updateSection}
+          updateSettings={updateSettings}
+          addSection={addSection}
+          removeSection={removeSection}
+          reorderSections={reorderSections}
+          onUploadResume={() => setShowUpload(true)}
+        />
+      );
+      rightPanel = <AIReviewPanel resume={resume} />;
+      break;
+
+    case 'tailor':
+      leftPanel = (
+        <TailorPanel
+          resume={resume}
+          onSelectJob={setSelectedJob}
+          selectedJob={selectedJob}
+        />
+      );
+      rightPanel = (
+        <TailorJobDetail
+          job={selectedJob}
+          resume={resume}
+          onApplyOptimization={handleApplyOptimization}
+        />
+      );
+      break;
+
+    default:
+      leftPanel = null;
+      rightPanel = null;
+  }
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: theme.bg, ...themeVars }}>
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
       <PageHead title="Resume IO — Editor" />
       <Sidebar activeId="resume-io" />
-      <main style={{ flex: 1, overflow: 'hidden', marginLeft: '240px' }}>
-        <EditorLayout
+      <main style={{ flex: 1, marginLeft: '240px', overflow: 'hidden' }}>
+        <EditorShell
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
           onBack={() => setView('gallery')}
-          toolbar={
-            <>
-              <button onClick={() => setShowUpload(true)} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>📄 Import Resume</button>
-              <button onClick={() => setShowATS(true)} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>🎯 ATS Check</button>
-              <button onClick={() => setShowOptimizer(true)} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontFamily: "'DM Sans', sans-serif" }}>✨ Optimize for JD</button>
-            </>
-          }
-          formPanel={
-            <SectionManager
-              resume={resume}
-              updateSection={updateSection}
-              updateSettings={updateSettings}
-              addSection={addSection}
-              removeSection={removeSection}
-              reorderSections={reorderSections}
-            />
-          }
-          previewPanel={
-            <>
-              <LivePreview
-                resume={resume}
-                TemplateComponent={TemplateRenderer}
-              />
-              <ExportPanel resume={resume} />
-            </>
-          }
+          onExport={handleExport}
+          resumeName={resume.personal.name || 'Untitled Resume'}
+          leftPanel={leftPanel}
+          rightPanel={rightPanel}
         />
       </main>
-      
-      {showUpload && <ResumeUpload onDataExtracted={handleDataExtracted} onClose={() => setShowUpload(false)} />}
-      {showATS && <ATSChecker resume={resume} onClose={() => setShowATS(false)} />}
-      {showOptimizer && <JDOptimizer resume={resume} onApplyOptimization={handleApplyOptimization} onClose={() => setShowOptimizer(false)} />}
+
+      {/* Upload Modal */}
+      {showUpload && (
+        <ResumeUpload
+          onDataExtracted={handleDataExtracted}
+          onClose={() => setShowUpload(false)}
+        />
+      )}
     </div>
   );
 }
