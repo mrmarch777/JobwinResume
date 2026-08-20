@@ -85,9 +85,8 @@ export default function ResumeIO() {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', background: theme.bg }}>
         <PageHead title="Resume IO" description="Build a professional resume with our advanced builder" />
-        <Sidebar activeId="resume-io" />
-        <main style={{ flex: 1, overflow: 'auto', marginLeft: '240px' }}>
-          <TemplateGallery onSelect={handleSelectTemplate} />
+        <main style={{ flex: 1, overflow: 'auto' }}>
+          <TemplateGallery onSelect={handleSelectTemplate} onBack={() => router.push('/dashboard')} />
         </main>
       </div>
     );
@@ -167,10 +166,9 @@ export default function ResumeIO() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f9fafb' }}>
       <PageHead title="Resume IO — Editor" />
-      <Sidebar activeId="resume-io" />
-      <main style={{ flex: 1, marginLeft: '240px', overflow: 'hidden' }}>
+      <main style={{ flex: 1, overflow: 'hidden' }}>
         <EditorShell
           activeTab={activeTab}
           onTabChange={setActiveTab}

@@ -139,7 +139,7 @@ const templatesData = [
 
 const categories = ['All Templates', 'Professional', 'Modern', 'Creative', 'Simple', 'ATS', 'With Photo'];
 
-export default function TemplateGallery({ onSelect }) {
+export default function TemplateGallery({ onSelect, onBack }) {
   const { theme } = useTheme();
   const [activeCategory, setActiveCategory] = useState('All Templates');
   const [hoveredId, setHoveredId] = useState(null);
@@ -161,18 +161,33 @@ export default function TemplateGallery({ onSelect }) {
     : templatesData.filter(t => t.category === activeCategory);
 
   const containerStyle = {
-    padding: '40px 20px',
-    maxWidth: '1200px',
+    padding: '40px',
+    maxWidth: '1400px',
     margin: '0 auto',
-    color: theme.text,
-    fontFamily: "'DM Sans', sans-serif",
-    minHeight: '100vh',
-    background: 'var(--theme-bg)'
+    position: 'relative'
   };
 
   const headerStyle = {
     textAlign: 'center',
-    marginBottom: '40px'
+    marginBottom: '40px',
+    position: 'relative'
+  };
+
+  const backButtonStyle = {
+    position: 'absolute',
+    left: '0',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--theme-text)',
+    fontSize: '16px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '8px 16px',
+    borderRadius: '8px',
   };
 
   const tabsStyle = {
@@ -184,9 +199,9 @@ export default function TemplateGallery({ onSelect }) {
   };
 
   const getTabStyle = (isActive) => ({
-    padding: '8px 20px',
-    borderRadius: '20px',
-    background: isActive ? theme.accent : 'var(--theme-input-bg)',
+    padding: '10px 24px',
+    borderRadius: '30px',
+    background: isActive ? theme.accent : 'transparent',
     color: isActive ? '#fff' : theme.text,
     border: `1px solid ${isActive ? theme.accent : 'rgba(255,255,255,0.1)'}`,
     cursor: 'pointer',
@@ -221,6 +236,11 @@ export default function TemplateGallery({ onSelect }) {
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
+        {onBack && (
+          <button style={backButtonStyle} onClick={onBack}>
+            ← Back
+          </button>
+        )}
         <h1 style={{ fontFamily: "'Noto Serif', serif", fontSize: '42px', marginBottom: '16px', color: 'var(--theme-text)' }}>Choose a Template</h1>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>Select from our professionally designed templates to get started building your resume.</p>
       </div>

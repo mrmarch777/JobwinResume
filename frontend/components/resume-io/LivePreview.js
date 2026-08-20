@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import TemplateRenderer from './templates/TemplateRenderer';
 
 export default function LivePreview({ resume, TemplateComponent }) {
   const containerRef = useRef(null);
@@ -55,9 +56,7 @@ export default function LivePreview({ resume, TemplateComponent }) {
           {TemplateComponent ? (
             <TemplateComponent resume={resume} />
           ) : (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
-              Template Preview Here
-            </div>
+            <TemplateRenderer resume={resume} />
           )}
         </div>
       </div>
