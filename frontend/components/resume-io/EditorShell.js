@@ -172,7 +172,7 @@ export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel,
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Left Panel */}
         <div style={{
-          width: isFullWidth ? '50%' : '50%',
+          width: isFullWidth ? '50%' : '55%',
           background: '#FFFFFF', borderRight: '1px solid #E5E7EB',
           overflowY: 'auto', overflowX: 'hidden',
           display: isMobile && mobilePanel !== 'form' ? 'none' : 'block',
@@ -182,11 +182,11 @@ export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel,
 
         {/* Right Panel */}
         <div style={{
-          flex: 1, background: isFullWidth ? '#FFFFFF' : '#F3F4F6',
+          flex: 1, background: isFullWidth ? '#FFFFFF' : '#656565',
           overflowY: 'auto', overflowX: 'hidden',
           display: isMobile && mobilePanel !== 'preview' ? 'none' : 'flex',
           flexDirection: 'column', alignItems: isFullWidth ? 'stretch' : 'center',
-          padding: isFullWidth ? '0' : '24px',
+          padding: isFullWidth ? '0' : '32px 24px',
         }}>
           {rightPanel}
         </div>
