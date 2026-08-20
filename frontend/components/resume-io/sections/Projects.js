@@ -63,17 +63,17 @@ export default function Projects({ data = [], onChange }) {
                 <div style={STYLES.row}>
                   <div>
                     <label style={STYLES.label}>Project Title</label>
-                    <input type="text" value={entry.title || ''} onChange={(e) => updateEntry(i, 'title', e.target.value)} style={STYLES.input} />
+                    <input type="text" value={entry.title || ''} onChange={(e) => updateEntry(i, 'title', e.target.value)} style={STYLES.input} placeholder="e.g. E-Commerce Platform" />
                   </div>
                   <div>
                     <label style={STYLES.label}>Subtitle / Tech Stack</label>
-                    <input type="text" value={entry.subtitle || ''} onChange={(e) => updateEntry(i, 'subtitle', e.target.value)} style={STYLES.input} />
+                    <input type="text" value={entry.subtitle || ''} onChange={(e) => updateEntry(i, 'subtitle', e.target.value)} style={STYLES.input} placeholder="e.g. React, Node.js, MongoDB" />
                   </div>
                 </div>
 
                 <div style={STYLES.field}>
                   <label style={STYLES.label}>Project URL</label>
-                  <input type="url" value={entry.url || ''} onChange={(e) => updateEntry(i, 'url', e.target.value)} style={STYLES.input} />
+                  <input type="url" value={entry.url || ''} onChange={(e) => updateEntry(i, 'url', e.target.value)} style={STYLES.input} placeholder="e.g. https://github.com/myproject" />
                 </div>
 
                 <div style={STYLES.field}>
@@ -82,6 +82,7 @@ export default function Projects({ data = [], onChange }) {
                     value={entry.description || ''} 
                     onChange={(e) => updateEntry(i, 'description', e.target.value)} 
                     style={{ ...STYLES.input, minHeight: '80px', resize: 'vertical' }} 
+                    placeholder="e.g. Developed a full-stack e-commerce application..."
                   />
                 </div>
 

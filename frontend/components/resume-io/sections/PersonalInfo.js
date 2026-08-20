@@ -49,7 +49,7 @@ export default function PersonalInfo({ data = {}, onChange }) {
       <div style={STYLES.row}>
         <div>
           <label style={STYLES.label}>Job Target</label>
-          <input type="text" name="title" value={data.title || ''} onChange={handleChange} style={STYLES.input} 
+          <input type="text" name="title" value={data.title || ''} onChange={handleChange} style={STYLES.input} placeholder="e.g. Senior Analyst"
             onFocus={e => { e.target.style.background = '#FFFFFF'; e.target.style.borderColor = '#2563EB'; }}
             onBlur={e => { e.target.style.background = '#F3F4F6'; e.target.style.borderColor = 'transparent'; }}
           />
@@ -80,14 +80,14 @@ export default function PersonalInfo({ data = {}, onChange }) {
       <div style={STYLES.row}>
         <div>
           <label style={STYLES.label}>First Name</label>
-          <input type="text" value={firstName} onChange={e => handleNameChange(e.target.value, lastName)} style={STYLES.input}
+          <input type="text" value={firstName} onChange={e => handleNameChange(e.target.value, lastName)} style={STYLES.input} placeholder="e.g. John"
             onFocus={e => { e.target.style.background = '#FFFFFF'; e.target.style.borderColor = '#2563EB'; }}
             onBlur={e => { e.target.style.background = '#F3F4F6'; e.target.style.borderColor = 'transparent'; }}
           />
         </div>
         <div>
           <label style={STYLES.label}>Last Name</label>
-          <input type="text" value={lastName} onChange={e => handleNameChange(firstName, e.target.value)} style={STYLES.input}
+          <input type="text" value={lastName} onChange={e => handleNameChange(firstName, e.target.value)} style={STYLES.input} placeholder="e.g. Doe"
             onFocus={e => { e.target.style.background = '#FFFFFF'; e.target.style.borderColor = '#2563EB'; }}
             onBlur={e => { e.target.style.background = '#F3F4F6'; e.target.style.borderColor = 'transparent'; }}
           />
@@ -97,14 +97,14 @@ export default function PersonalInfo({ data = {}, onChange }) {
       <div style={STYLES.row}>
         <div>
           <label style={STYLES.label}>Email</label>
-          <input type="email" name="email" value={data.email || ''} onChange={handleChange} style={STYLES.input}
+          <input type="email" name="email" value={data.email || ''} onChange={handleChange} style={STYLES.input} placeholder="e.g. john@example.com"
             onFocus={e => { e.target.style.background = '#FFFFFF'; e.target.style.borderColor = '#2563EB'; }}
             onBlur={e => { e.target.style.background = '#F3F4F6'; e.target.style.borderColor = 'transparent'; }}
           />
         </div>
         <div>
           <label style={STYLES.label}>Phone</label>
-          <input type="tel" name="phone" value={data.phone || ''} onChange={handleChange} style={STYLES.input}
+          <input type="tel" name="phone" value={data.phone || ''} onChange={handleChange} style={STYLES.input} placeholder="e.g. +1 234 567 8900"
             onFocus={e => { e.target.style.background = '#FFFFFF'; e.target.style.borderColor = '#2563EB'; }}
             onBlur={e => { e.target.style.background = '#F3F4F6'; e.target.style.borderColor = 'transparent'; }}
           />
@@ -114,14 +114,14 @@ export default function PersonalInfo({ data = {}, onChange }) {
       <div style={STYLES.row}>
         <div>
           <label style={STYLES.label}>LinkedIn URL</label>
-          <input type="url" name="linkedin" value={data.linkedin || ''} onChange={handleChange} style={STYLES.input}
+          <input type="url" name="linkedin" value={data.linkedin || ''} onChange={handleChange} style={STYLES.input} placeholder="linkedin.com/in/johndoe"
             onFocus={e => { e.target.style.background = '#FFFFFF'; e.target.style.borderColor = '#2563EB'; }}
             onBlur={e => { e.target.style.background = '#F3F4F6'; e.target.style.borderColor = 'transparent'; }}
           />
         </div>
         <div>
           <label style={STYLES.label}>Postal Code</label>
-          <input type="text" name="postalCode" value={data.postalCode || ''} onChange={handleChange} style={STYLES.input}
+          <input type="text" name="postalCode" value={data.postalCode || ''} onChange={handleChange} style={STYLES.input} placeholder="e.g. 10001"
             onFocus={e => { e.target.style.background = '#FFFFFF'; e.target.style.borderColor = '#2563EB'; }}
             onBlur={e => { e.target.style.background = '#F3F4F6'; e.target.style.borderColor = 'transparent'; }}
           />
@@ -131,14 +131,14 @@ export default function PersonalInfo({ data = {}, onChange }) {
       <div style={STYLES.row}>
         <div>
           <label style={STYLES.label}>City, State</label>
-          <input type="text" name="location" value={data.location || ''} onChange={handleChange} style={STYLES.input}
+          <input type="text" name="location" value={data.location || ''} onChange={handleChange} style={STYLES.input} placeholder="e.g. New York, NY"
             onFocus={e => { e.target.style.background = '#FFFFFF'; e.target.style.borderColor = '#2563EB'; }}
             onBlur={e => { e.target.style.background = '#F3F4F6'; e.target.style.borderColor = 'transparent'; }}
           />
         </div>
         <div>
           <label style={STYLES.label}>Country</label>
-          <input type="text" name="country" value={data.country || ''} onChange={handleChange} style={STYLES.input}
+          <input type="text" name="country" value={data.country || ''} onChange={handleChange} style={STYLES.input} placeholder="e.g. United States"
             onFocus={e => { e.target.style.background = '#FFFFFF'; e.target.style.borderColor = '#2563EB'; }}
             onBlur={e => { e.target.style.background = '#F3F4F6'; e.target.style.borderColor = 'transparent'; }}
           />

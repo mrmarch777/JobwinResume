@@ -13,6 +13,24 @@ const STYLES = {
   sectionSubtext: { color: '#6B7280', fontSize: '13px', marginBottom: '16px', lineHeight: '1.5', fontFamily: "'Inter', sans-serif" },
 };
 
+const formatToMonthYear = (dateStr) => {
+  if (!dateStr) return '';
+  const [year, month] = dateStr.split('-');
+  if (!year || !month) return dateStr;
+  const date = new Date(year, parseInt(month) - 1);
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+};
+
+const parseToYYYYMM = (str) => {
+  if (!str) return '';
+  const parts = str.split(' ');
+  if (parts.length !== 2) return ''; 
+  const months = {Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
+  const m = months[parts[0]];
+  if (!m) return '';
+  return `${parts[1]}-${m}`;
+};
+
 export default function Experience({ data = [], onChange }) {
   const [expandedIndex, setExpandedIndex] = useState(0);
 
@@ -82,18 +100,23 @@ export default function Experience({ data = [], onChange }) {
                 <div style={STYLES.row}>
                   <div>
                     <label style={STYLES.label}>Job Title</label>
-                    <input type="text" value={entry.title || ''} onChange={(e) => updateEntry(i, 'title', e.target.value)} style={STYLES.input} />
+                    <input type="text" value={entry.title || ''} onChange={(e) => updateEntry(i, 'title', e.target.value)} style={STYLES.input} placeholder="e.g. Software Engineer" />
                   </div>
                   <div>
                     <label style={STYLES.label}>Company</label>
-                    <input type="text" value={entry.company || ''} onChange={(e) => updateEntry(i, 'company', e.target.value)} style={STYLES.input} />
+                    <input type="text" value={entry.company || ''} onChange={(e) => updateEntry(i, 'company', e.target.value)} style={STYLES.input} placeholder="e.g. Google" />
                   </div>
                 </div>
 
                 <div style={STYLES.row}>
                   <div>
                     <label style={STYLES.label}>Start Date</label>
-                    <input type="text" placeholder="MM/YYYY" value={entry.startDate || ''} onChange={(e) => updateEntry(i, 'startDate', e.target.value)} style={STYLES.input} />
+                    <input 
+                      type="month" 
+                      value={parseToYYYYMM(entry.startDate)} 
+                      onChange={(e) => updateEntry(i, 'startDate', formatToMonthYear(e.target.value))} 
+                      style={STYLES.input} 
+                    />
                   </div>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -103,13 +126,19 @@ export default function Experience({ data = [], onChange }) {
                         Present
                       </label>
                     </div>
-                    <input type="text" placeholder="MM/YYYY" value={entry.endDate || ''} onChange={(e) => updateEntry(i, 'endDate', e.target.value)} style={STYLES.input} disabled={entry.current} />
+                    <input 
+                      type="month" 
+                      value={parseToYYYYMM(entry.endDate)} 
+                      onChange={(e) => updateEntry(i, 'endDate', formatToMonthYear(e.target.value))} 
+                      style={STYLES.input} 
+                      disabled={entry.current} 
+                    />
                   </div>
                 </div>
 
                 <div style={STYLES.field}>
                   <label style={STYLES.label}>Location</label>
-                  <input type="text" value={entry.location || ''} onChange={(e) => updateEntry(i, 'location', e.target.value)} style={STYLES.input} />
+                  <input type="text" value={entry.location || ''} onChange={(e) => updateEntry(i, 'location', e.target.value)} style={STYLES.input} placeholder="e.g. San Francisco, CA" />
                 </div>
 
                 <div>

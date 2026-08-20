@@ -13,6 +13,24 @@ const STYLES = {
   sectionSubtext: { color: '#6B7280', fontSize: '13px', marginBottom: '16px', lineHeight: '1.5', fontFamily: "'Inter', sans-serif" },
 };
 
+const formatToMonthYear = (dateStr) => {
+  if (!dateStr) return '';
+  const [year, month] = dateStr.split('-');
+  if (!year || !month) return dateStr;
+  const date = new Date(year, parseInt(month) - 1);
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+};
+
+const parseToYYYYMM = (str) => {
+  if (!str) return '';
+  const parts = str.split(' ');
+  if (parts.length !== 2) return ''; 
+  const months = {Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
+  const m = months[parts[0]];
+  if (!m) return '';
+  return `${parts[1]}-${m}`;
+};
+
 export default function Education({ data = [], onChange }) {
   const [expandedIndex, setExpandedIndex] = useState(0);
 
@@ -63,29 +81,34 @@ export default function Education({ data = [], onChange }) {
                 <div style={STYLES.row}>
                   <div>
                     <label style={STYLES.label}>Degree</label>
-                    <input type="text" value={entry.degree || ''} onChange={(e) => updateEntry(i, 'degree', e.target.value)} style={STYLES.input} />
+                    <input type="text" value={entry.degree || ''} onChange={(e) => updateEntry(i, 'degree', e.target.value)} style={STYLES.input} placeholder="e.g. Bachelor of Science" />
                   </div>
                   <div>
                     <label style={STYLES.label}>Institution</label>
-                    <input type="text" value={entry.institution || ''} onChange={(e) => updateEntry(i, 'institution', e.target.value)} style={STYLES.input} />
+                    <input type="text" value={entry.institution || ''} onChange={(e) => updateEntry(i, 'institution', e.target.value)} style={STYLES.input} placeholder="e.g. Stanford University" />
                   </div>
                 </div>
 
                 <div style={STYLES.row}>
                   <div>
                     <label style={STYLES.label}>Field of Study</label>
-                    <input type="text" value={entry.field || ''} onChange={(e) => updateEntry(i, 'field', e.target.value)} style={STYLES.input} />
+                    <input type="text" value={entry.field || ''} onChange={(e) => updateEntry(i, 'field', e.target.value)} style={STYLES.input} placeholder="e.g. Computer Science" />
                   </div>
                   <div>
                     <label style={STYLES.label}>Grade</label>
-                    <input type="text" value={entry.grade || ''} onChange={(e) => updateEntry(i, 'grade', e.target.value)} style={STYLES.input} />
+                    <input type="text" value={entry.grade || ''} onChange={(e) => updateEntry(i, 'grade', e.target.value)} style={STYLES.input} placeholder="e.g. 3.9 GPA" />
                   </div>
                 </div>
 
                 <div style={STYLES.row}>
                   <div>
                     <label style={STYLES.label}>Start Date</label>
-                    <input type="text" placeholder="MM/YYYY" value={entry.startDate || ''} onChange={(e) => updateEntry(i, 'startDate', e.target.value)} style={STYLES.input} />
+                    <input 
+                      type="month" 
+                      value={parseToYYYYMM(entry.startDate)} 
+                      onChange={(e) => updateEntry(i, 'startDate', formatToMonthYear(e.target.value))} 
+                      style={STYLES.input} 
+                    />
                   </div>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -95,7 +118,13 @@ export default function Education({ data = [], onChange }) {
                         Present
                       </label>
                     </div>
-                    <input type="text" placeholder="MM/YYYY" value={entry.endDate || ''} onChange={(e) => updateEntry(i, 'endDate', e.target.value)} style={STYLES.input} disabled={entry.current} />
+                    <input 
+                      type="month" 
+                      value={parseToYYYYMM(entry.endDate)} 
+                      onChange={(e) => updateEntry(i, 'endDate', formatToMonthYear(e.target.value))} 
+                      style={STYLES.input} 
+                      disabled={entry.current} 
+                    />
                   </div>
                 </div>
 
