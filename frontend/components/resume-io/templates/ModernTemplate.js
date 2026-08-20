@@ -185,7 +185,7 @@ export default function ModernTemplate({ resume }) {
   };
 
   return (
-    <div id="resume-preview" style={styles.container}>
+    <div style={styles.container}>
       {renderSidebar()}
       <div style={styles.main}>
         <div style={styles.name}>{personal.name || 'Your Name'}</div>

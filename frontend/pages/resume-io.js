@@ -45,21 +45,38 @@ export default function ResumeIO() {
     if (parsedData.summary) updateSection('summary', parsedData.summary);
     if (parsedData.experience?.length) updateSection('experience', parsedData.experience);
     if (parsedData.education?.length) updateSection('education', parsedData.education);
-    if (parsedData.skills?.length) updateSection('skills', parsedData.skills);
+    // Skills can come as { items: [...] } or as a flat array
+    if (parsedData.skills) {
+      if (parsedData.skills.items) {
+        updateSection('skills', parsedData.skills.items);
+      } else if (Array.isArray(parsedData.skills) && parsedData.skills.length) {
+        updateSection('skills', parsedData.skills);
+      }
+    }
+    // Enable sections that now have data
+    const sectionsToEnable = ['personal', 'summary', 'experience', 'education', 'skills'];
+    const newEnabled = [...new Set([...resume.enabledSections, ...sectionsToEnable])];
+    const newOrder = [...new Set([...resume.sectionOrder, ...sectionsToEnable])];
+    updateSettings({ enabledSections: newEnabled, sectionOrder: newOrder });
     setShowUpload(false);
   };
 
   // Export handler
   const handleExport = async (format) => {
-    const el = document.getElementById('resume-preview');
-    if (!el) return;
+    const el = document.getElementById('resume-export-target');
+    if (!el) {
+      console.error('Export target not found');
+      return;
+    }
     if (format === 'pdf') {
       const html2pdf = (await import('html2pdf.js')).default;
       html2pdf().set({
-        margin: 0, filename: `${resume.personal.name || 'Resume'}_Resume.pdf`,
+        margin: 0,
+        filename: `${resume.personal.name || 'Resume'}_Resume.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 794 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
       }).from(el).save();
     } else {
       const html = el.innerHTML;

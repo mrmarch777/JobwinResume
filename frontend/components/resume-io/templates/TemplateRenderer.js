@@ -44,5 +44,10 @@ const templates = {
 
 export default function TemplateRenderer({ resume }) {
   const Template = templates[resume.templateId] || ClassicTemplate;
-  return <Template resume={resume} />;
+  // Normalize skills: ensure templates always get a flat array of { name, level }
+  const normalizedResume = {
+    ...resume,
+    skills: Array.isArray(resume.skills) ? resume.skills : (resume.skills?.items || []),
+  };
+  return <Template resume={normalizedResume} />;
 }

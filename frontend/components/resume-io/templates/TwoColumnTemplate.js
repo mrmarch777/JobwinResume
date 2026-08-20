@@ -41,7 +41,7 @@ export default function TwoColumnTemplate({ resume }) {
   };
 
   return (
-    <div id="resume-preview" style={styles.container}>
+    <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.name}>{personal.name || 'Your Name'}</div>
         {personal.title && <div style={styles.title}>{personal.title}</div>}

@@ -81,7 +81,7 @@ export default function IndustrialTemplate({ resume }) {
   };
 
   return (
-    <div id="resume-preview" style={styles.container}>
+    <div style={styles.container}>
       <div style={styles.headerBanner}>
         <div style={styles.name}>{personal.name || 'Your Name'}</div>
         {personal.title && <div style={styles.title}>{personal.title}</div>}

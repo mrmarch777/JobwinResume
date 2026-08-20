@@ -5,21 +5,14 @@ export default function LivePreview({ resume, TemplateComponent }) {
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
 
-  // A4 proportions
-  const A4_WIDTH_MM = 210;
-  const A4_HEIGHT_MM = 297;
-  const aspect_ratio = A4_HEIGHT_MM / A4_WIDTH_MM;
   const BASE_WIDTH = 794; // approx A4 width in pixels at 96dpi
   
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {
-        const parentWidth = containerRef.current.parentElement.clientWidth;
-        // Padding around the paper
+        const parentWidth = containerRef.current.parentElement?.clientWidth || 600;
         const padding = 40;
         const availableWidth = parentWidth - padding * 2;
-        
-        // Calculate scale to fit width
         const newScale = Math.min(1, availableWidth / BASE_WIDTH);
         setScale(newScale);
       }
@@ -30,29 +23,22 @@ export default function LivePreview({ resume, TemplateComponent }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const wrapperStyle = {
-    position: 'relative',
-    display: 'flex',
-    justifyContent: 'center',
-    transformOrigin: 'top center',
-    transform: `scale(${scale})`,
-    marginBottom: `${(BASE_WIDTH * aspect_ratio) * scale - (BASE_WIDTH * aspect_ratio) + 20}px` // Adjust for scale offset
-  };
-
-  const paperStyle = {
-    width: `${BASE_WIDTH}px`,
-    height: `${BASE_WIDTH * aspect_ratio}px`,
-    background: '#ffffff',
-    color: '#000000',
-    boxShadow: '0 15px 35px rgba(0,0,0,0.2)',
-    overflow: 'hidden',
-    position: 'relative'
-  };
-
   return (
-    <div ref={containerRef} style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-      <div style={wrapperStyle}>
-        <div id="resume-preview" style={paperStyle}>
+    <div ref={containerRef} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      {/* Visible scaled preview — scrollable, no fixed height */}
+      <div style={{
+        transformOrigin: 'top center',
+        transform: `scale(${scale})`,
+        marginBottom: '-20px',
+        width: `${BASE_WIDTH}px`,
+      }}>
+        <div style={{
+          width: `${BASE_WIDTH}px`,
+          minHeight: '1123px',
+          background: '#ffffff',
+          color: '#000000',
+          boxShadow: '0 15px 35px rgba(0,0,0,0.2)',
+        }}>
           {TemplateComponent ? (
             <TemplateComponent resume={resume} />
           ) : (
@@ -60,6 +46,26 @@ export default function LivePreview({ resume, TemplateComponent }) {
           )}
         </div>
       </div>
+
+      {/* Hidden full-size export target — not scaled, not clipped */}
+      <div
+        id="resume-export-target"
+        style={{
+          position: 'absolute',
+          left: '-9999px',
+          top: 0,
+          width: `${BASE_WIDTH}px`,
+          background: '#ffffff',
+          color: '#000000',
+        }}
+      >
+        {TemplateComponent ? (
+          <TemplateComponent resume={resume} />
+        ) : (
+          <TemplateRenderer resume={resume} />
+        )}
+      </div>
     </div>
   );
 }
+

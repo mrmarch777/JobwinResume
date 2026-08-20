@@ -41,7 +41,7 @@ const defaultResume = {
   summary: '',
   experience: [{ id: generateId('exp'), title: '', company: '', location: '', startDate: '', endDate: '', current: false, bullets: [''] }],
   education: [{ id: generateId('edu'), degree: '', field: '', institution: '', year: '', grade: '' }],
-  skills: [{ name: '', level: 3 }],
+  skills: { items: [{ id: 'skill-default', name: '', level: 'Skillful' }], hideExperienceLevel: false },
   projects: [],
   certifications: [],
   languages: [],

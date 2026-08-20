@@ -146,7 +146,7 @@ export default function MinimalTemplate({ resume }) {
   };
 
   return (
-    <div id="resume-preview" style={styles.container}>
+    <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.name}>{personal.name || 'Your Name'}</div>
         <div style={styles.contact}>{renderContact()}</div>

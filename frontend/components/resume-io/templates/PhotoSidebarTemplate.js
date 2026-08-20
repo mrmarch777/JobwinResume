@@ -41,7 +41,7 @@ const PhotoSidebarTemplate = ({ resume }) => {
   const isEnabled = (sec) => enabledSections.includes(sec);
 
   return (
-    <div id="resume-preview" style={{ 
+    <div style={{ 
       width: '794px', minHeight: '1123px', background: 'white', color: '#222', 
       fontFamily, lineHeight: spaces.line, display: 'flex', flexDirection: 'row', boxSizing: 'border-box' 
     }}>

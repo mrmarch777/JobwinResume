@@ -39,7 +39,7 @@ const PhotoExecutiveTemplate = ({ resume }) => {
   const isEnabled = (sec) => enabledSections.includes(sec);
 
   return (
-    <div id="resume-preview" style={{ 
+    <div style={{ 
       width: '794px', minHeight: '1123px', background: 'white', color: '#2c3e50', 
       fontFamily, lineHeight: spaces.line, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '50px' 
     }}>

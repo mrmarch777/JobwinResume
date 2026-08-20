@@ -10,13 +10,15 @@ export default function ExportPanel({ resume }) {
     setExportingPDF(true);
     try {
       const html2pdf = (await import('html2pdf.js')).default;
-      const element = document.getElementById('resume-preview');
+      const element = document.getElementById('resume-export-target');
+      if (!element) { console.error('Export target not found'); setExportingPDF(false); return; }
       const opt = {
         margin: 0,
         filename: `${resume.personal.name || 'Resume'}_Resume.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 794 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
       };
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
@@ -28,8 +30,8 @@ export default function ExportPanel({ resume }) {
   const exportDOCX = async () => {
     setExportingDOCX(true);
     try {
-      // Basic simulated DOCX export (can be enhanced with proper lib later)
-      const element = document.getElementById('resume-preview');
+      const element = document.getElementById('resume-export-target');
+      if (!element) { console.error('Export target not found'); setExportingDOCX(false); return; }
       const htmlContent = `
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head><title>Resume</title></head>

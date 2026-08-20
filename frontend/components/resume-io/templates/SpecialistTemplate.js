@@ -89,7 +89,7 @@ export default function SpecialistTemplate({ resume }) {
   };
 
   return (
-    <div id="resume-preview" style={styles.container}>
+    <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.headerLeft}>
           <div style={styles.name}>{personal.name || 'Your Name'}</div>

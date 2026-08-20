@@ -114,8 +114,8 @@ export default function ClassicTemplate({ resume }) {
           {education.map((edu, i) => (
             <div key={i} style={styles.item}>
               <div style={styles.itemHeader}>
-                <div style={styles.itemTitle}>{edu.degree} in {edu.field}</div>
-                <div style={styles.itemDate}>{edu.year}</div>
+                <div style={styles.itemTitle}>{edu.degree}{edu.field ? ` in ${edu.field}` : ''}</div>
+                <div style={styles.itemDate}>{edu.startDate}{edu.startDate && edu.endDate ? ' - ' : ''}{edu.current ? 'Present' : (edu.endDate || edu.year || '')}</div>
               </div>
               <div style={styles.itemSubtitle}>{edu.institution}{edu.grade ? ` | ${edu.grade}` : ''}</div>
             </div>
@@ -124,8 +124,9 @@ export default function ClassicTemplate({ resume }) {
       );
     },
     skills: () => {
-      if (!skills.length) return null;
-      const validSkills = skills.filter(s => s.name).map(s => s.name);
+      const skillsList = Array.isArray(skills) ? skills : (skills?.items || []);
+      if (!skillsList.length) return null;
+      const validSkills = skillsList.filter(s => s.name).map(s => s.name);
       if (!validSkills.length) return null;
       return (
         <div key="skills" style={styles.section}>
@@ -155,7 +156,7 @@ export default function ClassicTemplate({ resume }) {
   };
 
   return (
-    <div id="resume-preview" style={styles.container}>
+    <div style={styles.container}>
       <div style={styles.header}>
         <div style={styles.name}>{personal.name || 'Your Name'}</div>
         {personal.title && <div style={styles.title}>{personal.title}</div>}
