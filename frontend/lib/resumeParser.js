@@ -381,7 +381,7 @@ async function parseWithAI(rawText, jobDescription = "") {
   const timeout = setTimeout(() => controller.abort(), 25000); // 25s timeout
 
   try {
-    const response = await fetch(`${apiUrl}/parse-resume`, {
+    const response = await fetch('/api/parse-resume', {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ resume_text: rawText, job_description: jobDescription }),

@@ -105,8 +105,8 @@ export default function App({ Component, pageProps }) {
         <style>{`
           *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
           html, body { background: ${theme.bg}; color: ${theme.text}; font-family: 'DM Sans', Arial, sans-serif; transition: background 0.3s, color 0.3s; }
-          input, textarea, select { color: ${theme.text} !important; }
-          input::placeholder, textarea::placeholder { color: ${theme.muted} !important; }
+          input, textarea, select { color: ${theme.text}; font-family: inherit; }
+          input::placeholder, textarea::placeholder { color: ${theme.muted}; }
           ::-webkit-scrollbar { width: 4px; }
           ::-webkit-scrollbar-track { background: transparent; }
           ::-webkit-scrollbar-thumb { background: ${theme.border}; border-radius: 4px; }
