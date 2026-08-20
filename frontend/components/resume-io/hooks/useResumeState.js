@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
 
 const generateId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 
@@ -53,6 +54,64 @@ const defaultResume = {
 
 export default function useResumeState() {
   const [resume, setResume] = useState(defaultResume);
+  const [resumeName, setResumeName] = useState('Untitled Resume');
+  const [resumeId, setResumeId] = useState(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('jobwin_resume_draft');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const { _name, _id, ...resumeData } = parsed;
+        setResume({ ...defaultResume, ...resumeData });
+        if (_name) setResumeName(_name);
+        if (_id) setResumeId(_id);
+      }
+    } catch (e) { console.warn('Failed to load draft:', e); }
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem('jobwin_resume_draft', JSON.stringify({ ...resume, _name: resumeName, _id: resumeId }));
+      } catch (e) { console.warn('Failed to save draft:', e); }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [resume, resumeName, resumeId]);
+
+  const saveDraft = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return { error: 'Not logged in' };
+      const payload = { 
+        user_id: session.user.id, 
+        title: resumeName, 
+        content: JSON.stringify(resume),
+        template: resume.templateId,
+        form_data: resume,
+        updated_at: new Date().toISOString()
+      };
+      if (resumeId) {
+        const { error } = await supabase.from('resumes').update(payload).eq('id', resumeId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from('resumes').insert(payload).select().single();
+        if (error) throw error;
+        setResumeId(data.id);
+      }
+      return { success: true };
+    } catch (e) {
+      console.error('Save failed:', e);
+      return { error: e.message };
+    }
+  }, [resume, resumeName, resumeId]);
+
+  const loadResume = useCallback((savedResume) => {
+    const formData = typeof savedResume.form_data === 'string' ? JSON.parse(savedResume.form_data) : savedResume.form_data;
+    setResume({ ...defaultResume, ...formData });
+    setResumeName(savedResume.title || 'Untitled Resume');
+    setResumeId(savedResume.id);
+  }, []);
   
   const updateSection = useCallback((section, data) => {
     setResume(prev => ({ ...prev, [section]: data }));
@@ -86,7 +145,7 @@ export default function useResumeState() {
     setResume(prev => ({ ...prev, templateId }));
   }, []);
   
-  return { resume, updateSection, updateSettings, addSection, removeSection, reorderSections, switchTemplate, setResume };
+  return { resume, updateSection, updateSettings, addSection, removeSection, reorderSections, switchTemplate, setResume, resumeName, setResumeName, resumeId, saveDraft, loadResume };
 }
 
 export { defaultResume, generateId };

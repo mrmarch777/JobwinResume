@@ -44,10 +44,31 @@ const templates = {
 
 export default function TemplateRenderer({ resume }) {
   const Template = templates[resume.templateId] || ClassicTemplate;
-  // Normalize skills: ensure templates always get a flat array of { name, level }
+  
+  // Normalize data shapes so all templates get consistent field names
   const normalizedResume = {
     ...resume,
+    // Skills: convert { items: [...] } to flat array
     skills: Array.isArray(resume.skills) ? resume.skills : (resume.skills?.items || []),
+    // Projects: ensure both name/title and technologies/subtitle work
+    projects: (resume.projects || []).map(p => ({
+      ...p,
+      name: p.name || p.title || '',
+      title: p.title || p.name || '',
+      technologies: p.technologies || p.subtitle || '',
+      subtitle: p.subtitle || p.technologies || '',
+    })),
+    // Languages: ensure both proficiency and level work
+    languages: (resume.languages || []).map(l => ({
+      ...l,
+      level: l.level || l.proficiency || '',
+      proficiency: l.proficiency || l.level || '',
+    })),
+    // Achievements: normalize strings to objects
+    achievements: (resume.achievements || []).map(a => 
+      typeof a === 'string' ? { title: a, description: '', date: '' } : a
+    ),
   };
+  
   return <Template resume={normalizedResume} />;
 }

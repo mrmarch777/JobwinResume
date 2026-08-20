@@ -56,10 +56,35 @@ export default function ResumeUpload({ onDataExtracted, onClose }) {
             name: typeof skill === 'string' ? skill : (skill.name || ''),
             level: 'Skillful'
           }))
-        }
+        },
+        projects: (parsedData.projects || []).map((proj, i) => ({
+          id: `proj-${i}`,
+          title: proj.title || proj.name || '',
+          subtitle: proj.subtitle || proj.technologies || '',
+          url: proj.url || '',
+          description: proj.description || ''
+        })),
+        certifications: (parsedData.certifications || []).map((cert, i) => ({
+          id: `cert-${i}`,
+          name: cert.name || cert.title || '',
+          issuer: cert.issuer || cert.organization || '',
+          date: cert.date || ''
+        })),
+        languages: (parsedData.languages || []).map((lang, i) => ({
+          id: `lang-${i}`,
+          name: typeof lang === 'string' ? lang : (lang.name || ''),
+          proficiency: lang.proficiency || lang.level || 'Working knowledge'
+        })),
+        achievements: (parsedData.achievements || []).map((ach, i) => ({
+          id: `ach-${i}`,
+          title: typeof ach === 'string' ? ach : (ach.title || ''),
+          description: typeof ach === 'string' ? '' : (ach.description || ''),
+          date: typeof ach === 'string' ? '' : (ach.date || '')
+        }))
       };
       
       onDataExtracted(adapted);
+      onClose();
     } catch (err) {
       console.error(err);
       setError(err.message || 'Failed to parse resume. Please try again.');

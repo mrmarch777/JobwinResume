@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FileText, Palette, Bot, Target, ArrowLeft, Download, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { FileText, Palette, Bot, Target, ArrowLeft, Download, ChevronDown, Save, Check } from 'lucide-react';
 
 const TABS = [
   { id: 'edit', label: 'Edit', icon: FileText },
@@ -24,10 +24,42 @@ const editorTheme = {
   '--editor-preview-bg': '#F3F4F6',
 };
 
-export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel, rightPanel, onExport, resumeName }) {
+export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel, rightPanel, onExport, resumeName, onRenameSave, onSaveDraft }) {
   const [isMobile, setIsMobile] = useState(false);
   const [mobilePanel, setMobilePanel] = useState('form');
   const [showExportMenu, setShowExportMenu] = useState(false);
+  
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(resumeName || 'Untitled Resume');
+  const [showSavedToast, setShowSavedToast] = useState(false);
+  const nameInputRef = useRef(null);
+
+  useEffect(() => {
+    setTempName(resumeName || 'Untitled Resume');
+  }, [resumeName]);
+
+  useEffect(() => {
+    if (isEditingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
+  }, [isEditingName]);
+
+  const handleNameSave = () => {
+    setIsEditingName(false);
+    if (tempName.trim() && tempName !== resumeName) {
+      onRenameSave?.(tempName.trim());
+    } else {
+      setTempName(resumeName || 'Untitled Resume');
+    }
+  };
+
+  const handleSaveClick = async () => {
+    if (onSaveDraft) {
+      await onSaveDraft();
+      setShowSavedToast(true);
+      setTimeout(() => setShowSavedToast(false), 2000);
+    }
+  };
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 900);
@@ -60,9 +92,38 @@ export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel,
             <span style={{ fontWeight: '500' }}>Back</span>
           </button>
           <span style={{ color: '#D1D5DB' }}>|</span>
-          <span style={{ fontWeight: '600', color: '#111827', fontSize: '15px' }}>
-            {resumeName || 'Untitled Resume'}
-          </span>
+          {isEditingName ? (
+            <input
+              ref={nameInputRef}
+              value={tempName}
+              onChange={(e) => setTempName(e.target.value)}
+              onBlur={handleNameSave}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleNameSave();
+                if (e.key === 'Escape') {
+                  setTempName(resumeName || 'Untitled Resume');
+                  setIsEditingName(false);
+                }
+              }}
+              style={{
+                fontWeight: '600', color: '#111827', fontSize: '15px',
+                border: '1px solid #E5E7EB', borderRadius: '4px', padding: '2px 6px',
+                fontFamily: "'Inter', 'DM Sans', sans-serif", width: '150px'
+              }}
+            />
+          ) : (
+            <span
+              onClick={() => setIsEditingName(true)}
+              style={{ 
+                fontWeight: '600', color: '#111827', fontSize: '15px', 
+                cursor: 'pointer', padding: '3px 7px', borderRadius: '4px' 
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#F3F4F6'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              {resumeName || 'Untitled Resume'}
+            </span>
+          )}
         </div>
 
         {/* Center: 4 Tabs */}
@@ -95,7 +156,32 @@ export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel,
         </nav>
 
         {/* Right: Download */}
-        <div style={{ minWidth: '180px', display: 'flex', justifyContent: 'flex-end', position: 'relative' }}>
+        <div style={{ minWidth: '180px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px', position: 'relative' }}>
+          
+          <div style={{ position: 'relative' }}>
+            <button onClick={handleSaveClick} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '36px', height: '36px', borderRadius: '8px', border: '1px solid #E5E7EB', cursor: 'pointer',
+              background: '#FFFFFF', color: '#374151', transition: 'all 0.15s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.borderColor = '#D1D5DB'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.borderColor = '#E5E7EB'; }}
+              title="Save Draft"
+            >
+              <Save size={18} />
+            </button>
+            {showSavedToast && (
+              <div style={{
+                position: 'absolute', top: '100%', right: '50%', transform: 'translateX(50%)', marginTop: '8px',
+                background: '#1F2937', color: '#FFFFFF', fontSize: '12px', fontWeight: '500',
+                padding: '4px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px',
+                whiteSpace: 'nowrap', zIndex: 300,
+              }}>
+                <Check size={12} /> Saved!
+              </div>
+            )}
+          </div>
+
           <button onClick={() => setShowExportMenu(!showExportMenu)} style={{
             display: 'flex', alignItems: 'center', gap: '8px',
             padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer',

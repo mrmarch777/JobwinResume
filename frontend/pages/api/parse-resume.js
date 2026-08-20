@@ -63,7 +63,35 @@ Schema requirements:
       "grade": "GPA or Grade"
     }
   ],
-  "skills": ["Skill 1", "Skill 2"]
+  "skills": ["Skill 1", "Skill 2"],
+  "projects": [
+    {
+      "title": "Project Name",
+      "subtitle": "Tech Stack",
+      "url": "Project URL",
+      "description": "Project Description"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "Certification Name",
+      "issuer": "Issuing Organization",
+      "date": "Date Earned"
+    }
+  ],
+  "languages": [
+    {
+      "name": "Language",
+      "proficiency": "Proficiency Level"
+    }
+  ],
+  "achievements": [
+    {
+      "title": "Achievement Title",
+      "description": "Description",
+      "date": "Date"
+    }
+  ]
 }
 
 Resume Text:

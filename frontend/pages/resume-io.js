@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useTheme } from '../lib/contexts';
-import useResumeState from '../components/resume-io/hooks/useResumeState';
+import { supabase } from '../lib/supabase';
+import useResumeState, { defaultResume } from '../components/resume-io/hooks/useResumeState';
 import PageHead from '../components/PageHead';
 import Sidebar from '../components/Sidebar';
 import TemplateGallery from '../components/resume-io/TemplateGallery';
@@ -10,6 +11,7 @@ import SectionManager from '../components/resume-io/sections/SectionManager';
 import LivePreview from '../components/resume-io/LivePreview';
 import ExportPanel from '../components/resume-io/ExportPanel';
 import ResumeUpload from '../components/resume-io/ResumeUpload';
+import MyResumes from '../components/resume-io/MyResumes';
 
 // Lazy-loaded tab panels
 import dynamic from 'next/dynamic';
@@ -25,17 +27,41 @@ export default function ResumeIO() {
     resume, updateSection, updateSettings,
     addSection, removeSection, reorderSections,
     switchTemplate, setResume,
+    resumeName, setResumeName, resumeId, saveDraft, loadResume
   } = useResumeState();
 
   const [view, setView] = useState('gallery'); // 'gallery' | 'editor'
   const [activeTab, setActiveTab] = useState('edit');
   const [showUpload, setShowUpload] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
+  
+  const [savedResumes, setSavedResumes] = useState([]);
+
+  const loadSavedResumes = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const { data } = await supabase.from('resumes').select('*').eq('user_id', session.user.id).order('updated_at', { ascending: false }).limit(20);
+      if (data) setSavedResumes(data);
+    } catch (e) { console.error(e); }
+  };
+
+  useEffect(() => {
+    if (view === 'gallery') {
+      loadSavedResumes();
+    }
+  }, [view]);
 
   // Template selection from gallery
   const handleSelectTemplate = (templateId, accentColor) => {
     switchTemplate(templateId);
     if (accentColor) updateSettings({ accentColor });
+    setResumeName('Untitled Resume'); // reset on new
+    setView('editor');
+  };
+
+  const handleSelectSaved = (saved) => {
+    loadResume(saved);
     setView('editor');
   };
 
@@ -53,8 +79,19 @@ export default function ResumeIO() {
         updateSection('skills', parsedData.skills);
       }
     }
+    
+    if (parsedData.projects?.length) updateSection('projects', parsedData.projects);
+    if (parsedData.certifications?.length) updateSection('certifications', parsedData.certifications);
+    if (parsedData.languages?.length) updateSection('languages', parsedData.languages);
+    if (parsedData.achievements?.length) updateSection('achievements', parsedData.achievements);
+
     // Enable sections that now have data
     const sectionsToEnable = ['personal', 'summary', 'experience', 'education', 'skills'];
+    if (parsedData.projects?.length) sectionsToEnable.push('projects');
+    if (parsedData.certifications?.length) sectionsToEnable.push('certifications');
+    if (parsedData.languages?.length) sectionsToEnable.push('languages');
+    if (parsedData.achievements?.length) sectionsToEnable.push('achievements');
+    
     const newEnabled = [...new Set([...resume.enabledSections, ...sectionsToEnable])];
     const newOrder = [...new Set([...resume.sectionOrder, ...sectionsToEnable])];
     updateSettings({ enabledSections: newEnabled, sectionOrder: newOrder });
@@ -103,6 +140,19 @@ export default function ResumeIO() {
       <div style={{ display: 'flex', minHeight: '100vh', background: theme.bg }}>
         <PageHead title="Resume IO" description="Build a professional resume with our advanced builder" />
         <main style={{ flex: 1, overflow: 'auto' }}>
+          {savedResumes.length > 0 && (
+            <div style={{ padding: '40px 40px 0 40px' }}>
+              <MyResumes 
+                resumes={savedResumes} 
+                onSelect={handleSelectSaved} 
+                onCreateNew={() => {
+                  setResume(defaultResume);
+                  setResumeName('Untitled Resume');
+                  setView('editor');
+                }} 
+              />
+            </div>
+          )}
           <TemplateGallery onSelect={handleSelectTemplate} onBack={() => router.push('/dashboard')} />
         </main>
       </div>
@@ -191,7 +241,9 @@ export default function ResumeIO() {
           onTabChange={setActiveTab}
           onBack={() => setView('gallery')}
           onExport={handleExport}
-          resumeName={resume.personal.name || 'Untitled Resume'}
+          resumeName={resumeName}
+          onRenameSave={setResumeName}
+          onSaveDraft={saveDraft}
           leftPanel={leftPanel}
           rightPanel={rightPanel}
         />

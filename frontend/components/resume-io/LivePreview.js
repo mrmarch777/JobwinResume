@@ -51,9 +51,12 @@ export default function LivePreview({ resume, TemplateComponent }) {
       <div
         id="resume-export-target"
         style={{
-          position: 'absolute',
-          left: '-9999px',
+          position: 'fixed',
+          left: 0,
           top: 0,
+          zIndex: -1,
+          opacity: 0,
+          pointerEvents: 'none',
           width: `${BASE_WIDTH}px`,
           background: '#ffffff',
           color: '#000000',

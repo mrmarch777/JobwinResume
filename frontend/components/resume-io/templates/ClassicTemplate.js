@@ -143,11 +143,64 @@ export default function ClassicTemplate({ resume }) {
           {projects.map((proj, i) => (
             <div key={i} style={styles.item}>
               <div style={styles.itemHeader}>
-                <div style={styles.itemTitle}>{proj.name}</div>
-                {proj.url && <div style={styles.itemDate}>{proj.url}</div>}
+                <div style={styles.itemTitle}>{proj.title || proj.name}</div>
+                {(proj.url) && <div style={styles.itemDate}>{proj.url}</div>}
               </div>
-              <div style={styles.itemSubtitle}>{proj.technologies}</div>
-              <div style={styles.itemDesc}>{proj.description}</div>
+              {(proj.subtitle || proj.technologies) && <div style={styles.itemSubtitle}>{proj.subtitle || proj.technologies}</div>}
+              {proj.description && <div style={styles.itemDesc}>{proj.description}</div>}
+            </div>
+          ))}
+        </div>
+      );
+    },
+    certifications: () => {
+      if (!certifications.length) return null;
+      return (
+        <div key="certifications" style={styles.section}>
+          <div style={styles.sectionTitle}>Certifications</div>
+          {certifications.map((cert, i) => (
+            <div key={i} style={styles.item}>
+              <div style={styles.itemHeader}>
+                <div style={styles.itemTitle}>{cert.name}</div>
+                {cert.date && <div style={styles.itemDate}>{cert.date}</div>}
+              </div>
+              {cert.issuer && <div style={styles.itemSubtitle}>{cert.issuer}</div>}
+            </div>
+          ))}
+        </div>
+      );
+    },
+    languages: () => {
+      if (!languages.length) return null;
+      return (
+        <div key="languages" style={styles.section}>
+          <div style={styles.sectionTitle}>Languages</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {languages.map((lang, i) => (
+              <div key={i} style={{ display: 'flex', gap: '6px', alignItems: 'baseline' }}>
+                <span style={{ fontWeight: 'bold', color: '#000' }}>{lang.name}</span>
+                {(lang.proficiency || lang.level) && (
+                  <span style={{ fontSize: fSize.small, color: '#666' }}>— {lang.proficiency || lang.level}</span>
+                )}
+                {i < languages.length - 1 && <span style={{ color: '#ccc' }}>|</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    },
+    achievements: () => {
+      if (!achievements.length) return null;
+      return (
+        <div key="achievements" style={styles.section}>
+          <div style={styles.sectionTitle}>Achievements</div>
+          {achievements.map((ach, i) => (
+            <div key={i} style={styles.item}>
+              <div style={styles.itemHeader}>
+                <div style={styles.itemTitle}>{ach.title || ach}</div>
+                {ach.date && <div style={styles.itemDate}>{ach.date}</div>}
+              </div>
+              {ach.description && <div style={styles.itemDesc}>{ach.description}</div>}
             </div>
           ))}
         </div>
