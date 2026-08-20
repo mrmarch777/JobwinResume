@@ -71,12 +71,22 @@ export default function ResumeIO() {
     if (parsedData.summary) updateSection('summary', parsedData.summary);
     if (parsedData.experience?.length) updateSection('experience', parsedData.experience);
     if (parsedData.education?.length) updateSection('education', parsedData.education);
-    // Skills can come as { items: [...] } or as a flat array
+    // Skills: normalize to { items: [...], hideExperienceLevel } shape for Skills.js UI
     if (parsedData.skills) {
+      let skillsArray = [];
       if (parsedData.skills.items) {
-        updateSection('skills', parsedData.skills.items);
-      } else if (Array.isArray(parsedData.skills) && parsedData.skills.length) {
-        updateSection('skills', parsedData.skills);
+        skillsArray = parsedData.skills.items;
+      } else if (Array.isArray(parsedData.skills)) {
+        skillsArray = parsedData.skills;
+      }
+      if (skillsArray.length) {
+        // Ensure each skill has { id, name, level } shape
+        const normalized = skillsArray.map((s, i) => ({
+          id: s.id || `skill-${i}`,
+          name: typeof s === 'string' ? s : (s.name || ''),
+          level: s.level || 'Skillful'
+        }));
+        updateSection('skills', { items: normalized, hideExperienceLevel: false });
       }
     }
     
@@ -98,33 +108,50 @@ export default function ResumeIO() {
     setShowUpload(false);
   };
 
-  // Export handler
+  // Export handler — clones the preview at full size for capture
   const handleExport = async (format) => {
-    const el = document.getElementById('resume-export-target');
-    if (!el) {
-      console.error('Export target not found');
+    const source = document.getElementById('resume-preview-content');
+    if (!source) {
+      console.error('Resume preview not found');
       return;
     }
-    if (format === 'pdf') {
-      const html2pdf = (await import('html2pdf.js')).default;
-      html2pdf().set({
-        margin: 0,
-        filename: `${resume.personal.name || 'Resume'}_Resume.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 794 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-      }).from(el).save();
-    } else {
-      const html = el.innerHTML;
-      const blob = new Blob(
-        [`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"></head><body>${html}</body></html>`],
-        { type: 'application/msword' }
-      );
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `${resume.personal.name || 'Resume'}_Resume.doc`;
-      a.click(); URL.revokeObjectURL(url);
+
+    // Clone the preview and render it at full size (no scale transform)
+    const clone = source.cloneNode(true);
+    clone.style.transform = 'none';
+    clone.style.width = '794px';
+    clone.style.position = 'fixed';
+    clone.style.top = '0';
+    clone.style.left = '0';
+    clone.style.zIndex = '9999';
+    clone.style.background = '#ffffff';
+    clone.style.boxShadow = 'none';
+    document.body.appendChild(clone);
+
+    try {
+      if (format === 'pdf') {
+        const html2pdf = (await import('html2pdf.js')).default;
+        await html2pdf().set({
+          margin: 0,
+          filename: `${resume.personal.name || 'Resume'}_Resume.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+        }).from(clone).save();
+      } else {
+        const html = clone.innerHTML;
+        const blob = new Blob(
+          [`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"></head><body>${html}</body></html>`],
+          { type: 'application/msword' }
+        );
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `${resume.personal.name || 'Resume'}_Resume.doc`;
+        a.click(); URL.revokeObjectURL(url);
+      }
+    } finally {
+      document.body.removeChild(clone);
     }
   };
 
@@ -235,7 +262,22 @@ export default function ResumeIO() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f9fafb' }}>
       <PageHead title="Resume IO — Editor" />
-      <main style={{ flex: 1, overflow: 'hidden' }}>
+      {/* Force dark text colors for all form inputs in the Resume IO editor */}
+      <style>{`
+        .resume-io-editor input, .resume-io-editor textarea, .resume-io-editor select {
+          color: #111827 !important;
+        }
+        .resume-io-editor input::placeholder, .resume-io-editor textarea::placeholder {
+          color: #9CA3AF !important;
+        }
+        .resume-io-editor input[type="month"] {
+          appearance: none;
+          -webkit-appearance: none;
+          background: #F9FAFB;
+          cursor: pointer;
+        }
+      `}</style>
+      <main className="resume-io-editor" style={{ flex: 1, overflow: 'hidden' }}>
         <EditorShell
           activeTab={activeTab}
           onTabChange={setActiveTab}

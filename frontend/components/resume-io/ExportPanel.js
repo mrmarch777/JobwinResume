@@ -1,46 +1,59 @@
 import React, { useState } from 'react';
-import { useTheme } from '../../lib/contexts';
 
 export default function ExportPanel({ resume }) {
-  const { theme } = useTheme();
   const [exportingPDF, setExportingPDF] = useState(false);
   const [exportingDOCX, setExportingDOCX] = useState(false);
 
+  const getExportClone = () => {
+    const source = document.getElementById('resume-preview-content');
+    if (!source) return null;
+    const clone = source.cloneNode(true);
+    clone.style.transform = 'none';
+    clone.style.width = '794px';
+    clone.style.position = 'fixed';
+    clone.style.top = '0';
+    clone.style.left = '0';
+    clone.style.zIndex = '9999';
+    clone.style.background = '#ffffff';
+    clone.style.boxShadow = 'none';
+    document.body.appendChild(clone);
+    return clone;
+  };
+
   const exportPDF = async () => {
     setExportingPDF(true);
+    const clone = getExportClone();
+    if (!clone) { setExportingPDF(false); return; }
     try {
       const html2pdf = (await import('html2pdf.js')).default;
-      const element = document.getElementById('resume-export-target');
-      if (!element) { console.error('Export target not found'); setExportingPDF(false); return; }
-      const opt = {
+      await html2pdf().set({
         margin: 0,
         filename: `${resume.personal.name || 'Resume'}_Resume.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 794 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-      };
-      await html2pdf().set(opt).from(element).save();
+      }).from(clone).save();
     } catch (err) {
       console.error('PDF export failed:', err);
+    } finally {
+      document.body.removeChild(clone);
+      setExportingPDF(false);
     }
-    setExportingPDF(false);
   };
 
   const exportDOCX = async () => {
     setExportingDOCX(true);
+    const clone = getExportClone();
+    if (!clone) { setExportingDOCX(false); return; }
     try {
-      const element = document.getElementById('resume-export-target');
-      if (!element) { console.error('Export target not found'); setExportingDOCX(false); return; }
       const htmlContent = `
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head><title>Resume</title></head>
-        <body>${element.innerHTML}</body>
+        <body>${clone.innerHTML}</body>
         </html>
       `;
-      const blob = new Blob(['\ufeff', htmlContent], {
-        type: 'application/msword'
-      });
+      const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -50,68 +63,47 @@ export default function ExportPanel({ resume }) {
       document.body.removeChild(link);
     } catch (err) {
       console.error('DOCX export failed:', err);
+    } finally {
+      document.body.removeChild(clone);
+      setExportingDOCX(false);
     }
-    setExportingDOCX(false);
-  };
-
-  const containerStyle = {
-    background: 'var(--theme-card)',
-    border: `1px solid var(--theme-border)`, // Keeping dark theme elements on light bg is tricky, let's use standard light theme styling since it's in the preview panel
-    borderRadius: '12px',
-    padding: '16px',
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'center',
-    marginTop: '20px',
-    width: '100%',
-    maxWidth: '500px',
-    background: '#ffffff',
-    boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
-  };
-
-  const btnStyle = {
-    padding: '10px 20px',
-    borderRadius: '8px',
-    border: 'none',
-    fontWeight: '600',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontFamily: "'DM Sans', sans-serif",
-    transition: 'opacity 0.2s',
-  };
-
-  const pdfBtnStyle = {
-    ...btnStyle,
-    background: 'linear-gradient(135deg, #6C63FF, #FF6584)',
-    color: '#fff',
-  };
-
-  const docxBtnStyle = {
-    ...btnStyle,
-    background: 'transparent',
-    border: '2px solid #6C63FF',
-    color: '#6C63FF',
   };
 
   return (
-    <div style={containerStyle}>
+    <div style={{
+      borderRadius: '12px',
+      padding: '16px',
+      display: 'flex',
+      gap: '12px',
+      justifyContent: 'center',
+      marginTop: '20px',
+      width: '100%',
+      maxWidth: '500px',
+      background: '#ffffff',
+      border: '1px solid #E5E7EB',
+      boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
+    }}>
       <button 
-        style={pdfBtnStyle} 
+        style={{
+          padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: '600',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+          fontFamily: "'Inter', sans-serif", transition: 'opacity 0.2s',
+          background: 'linear-gradient(135deg, #6C63FF, #FF6584)', color: '#fff',
+        }} 
         onClick={exportPDF} 
         disabled={exportingPDF}
-        onMouseOver={e => e.currentTarget.style.opacity = '0.9'}
-        onMouseOut={e => e.currentTarget.style.opacity = '1'}
       >
         {exportingPDF ? 'Exporting...' : '⬇ Download PDF'}
       </button>
       <button 
-        style={docxBtnStyle} 
+        style={{
+          padding: '10px 20px', borderRadius: '8px', fontWeight: '600',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+          fontFamily: "'Inter', sans-serif", transition: 'opacity 0.2s',
+          background: 'transparent', border: '2px solid #6C63FF', color: '#6C63FF',
+        }} 
         onClick={exportDOCX} 
         disabled={exportingDOCX}
-        onMouseOver={e => e.currentTarget.style.background = 'rgba(108,99,255,0.05)'}
-        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
       >
         {exportingDOCX ? 'Exporting...' : '⬇ Download DOCX'}
       </button>

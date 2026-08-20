@@ -5,7 +5,7 @@ export default function LivePreview({ resume, TemplateComponent }) {
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
 
-  const BASE_WIDTH = 794; // approx A4 width in pixels at 96dpi
+  const BASE_WIDTH = 794;
   
   useEffect(() => {
     const handleResize = () => {
@@ -25,14 +25,13 @@ export default function LivePreview({ resume, TemplateComponent }) {
 
   return (
     <div ref={containerRef} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      {/* Visible scaled preview — scrollable, no fixed height */}
       <div style={{
         transformOrigin: 'top center',
         transform: `scale(${scale})`,
         marginBottom: '-20px',
         width: `${BASE_WIDTH}px`,
       }}>
-        <div style={{
+        <div id="resume-preview-content" style={{
           width: `${BASE_WIDTH}px`,
           minHeight: '1123px',
           background: '#ffffff',
@@ -46,29 +45,6 @@ export default function LivePreview({ resume, TemplateComponent }) {
           )}
         </div>
       </div>
-
-      {/* Hidden full-size export target — not scaled, not clipped */}
-      <div
-        id="resume-export-target"
-        style={{
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          zIndex: -1,
-          opacity: 0,
-          pointerEvents: 'none',
-          width: `${BASE_WIDTH}px`,
-          background: '#ffffff',
-          color: '#000000',
-        }}
-      >
-        {TemplateComponent ? (
-          <TemplateComponent resume={resume} />
-        ) : (
-          <TemplateRenderer resume={resume} />
-        )}
-      </div>
     </div>
   );
 }
-
