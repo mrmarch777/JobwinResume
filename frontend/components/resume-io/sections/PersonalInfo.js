@@ -69,7 +69,7 @@ export default function PersonalInfo({ data = {}, onChange }) {
             )}
           </div>
           <button onClick={() => fileInputRef.current.click()} style={{
-            background: 'none', border: 'none', color: '#2563EB', fontSize: '14px', fontWeight: '500', cursor: 'pointer', padding: 0
+            background: 'none', border: 'none', color: '#2563EB', fontSize: '13px', fontWeight: '500', cursor: 'pointer', padding: 0
           }}>
             Upload photo
           </button>

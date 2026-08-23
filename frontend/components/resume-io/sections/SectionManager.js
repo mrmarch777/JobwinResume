@@ -57,7 +57,7 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
           <div style={{ background: '#16A34A', color: 'white', fontWeight: 'bold', padding: '4px 8px', borderRadius: '4px', fontSize: '13px' }}>
             {completeness}%
           </div>
-          <div style={{ color: '#6B7280', fontSize: '14px', fontWeight: '500' }}>Resume completeness</div>
+          <div style={{ color: '#6B7280', fontSize: '13px', fontWeight: '500' }}>Resume completeness</div>
         </div>
         <div style={{ width: '100%', height: '4px', background: '#E5E7EB', borderRadius: '2px', overflow: 'hidden', marginBottom: '16px' }}>
           <div style={{ width: `${completeness}%`, height: '100%', background: '#16A34A' }} />
@@ -136,7 +136,7 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
               {isExpanded && (
                 <div style={{ padding: '0 0 12px 0' }}>
                   {sectionConfig.helperText && (
-                    <div style={{ color: '#9CA3AF', fontSize: '14px', marginBottom: '24px' }}>{sectionConfig.helperText}</div>
+                    <div style={{ color: '#9CA3AF', fontSize: '13px', marginBottom: '24px' }}>{sectionConfig.helperText}</div>
                   )}
                   <Component 
                     data={resume[sectionKey]} 
@@ -168,7 +168,7 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
                 onMouseOut={(e) => e.currentTarget.style.borderColor = '#E5E7EB'}
               >
                 <span style={{ fontSize: '24px' }}>{sectionComponents[key].icon}</span>
-                <span style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>{sectionComponents[key].title}</span>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>{sectionComponents[key].title}</span>
               </div>
             ))}
           </div>
