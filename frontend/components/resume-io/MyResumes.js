@@ -4,8 +4,13 @@ import { Plus, FileText, Clock } from 'lucide-react';
 export default function MyResumes({ resumes, onSelect, onCreateNew }) {
   const formatDate = (isoString) => {
     if (!isoString) return '';
-    const d = new Date(isoString);
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return 'Unknown';
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch (e) {
+      return 'Unknown';
+    }
   };
 
   return (

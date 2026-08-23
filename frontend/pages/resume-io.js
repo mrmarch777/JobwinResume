@@ -263,7 +263,7 @@ export default function ResumeIO() {
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f9fafb' }}>
       <PageHead title="Resume IO — Editor" />
       {/* Force dark text colors for all form inputs in the Resume IO editor */}
-      <style>{`
+      <style jsx global>{`
         .resume-io-editor input, .resume-io-editor textarea, .resume-io-editor select {
           color: #111827 !important;
         }
