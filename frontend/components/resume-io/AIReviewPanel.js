@@ -31,7 +31,7 @@ export default function AIReviewPanel({ resume }) {
   const runReview = async () => {
     setStatus('loading');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/comprehensive-ats-analysis`, {
+      const res = await fetch('/api/ai-review', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resume_text: serializeResume(resume), job_description: jd || 'General professional role' }),

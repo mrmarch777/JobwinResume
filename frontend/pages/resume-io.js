@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useTheme } from '../lib/contexts';
 import { supabase } from '../lib/supabase';
@@ -19,6 +19,55 @@ const CustomizePanel = dynamic(() => import('../components/resume-io/CustomizePa
 const AIReviewPanel = dynamic(() => import('../components/resume-io/AIReviewPanel'), { ssr: false });
 const TailorPanel = dynamic(() => import('../components/resume-io/TailorPanel'), { ssr: false });
 const TailorJobDetail = dynamic(() => import('../components/resume-io/TailorJobDetail'), { ssr: false });
+
+// Error Boundary to prevent full-page crashes
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    console.error('Resume IO Error:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#f9fafb', fontFamily: "'Inter', sans-serif", padding: '40px' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+          <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', marginBottom: '8px' }}>Something went wrong</h2>
+          <p style={{ color: '#6B7280', marginBottom: '24px', textAlign: 'center', maxWidth: '400px' }}>
+            The resume editor encountered an error. This is usually caused by corrupted saved data.
+          </p>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={() => {
+                try { localStorage.removeItem('jobwin_resume_draft'); } catch(e) {}
+                window.location.reload();
+              }}
+              style={{ padding: '12px 24px', background: '#2563EB', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}
+            >
+              Clear Data & Reload
+            </button>
+            <button
+              onClick={() => window.location.href = '/dashboard'}
+              style={{ padding: '12px 24px', background: 'white', color: '#374151', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}
+            >
+              Go to Dashboard
+            </button>
+          </div>
+          <details style={{ marginTop: '24px', color: '#9CA3AF', fontSize: '12px', maxWidth: '500px' }}>
+            <summary style={{ cursor: 'pointer' }}>Error details</summary>
+            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', marginTop: '8px' }}>{this.state.error?.toString()}</pre>
+          </details>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function ResumeIO() {
   const router = useRouter();
@@ -164,6 +213,7 @@ export default function ResumeIO() {
   // ─── Gallery View ────────────────────────────────────────
   if (view === 'gallery') {
     return (
+      <ErrorBoundary>
       <div style={{ display: 'flex', minHeight: '100vh', background: theme.bg }}>
         <PageHead title="Resume IO" description="Build a professional resume with our advanced builder" />
         <main style={{ flex: 1, overflow: 'auto' }}>
@@ -183,6 +233,7 @@ export default function ResumeIO() {
           <TemplateGallery onSelect={handleSelectTemplate} onBack={() => router.push('/dashboard')} />
         </main>
       </div>
+      </ErrorBoundary>
     );
   }
 
@@ -260,23 +311,18 @@ export default function ResumeIO() {
   }
 
   return (
+    <ErrorBoundary>
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f9fafb' }}>
       <PageHead title="Resume IO — Editor" />
       {/* Force dark text colors for all form inputs in the Resume IO editor */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .resume-io-editor input, .resume-io-editor textarea, .resume-io-editor select {
           color: #111827 !important;
         }
         .resume-io-editor input::placeholder, .resume-io-editor textarea::placeholder {
           color: #9CA3AF !important;
         }
-        .resume-io-editor input[type="month"] {
-          appearance: none;
-          -webkit-appearance: none;
-          background: #F9FAFB;
-          cursor: pointer;
-        }
-      `}</style>
+      `}} />
       <main className="resume-io-editor" style={{ flex: 1, overflow: 'hidden' }}>
         <EditorShell
           activeTab={activeTab}
@@ -299,5 +345,6 @@ export default function ResumeIO() {
         />
       )}
     </div>
+    </ErrorBoundary>
   );
 }
