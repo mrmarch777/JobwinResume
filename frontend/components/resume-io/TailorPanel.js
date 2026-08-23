@@ -10,22 +10,33 @@ export default function TailorPanel({ resume, onSelectJob, selectedJob }) {
 
   const fetchJobs = async (loc) => {
     setLoading(true);
+    // Mock jobs for now, a real API like Jooble or Adzuna would be needed here
+    setJobs([
+      { id: '1', title: 'Senior Frontend Engineer', company: 'TechCorp', location: loc || 'Remote', posted: 'Posted 2 days ago', autoApply: true, snippet: 'Looking for a senior frontend engineer with React experience...' },
+      { id: '2', title: 'Full Stack Developer', company: 'InnovateInc', location: loc || 'New York, NY', posted: 'Posted 5 days ago', autoApply: false, snippet: 'Join our fast-growing startup to build the next generation of tools.' },
+      { id: '3', title: 'React UI Developer', company: 'DesignWorks', location: loc || 'San Francisco, CA', posted: 'Posted 10 days ago', autoApply: true, snippet: 'Strong CSS and React skills required.' }
+    ]);
+    setLoading(false);
+  };
+
+  const handlePasteUrl = async () => {
+    if (!urlInput) return;
+    setLoading(true);
     try {
-      const title = resume?.personal?.title || 'developer';
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/jobs?query=${title}&location=${loc}&plan=premium&limit=20`);
+      const res = await fetch('/api/fetch-jd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: urlInput }),
+      });
       if (res.ok) {
         const data = await res.json();
-        setJobs(data.jobs || data || []);
+        setJobs([data, ...jobs]);
+        onSelectJob(data);
       } else {
-        throw new Error('API error');
+        alert('Could not extract job description from URL. Please try another link.');
       }
-    } catch (err) {
-      // Mock data fallback
-      setJobs([
-        { id: '1', title: 'Senior Frontend Engineer', company: 'TechCorp', location: 'Remote', posted: 'Posted 2 days ago', autoApply: true, snippet: 'Looking for a senior frontend engineer with React experience...' },
-        { id: '2', title: 'Full Stack Developer', company: 'InnovateInc', location: 'New York, NY', posted: 'Posted 5 days ago', autoApply: false, snippet: 'Join our fast-growing startup to build the next generation of tools.' },
-        { id: '3', title: 'React UI Developer', company: 'DesignWorks', location: 'San Francisco, CA', posted: 'Posted 10 days ago', autoApply: true, snippet: 'Strong CSS and React skills required.' }
-      ]);
+    } catch (e) {
+      alert('Error fetching URL.');
     }
     setLoading(false);
   };
@@ -56,7 +67,10 @@ export default function TailorPanel({ resume, onSelectJob, selectedJob }) {
             onChange={(e) => setUrlInput(e.target.value)}
             style={{ flex: 1, height: 40, padding: '0 12px', borderRadius: 6, border: '1px solid #D1D5DB', fontSize: 14 }}
           />
-          <button style={{ backgroundColor: '#F97316', color: 'white', border: 'none', borderRadius: 6, padding: '0 16px', fontWeight: 500, cursor: 'pointer', fontSize: 14 }}>
+          <button 
+            onClick={handlePasteUrl}
+            style={{ backgroundColor: '#F97316', color: 'white', border: 'none', borderRadius: 6, padding: '0 16px', fontWeight: 500, cursor: 'pointer', fontSize: 14 }}
+          >
             Start tailoring
           </button>
         </div>

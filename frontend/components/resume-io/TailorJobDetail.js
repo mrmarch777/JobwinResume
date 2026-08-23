@@ -29,7 +29,7 @@ export default function TailorJobDetail({ job, resume, onApplyOptimization }) {
   const tailorResume = async () => {
     setTailoring(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/tailor-resume`, {
+      const res = await fetch('/api/tailor-resume', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resume_data: serializeResume(resume), job_description: job.description || job.snippet }),
