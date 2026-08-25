@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     $('script, style, nav, footer, header').remove();
     const textContent = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 30000); // limit to 30k chars
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
     const prompt = `
 Extract the job title, company, location, and the full job description from the following webpage text.
 Return ONLY a valid JSON object with this structure (no markdown):
