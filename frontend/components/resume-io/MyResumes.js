@@ -1,7 +1,16 @@
-import React from 'react';
-import { Plus, FileText, Clock } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Plus, FileText, Clock, LogIn } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 export default function MyResumes({ resumes, onSelect, onCreateNew }) {
+  const [isLoggedIn, setIsLoggedIn] = useState(null); // null = checking
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session?.user);
+    });
+  }, []);
+
   const formatDate = (isoString) => {
     if (!isoString) return '';
     try {
@@ -12,6 +21,29 @@ export default function MyResumes({ resumes, onSelect, onCreateNew }) {
       return 'Unknown';
     }
   };
+
+  // Still checking login state
+  if (isLoggedIn === null) return null;
+
+  // Not logged in — show sign-in prompt
+  if (!isLoggedIn) {
+    return (
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{ fontSize: '28px', fontWeight: '700', color: 'var(--theme-text, #E8E6F0)', marginBottom: '16px' }}>My Resumes</h2>
+        <div style={{ textAlign: 'center', padding: '40px 20px', background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: '16px' }}>
+          <div style={{ fontSize: '40px', marginBottom: '12px' }}>🔐</div>
+          <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '8px', fontWeight: '600', fontSize: '16px' }}>Sign in to see your saved resumes</p>
+          <p style={{ color: 'rgba(255,255,255,0.4)', marginBottom: '20px', fontSize: '14px' }}>Your resumes are saved to your account. Sign in to access them.</p>
+          <button
+            onClick={() => window.location.href = '/login'}
+            style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #6C63FF, #2563EB)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <LogIn size={16} /> Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!resumes || resumes.length === 0) {
     return (
@@ -30,6 +62,7 @@ export default function MyResumes({ resumes, onSelect, onCreateNew }) {
       </div>
     );
   }
+
 
   return (
     <div style={{ marginBottom: '40px', fontFamily: "'Inter', 'DM Sans', sans-serif" }}>

@@ -89,16 +89,27 @@ export default function ResumeIO() {
   const loadSavedResumes = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
-      const { data } = await supabase.from('resumes').select('*').eq('user_id', session.user.id).order('updated_at', { ascending: false }).limit(20);
+      console.log('[MyResumes] session:', session?.user?.email);
+      if (!session?.user) {
+        console.warn('[MyResumes] No session — user not logged in, cannot load saved resumes');
+        setSavedResumes([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('resumes')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('updated_at', { ascending: false })
+        .limit(20);
+      console.log('[MyResumes] loaded resumes:', data?.length, error);
       if (data) setSavedResumes(data);
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error('[MyResumes] load error:', e); 
+    }
   };
 
   useEffect(() => {
-    if (view === 'gallery') {
-      loadSavedResumes();
-    }
+    loadSavedResumes();
   }, [view]);
 
   // Template selection from gallery
@@ -183,20 +194,48 @@ export default function ResumeIO() {
           margin: 0,
           filename: `${resume.personal?.name || 'Resume'}_Resume.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: -window.scrollY },
+          html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            letterRendering: true, 
+            scrollY: 0,
+            windowWidth: 794,
+          },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+          pagebreak: { mode: 'css', before: '.pdf-page-break' },
         }).from(source).save();
       } else {
-        const html = source.innerHTML;
-        const blob = new Blob(
-          [`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"></head><body>${html}</body></html>`],
-          { type: 'application/msword' }
-        );
+        // Word export — capture computed styles and full outer HTML
+        const outerHtml = source.outerHTML;
+        // Collect all inline style data from the element
+        const wordHtml = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office" 
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="utf-8">
+  <title>Resume</title>
+  <!--[if gte mso 9]>
+  <xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml>
+  <![endif]-->
+  <style>
+    @page { size: A4; margin: 0; }
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    * { box-sizing: border-box; }
+    div { display: block; }
+    [style*="display: flex"], [style*="display:flex"] { display: table; width: 100%; }
+    [style*="flex: 1"], [style*="flex:1"] { display: table-cell; }
+  </style>
+</head>
+<body>${outerHtml}</body>
+</html>`;
+        const blob = new Blob([wordHtml], { type: 'application/msword' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = `${resume.personal?.name || 'Resume'}_Resume.doc`;
-        a.click(); URL.revokeObjectURL(url);
+        a.href = url; 
+        a.download = `${resume.personal?.name || 'Resume'}_Resume.doc`;
+        a.click(); 
+        URL.revokeObjectURL(url);
       }
     } finally {
       // Restore scaling
