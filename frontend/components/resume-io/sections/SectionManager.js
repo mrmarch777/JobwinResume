@@ -24,6 +24,8 @@ const sectionComponents = {
 
 export default function SectionManager({ resume, updateSection, updateSettings, addSection, removeSection, reorderSections, onUploadResume }) {
   const [expandedSection, setExpandedSection] = useState('personal');
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customSectionName, setCustomSectionName] = useState('');
 
   // Calculate completeness
   let completedFields = 0;
@@ -104,9 +106,10 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
           if (!resume.enabledSections.includes(sectionKey)) return null;
           
           const sectionConfig = sectionComponents[sectionKey];
-          if (!sectionConfig) return null;
+          const customSection = (resume.customSections || []).find(c => c.key === sectionKey);
+          if (!sectionConfig && !customSection) return null;
           
-          const Component = sectionConfig.component;
+          const Component = sectionConfig?.component;
           const isExpanded = expandedSection === sectionKey;
           
           return (
@@ -116,10 +119,10 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
                 onClick={() => setExpandedSection(isExpanded ? null : sectionKey)}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '20px', fontWeight: '700', color: '#111827' }}>{sectionConfig.title}</span>
+                  <span style={{ fontSize: '20px', fontWeight: '700', color: '#111827' }}>{sectionConfig?.title || customSection?.title || sectionKey}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  {!sectionConfig.required && (
+                  {(!sectionConfig?.required) && (
                     <button 
                       onClick={(e) => { e.stopPropagation(); removeSection(sectionKey); }}
                       style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '4px', borderRadius: '4px' }}
@@ -135,14 +138,50 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
               
               {isExpanded && (
                 <div style={{ padding: '0 0 12px 0' }}>
-                  {sectionConfig.helperText && (
+                  {sectionConfig?.helperText && (
                     <div style={{ color: '#9CA3AF', fontSize: '13px', marginBottom: '24px' }}>{sectionConfig.helperText}</div>
                   )}
-                  <Component 
-                    data={resume[sectionKey]} 
-                    onChange={(data) => updateSection(sectionKey, data)}
-                    resumeContext={resume}
-                  />
+                  {sectionConfig ? (
+                    <Component 
+                      data={resume[sectionKey]} 
+                      onChange={(data) => updateSection(sectionKey, data)}
+                      resumeContext={resume}
+                    />
+                  ) : customSection ? (
+                    <div>
+                      {(resume[sectionKey] || []).map((item, idx) => (
+                        <div key={item.id || idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '12px' }}>
+                          <span style={{ color: '#9CA3AF', marginTop: '10px' }}>•</span>
+                          <textarea 
+                            value={item.text || ''} 
+                            onChange={(e) => {
+                              const newItems = [...(resume[sectionKey] || [])];
+                              newItems[idx] = { ...newItems[idx], text: e.target.value };
+                              updateSection(sectionKey, newItems);
+                            }}
+                            style={{ flex: 1, padding: '10px 14px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '13px', minHeight: '40px', resize: 'vertical', outline: 'none' }}
+                            placeholder="Enter details..."
+                          />
+                          <button 
+                            onClick={() => {
+                              const newItems = (resume[sectionKey] || []).filter((_, i) => i !== idx);
+                              updateSection(sectionKey, newItems);
+                            }}
+                            style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '10px' }}
+                          >✕</button>
+                        </div>
+                      ))}
+                      <button 
+                        onClick={() => {
+                          const newItems = [...(resume[sectionKey] || []), { id: 'item-' + Date.now(), text: '' }];
+                          updateSection(sectionKey, newItems);
+                        }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#2563EB', fontSize: '13px', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0' }}
+                      >
+                        + Add item
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               )}
             </div>
@@ -174,6 +213,65 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
           </div>
         </div>
       )}
+
+      {/* Add Custom Section */}
+      <div style={{ marginTop: '24px' }}>
+        {!showCustomInput ? (
+          <button 
+            onClick={() => setShowCustomInput(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#2563EB', fontSize: '14px', fontWeight: '600', background: 'none', border: '1px dashed #2563EB', padding: '12px 20px', borderRadius: '8px', cursor: 'pointer', width: '100%', justifyContent: 'center' }}
+          >
+            <Plus size={16} /> Add Custom Section
+          </button>
+        ) : (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input 
+              type="text" 
+              value={customSectionName} 
+              onChange={(e) => setCustomSectionName(e.target.value)}
+              placeholder="e.g. Hobbies, Volunteer Work, Publications..."
+              style={{ flex: 1, padding: '10px 14px', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '14px', outline: 'none' }}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && customSectionName.trim()) {
+                  const key = 'custom_' + customSectionName.trim().toLowerCase().replace(/\s+/g, '_');
+                  updateSection(key, [{ id: 'item-' + Date.now(), text: '' }]);
+                  const newEnabled = [...resume.enabledSections, key];
+                  const newOrder = [...resume.sectionOrder, key];
+                  updateSettings({ enabledSections: newEnabled, sectionOrder: newOrder, customSections: [...(resume.customSections || []), { key, title: customSectionName.trim() }] });
+                  setCustomSectionName('');
+                  setShowCustomInput(false);
+                  setExpandedSection(key);
+                }
+              }}
+            />
+            <button 
+              onClick={() => {
+                if (customSectionName.trim()) {
+                  const key = 'custom_' + customSectionName.trim().toLowerCase().replace(/\s+/g, '_');
+                  updateSection(key, [{ id: 'item-' + Date.now(), text: '' }]);
+                  const newEnabled = [...resume.enabledSections, key];
+                  const newOrder = [...resume.sectionOrder, key];
+                  updateSettings({ enabledSections: newEnabled, sectionOrder: newOrder, customSections: [...(resume.customSections || []), { key, title: customSectionName.trim() }] });
+                  setCustomSectionName('');
+                  setShowCustomInput(false);
+                  setExpandedSection(key);
+                }
+              }}
+              style={{ padding: '10px 20px', background: '#2563EB', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              Add
+            </button>
+            <button 
+              onClick={() => { setShowCustomInput(false); setCustomSectionName(''); }}
+              style={{ padding: '10px', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }

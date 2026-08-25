@@ -112,9 +112,9 @@ export default function Experience({ data = [], onChange }) {
                   <div>
                     <label style={STYLES.label}>Start Date</label>
                     <input 
-                      type="text" placeholder="e.g. 05/2021 or May 2021" 
-                      value={parseToYYYYMM(entry.startDate)} 
-                      onChange={(e) => updateEntry(i, 'startDate', formatToMonthYear(e.target.value))} 
+                      type="text" placeholder="e.g. Mar 2021" 
+                      value={entry.startDate || ''} 
+                      onChange={(e) => updateEntry(i, 'startDate', e.target.value)} 
                       style={STYLES.input} 
                     />
                   </div>
@@ -127,9 +127,9 @@ export default function Experience({ data = [], onChange }) {
                       </label>
                     </div>
                     <input 
-                      type="text" placeholder="e.g. 05/2021 or May 2021" 
-                      value={parseToYYYYMM(entry.endDate)} 
-                      onChange={(e) => updateEntry(i, 'endDate', formatToMonthYear(e.target.value))} 
+                      type="text" placeholder="e.g. Dec 2023" 
+                      value={entry.endDate || ''} 
+                      onChange={(e) => updateEntry(i, 'endDate', e.target.value)} 
                       style={STYLES.input} 
                       disabled={entry.current} 
                     />

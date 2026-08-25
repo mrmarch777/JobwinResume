@@ -13,6 +13,24 @@ export default function MyResumes({ resumes, onSelect, onCreateNew }) {
     }
   };
 
+  if (!resumes || resumes.length === 0) {
+    return (
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{ fontSize: '28px', fontWeight: '700', color: 'var(--theme-text, #E8E6F0)', marginBottom: '16px' }}>My Resumes</h2>
+        <div style={{ textAlign: 'center', padding: '40px 20px', background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: '16px' }}>
+          <div style={{ fontSize: '40px', marginBottom: '12px' }}>📄</div>
+          <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '16px' }}>No saved resumes yet. Create your first one below!</p>
+          <button 
+            onClick={onCreateNew}
+            style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #6C63FF, #FF6584)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+          >
+            + Create New Resume
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ marginBottom: '40px', fontFamily: "'Inter', 'DM Sans', sans-serif" }}>
       <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', marginBottom: '20px' }}>

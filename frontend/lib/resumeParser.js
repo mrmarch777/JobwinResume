@@ -123,59 +123,67 @@ export function validateAndCleanResume(resumeData) {
 
 export async function extractTextFromPDF(file) {
   try {
-    // console.log(`📄 [PDF] Starting extraction from ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
-
-    const pdfjsLib = await import("pdfjs-dist/build/pdf.mjs");
-
-    // Configure PDF.js worker with multiple fallback CDNs
-    const cdnUrls = [
-      `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`,
-      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`,
-      `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`,
+    let pdfjsLib;
+    
+    // Try multiple import paths for compatibility
+    const importPaths = [
+      () => import('pdfjs-dist'),
+      () => import('pdfjs-dist/build/pdf.mjs'),
+      () => import('pdfjs-dist/legacy/build/pdf'),
     ];
-
-    let workerSet = false;
-    for (const url of cdnUrls) {
+    
+    for (const tryImport of importPaths) {
       try {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = url;
-        workerSet = true;
-        // console.log(`✅ [PDF] Worker configured: ${url.substring(0, 50)}...`);
-        break;
+        pdfjsLib = await tryImport();
+        if (pdfjsLib && pdfjsLib.getDocument) break;
+        if (pdfjsLib && pdfjsLib.default?.getDocument) { pdfjsLib = pdfjsLib.default; break; }
       } catch (e) {
-        console.warn(`⚠️ [PDF] Worker URL failed: ${url.substring(0, 50)}...`);
+        console.warn('PDF.js import attempt failed:', e.message);
       }
     }
+    
+    if (!pdfjsLib) {
+      throw new Error('Could not load PDF reader library. Please try uploading a DOCX file instead.');
+    }
 
-    if (!workerSet) {
-      console.warn("⚠️ [PDF] Could not set PDF worker from CDN, attempting inline...");
+    // Configure worker
+    const version = pdfjsLib.version || '3.11.174';
+    const workerUrls = [
+      `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/build/pdf.worker.min.mjs`,
+      `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/build/pdf.worker.min.js`,
+      `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.js`,
+      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.js`,
+    ];
+    
+    for (const url of workerUrls) {
+      try {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = url;
+        break;
+      } catch (e) {
+        // continue
+      }
     }
 
     const arrayBuffer = await file.arrayBuffer();
     if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-      throw new Error("File is empty");
+      throw new Error('File is empty');
     }
 
     let pdf;
-    const loadOptions = [
-      { data: arrayBuffer },
-      { data: arrayBuffer, useWorkerFetch: false },
-      { data: arrayBuffer, withCredentials: false },
-    ];
-
-    let lastError;
-    for (const options of loadOptions) {
+    try {
+      pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    } catch (e) {
+      // Try without worker
       try {
-        pdf = await pdfjsLib.getDocument(options).promise;
-        // console.log(`✅ [PDF] Loaded. Total pages: ${pdf.numPages}`);
-        break;
-      } catch (err) {
-        lastError = err;
-        console.warn(`⚠️ [PDF] Load attempt failed:`, err.message);
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+        pdf = await pdfjsLib.getDocument({ data: arrayBuffer, useWorkerFetch: false }).promise;
+      } catch (e2) {
+        throw new Error('Could not load PDF: ' + e2.message);
       }
     }
 
     if (!pdf || pdf.numPages === 0) {
-      throw new Error(`Could not load PDF. Error: ${lastError?.message || "Unknown"}`);
+      throw new Error(`Could not load PDF. Error: Unknown`);
     }
 
     let fullText = "";

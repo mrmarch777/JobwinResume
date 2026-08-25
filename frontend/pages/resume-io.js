@@ -165,42 +165,45 @@ export default function ResumeIO() {
       return;
     }
 
-    // Clone the preview and render it at full size (no scale transform)
-    const clone = source.cloneNode(true);
-    clone.style.transform = 'none';
-    clone.style.width = '794px';
-    clone.style.position = 'fixed';
-    clone.style.top = '0';
-    clone.style.left = '0';
-    clone.style.zIndex = '9999';
-    clone.style.background = '#ffffff';
-    clone.style.boxShadow = 'none';
-    document.body.appendChild(clone);
+    // Find the scaled wrapper (parent with transform)
+    const scaledWrapper = source.parentElement;
+    const originalTransform = scaledWrapper?.style.transform;
+    const originalWidth = scaledWrapper?.style.width;
+    
+    // Temporarily remove scaling for capture
+    if (scaledWrapper) {
+      scaledWrapper.style.transform = 'none';
+      scaledWrapper.style.width = '794px';
+    }
 
     try {
       if (format === 'pdf') {
         const html2pdf = (await import('html2pdf.js')).default;
         await html2pdf().set({
           margin: 0,
-          filename: `${resume.personal.name || 'Resume'}_Resume.pdf`,
+          filename: `${resume.personal?.name || 'Resume'}_Resume.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+          html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: -window.scrollY },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
           pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-        }).from(clone).save();
+        }).from(source).save();
       } else {
-        const html = clone.innerHTML;
+        const html = source.innerHTML;
         const blob = new Blob(
           [`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"></head><body>${html}</body></html>`],
           { type: 'application/msword' }
         );
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = `${resume.personal.name || 'Resume'}_Resume.doc`;
+        a.href = url; a.download = `${resume.personal?.name || 'Resume'}_Resume.doc`;
         a.click(); URL.revokeObjectURL(url);
       }
     } finally {
-      document.body.removeChild(clone);
+      // Restore scaling
+      if (scaledWrapper) {
+        scaledWrapper.style.transform = originalTransform || '';
+        scaledWrapper.style.width = originalWidth || '';
+      }
     }
   };
 
@@ -217,19 +220,17 @@ export default function ResumeIO() {
       <div style={{ display: 'flex', minHeight: '100vh', background: theme.bg }}>
         <PageHead title="Resume IO" description="Build a professional resume with our advanced builder" />
         <main style={{ flex: 1, overflow: 'auto' }}>
-          {savedResumes.length > 0 && (
-            <div style={{ padding: '40px 40px 0 40px' }}>
-              <MyResumes 
-                resumes={savedResumes} 
-                onSelect={handleSelectSaved} 
-                onCreateNew={() => {
-                  setResume(defaultResume);
-                  setResumeName('Untitled Resume');
-                  setView('editor');
-                }} 
-              />
-            </div>
-          )}
+          <div style={{ padding: '40px 40px 0 40px' }}>
+            <MyResumes 
+              resumes={savedResumes} 
+              onSelect={handleSelectSaved} 
+              onCreateNew={() => {
+                setResume(defaultResume);
+                setResumeName('Untitled Resume');
+                setView('editor');
+              }} 
+            />
+          </div>
           <TemplateGallery onSelect={handleSelectTemplate} onBack={() => router.push('/dashboard')} />
         </main>
       </div>
