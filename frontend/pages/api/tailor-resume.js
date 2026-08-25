@@ -23,7 +23,7 @@ async function handleTailor(req, res) {
     return res.status(400).json({ error: 'Missing resume data or job description' });
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   const prompt = `
 You are an expert resume reviewer and ATS optimization specialist.
