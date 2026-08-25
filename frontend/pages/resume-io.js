@@ -168,85 +168,114 @@ export default function ResumeIO() {
     setShowUpload(false);
   };
 
-  // Export handler — clones the preview at full size for capture
+  // Export handler — uses server-side Puppeteer for perfect PDF, html2pdf as fallback
   const handleExport = async (format) => {
     const source = document.getElementById('resume-preview-content');
     if (!source) {
-      console.error('Resume preview not found');
+      alert('Resume preview not found. Please try again.');
       return;
     }
 
-    // Find the scaled wrapper (parent with transform)
-    const scaledWrapper = source.parentElement;
-    const originalTransform = scaledWrapper?.style.transform;
-    const originalWidth = scaledWrapper?.style.width;
-    
-    // Temporarily remove scaling for capture
-    if (scaledWrapper) {
-      scaledWrapper.style.transform = 'none';
-      scaledWrapper.style.width = '794px';
-    }
+    const name = resume.personal?.name || 'Resume';
 
-    try {
-      if (format === 'pdf') {
+    if (format === 'pdf') {
+      // Build a standalone HTML page with all inline styles intact
+      const styles = Array.from(document.styleSheets)
+        .map(sheet => {
+          try {
+            return Array.from(sheet.cssRules).map(r => r.cssText).join('\n');
+          } catch { return ''; }
+        })
+        .join('\n');
+
+      const fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { margin: 0; background: white; }
+    ${styles}
+  </style>
+</head>
+<body>${source.outerHTML}</body>
+</html>`;
+
+      try {
+        // Try server-side Puppeteer PDF first (perfect rendering)
+        const response = await fetch('/api/generate-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ html: fullHtml, filename: `${name}_Resume.pdf` }),
+        });
+
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${name}_Resume.pdf`;
+          a.click();
+          URL.revokeObjectURL(url);
+          return;
+        }
+      } catch (err) {
+        console.warn('Server PDF failed, falling back to html2pdf:', err);
+      }
+
+      // Fallback: html2pdf client-side
+      const scaledWrapper = source.parentElement;
+      const originalTransform = scaledWrapper?.style.transform;
+      const originalWidth = scaledWrapper?.style.width;
+      if (scaledWrapper) {
+        scaledWrapper.style.transform = 'none';
+        scaledWrapper.style.width = '794px';
+      }
+      try {
         const html2pdf = (await import('html2pdf.js')).default;
         await html2pdf().set({
           margin: 0,
-          filename: `${resume.personal?.name || 'Resume'}_Resume.pdf`,
+          filename: `${name}_Resume.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { 
-            scale: 2, 
-            useCORS: true, 
-            letterRendering: true, 
-            scrollY: 0,
-            windowWidth: 794,
-          },
+          html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 794 },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: 'css', before: '.pdf-page-break' },
+          pagebreak: { mode: 'css' },
         }).from(source).save();
-      } else {
-        // Word export — capture computed styles and full outer HTML
-        const outerHtml = source.outerHTML;
-        // Collect all inline style data from the element
-        const wordHtml = `
-<html xmlns:o="urn:schemas-microsoft-com:office:office" 
-      xmlns:w="urn:schemas-microsoft-com:office:word"
-      xmlns="http://www.w3.org/TR/REC-html40">
+      } finally {
+        if (scaledWrapper) {
+          scaledWrapper.style.transform = originalTransform || '';
+          scaledWrapper.style.width = originalWidth || '';
+        }
+      }
+    } else {
+      // Word export
+      const outerHtml = source.outerHTML;
+      const wordHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" 
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns="http://www.w3.org/TR/REC-html40">
 <head>
-  <meta charset="utf-8">
-  <title>Resume</title>
-  <!--[if gte mso 9]>
-  <xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml>
-  <![endif]-->
-  <style>
-    @page { size: A4; margin: 0; }
-    body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
-    * { box-sizing: border-box; }
-    div { display: block; }
-    [style*="display: flex"], [style*="display:flex"] { display: table; width: 100%; }
-    [style*="flex: 1"], [style*="flex:1"] { display: table-cell; }
-  </style>
+<meta charset="utf-8"><title>Resume</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
+<style>
+  @page { size: A4; margin: 1cm; }
+  body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+  * { box-sizing: border-box; }
+</style>
 </head>
 <body>${outerHtml}</body>
 </html>`;
-        const blob = new Blob([wordHtml], { type: 'application/msword' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; 
-        a.download = `${resume.personal?.name || 'Resume'}_Resume.doc`;
-        a.click(); 
-        URL.revokeObjectURL(url);
-      }
-    } finally {
-      // Restore scaling
-      if (scaledWrapper) {
-        scaledWrapper.style.transform = originalTransform || '';
-        scaledWrapper.style.width = originalWidth || '';
-      }
+      const blob = new Blob([wordHtml], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${name}_Resume.doc`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
   };
 
   // Apply tailor suggestions
+
   const handleApplyOptimization = (suggestions) => {
     if (suggestions?.summary) updateSection('summary', suggestions.summary);
     if (suggestions?.experience) updateSection('experience', suggestions.experience);
