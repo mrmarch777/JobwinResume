@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { processResumeFile } from '../../lib/resumeParser';
 
 export default function ResumeUpload({ onDataExtracted, onClose }) {
   const [loading, setLoading] = useState(false);
@@ -15,10 +14,36 @@ export default function ResumeUpload({ onDataExtracted, onClose }) {
     setProgressMsg('Uploading file...');
     
     try {
-      const parsedData = await processResumeFile(file, (info) => {
-        setProgressMsg(info.status);
+      // Validate file
+      const ext = file.name.toLowerCase().split('.').pop();
+      if (!['pdf', 'docx', 'doc'].includes(ext)) {
+        throw new Error('Unsupported file format. Please upload a PDF or Word document.');
+      }
+      if (file.size > 50 * 1024 * 1024) {
+        throw new Error('File is too large. Maximum size is 50MB.');
+      }
+
+      setProgressMsg('Sending to AI for analysis...');
+
+      // Send file directly to server — no client-side PDF parsing needed
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload-resume', {
+        method: 'POST',
+        body: formData,
       });
-      
+
+      const result = await response.json();
+
+      if (!response.ok || result.status === 'error') {
+        throw new Error(result.error || `Server error: ${response.status}`);
+      }
+
+      setProgressMsg('Organizing resume data...');
+
+      const parsedData = result.data;
+
       // Adapt parsedData to the shape the UI expects
       const adapted = {
         personal: {
@@ -36,7 +61,7 @@ export default function ResumeUpload({ onDataExtracted, onClose }) {
           company: exp.company || '',
           startDate: exp.from || exp.startDate || '',
           endDate: exp.to || exp.endDate || '',
-          current: exp.current || (!exp.to && !!exp.from),
+          current: exp.current || (exp.to && /present|current|now/i.test(exp.to)),
           location: exp.location || '',
           bullets: exp.bullets || exp.responsibilities || []
         })),
@@ -98,14 +123,16 @@ export default function ResumeUpload({ onDataExtracted, onClose }) {
       <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '16px', padding: '32px', width: '90%', maxWidth: '500px', position: 'relative', fontFamily: "'Inter', sans-serif", boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', fontSize: '24px' }}>✕</button>
         <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', marginTop: 0, marginBottom: '8px' }}>Import Your Resume</h2>
-        <p style={{ color: '#6B7280', marginBottom: '24px', fontSize: '15px' }}>Upload your existing resume to pre-fill the editor. Supports PDF and Word documents.</p>
+        <p style={{ color: '#6B7280', marginBottom: '24px', fontSize: '15px' }}>Upload your existing resume to pre-fill the editor. AI will extract all sections automatically.</p>
         
         <div style={{ border: '2px dashed #D1D5DB', borderRadius: '12px', padding: '40px 20px', textAlign: 'center', position: 'relative', background: '#F9FAFB', transition: 'border-color 0.2s' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>📄</div>
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ width: '32px', height: '32px', border: '3px solid #E5E7EB', borderTopColor: '#2563EB', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '12px' }} />
               <div style={{ color: '#2563EB', fontWeight: '600', marginBottom: '8px' }}>Processing document...</div>
               <div style={{ color: '#6B7280', fontSize: '13px' }}>{progressMsg}</div>
+              <style dangerouslySetInnerHTML={{ __html: '@keyframes spin { to { transform: rotate(360deg); } }' }} />
             </div>
           ) : (
             <>
