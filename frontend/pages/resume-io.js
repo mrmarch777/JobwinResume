@@ -196,6 +196,8 @@ export default function ResumeIO() {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { margin: 0; background: white; }
     ${styles}
+    p, li { page-break-inside: avoid; orphans: 3; widows: 3; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
   </style>
 </head>
 <body>${source.outerHTML}</body>
