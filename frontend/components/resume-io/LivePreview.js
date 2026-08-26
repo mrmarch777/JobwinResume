@@ -16,7 +16,7 @@ export default function LivePreview({ resume, TemplateComponent }) {
     const handleResize = () => {
       if (containerRef.current) {
         const parentWidth = containerRef.current.parentElement?.clientWidth || 600;
-        const availableWidth = parentWidth - 48;
+        const availableWidth = parentWidth - 32;
         const newScale = Math.min(1, availableWidth / A4_WIDTH);
         setScale(newScale);
       }
@@ -26,22 +26,19 @@ export default function LivePreview({ resume, TemplateComponent }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Measure content height to determine number of pages
+  // Measure total pages from rendered content height
   useEffect(() => {
     if (contentRef.current) {
       const h = contentRef.current.scrollHeight;
       const pages = Math.max(1, Math.ceil(h / A4_HEIGHT));
       setTotalPages(pages);
-      // If current page is now out of range after content change, reset to 1
       setCurrentPage(p => Math.min(p, pages));
     }
   });
 
-  // The Y offset into the content for the current page
   const pageOffset = (currentPage - 1) * A4_HEIGHT;
-
-  // Visible frame height after scaling
-  const visibleFrameHeight = A4_HEIGHT * scale;
+  const scaledWidth = A4_WIDTH * scale;
+  const scaledHeight = A4_HEIGHT * scale;
 
   return (
     <div
@@ -51,29 +48,30 @@ export default function LivePreview({ resume, TemplateComponent }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        background: '#E5E7EB',
+        background: '#E8E8E8',
         minHeight: '100%',
+        padding: '16px 0 24px 0',
       }}
     >
-      {/* ── A4 Page Viewport ── */}
+      {/* ── Page Viewport — clips to exactly one A4 page ── */}
       <div
         style={{
-          width: `${A4_WIDTH * scale}px`,
-          height: `${visibleFrameHeight}px`,
+          width: `${scaledWidth}px`,
+          height: `${scaledHeight}px`,
           overflow: 'hidden',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+          boxShadow: '0 2px 16px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.12)',
           background: '#fff',
-          margin: '24px 0 0 0',
           position: 'relative',
           flexShrink: 0,
         }}
       >
-        {/* Full-height content rendered inside, shifted up to show current page */}
+        {/* Full-height content, shifted up to show current page */}
         <div
           style={{
             transformOrigin: 'top left',
             transform: `scale(${scale}) translateY(${-pageOffset}px)`,
             width: `${A4_WIDTH}px`,
+            willChange: 'transform',
           }}
         >
           <div
@@ -92,68 +90,68 @@ export default function LivePreview({ resume, TemplateComponent }) {
             )}
           </div>
         </div>
-      </div>
 
-      {/* ── Pagination Controls ── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-          padding: '14px 20px',
-          background: '#fff',
-          borderRadius: '10px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-          margin: '16px 0 24px 0',
-          fontFamily: "'Inter', sans-serif",
-        }}
-      >
-        <button
-          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-          disabled={currentPage === 1}
-          style={{
-            padding: '8px 18px',
-            background: currentPage === 1 ? '#F3F4F6' : '#2563EB',
-            color: currentPage === 1 ? '#9CA3AF' : '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: currentPage === 1 ? 'default' : 'pointer',
-            fontWeight: '600',
-            fontSize: '14px',
-            transition: 'all 0.15s',
-          }}
-        >
-          ← Prev
-        </button>
+        {/* ── Page Pill (overlaid bottom-right, like resume.io) ── */}
+        {totalPages > 1 && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '14px',
+              right: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(17,24,39,0.75)',
+              backdropFilter: 'blur(6px)',
+              borderRadius: '20px',
+              padding: '5px 10px',
+              zIndex: 20,
+              fontFamily: "'Inter', sans-serif",
+              userSelect: 'none',
+            }}
+          >
+            {/* Prev arrow */}
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: currentPage === 1 ? 'rgba(255,255,255,0.3)' : '#fff',
+                cursor: currentPage === 1 ? 'default' : 'pointer',
+                padding: '0 2px',
+                fontSize: '13px',
+                lineHeight: 1,
+                fontWeight: '700',
+              }}
+            >
+              ←
+            </button>
 
-        <div style={{ textAlign: 'center', minWidth: '100px' }}>
-          <div style={{ fontWeight: '700', fontSize: '15px', color: '#111827' }}>
-            Page {currentPage} of {totalPages}
+            {/* Page indicator */}
+            <span style={{ color: '#fff', fontSize: '12px', fontWeight: '600', letterSpacing: '0.3px' }}>
+              {currentPage} / {totalPages}
+            </span>
+
+            {/* Next arrow */}
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: currentPage === totalPages ? 'rgba(255,255,255,0.3)' : '#fff',
+                cursor: currentPage === totalPages ? 'default' : 'pointer',
+                padding: '0 2px',
+                fontSize: '13px',
+                lineHeight: 1,
+                fontWeight: '700',
+              }}
+            >
+              →
+            </button>
           </div>
-          {totalPages > 1 && (
-            <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
-              {totalPages} pages total
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-          disabled={currentPage === totalPages}
-          style={{
-            padding: '8px 18px',
-            background: currentPage === totalPages ? '#F3F4F6' : '#2563EB',
-            color: currentPage === totalPages ? '#9CA3AF' : '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: currentPage === totalPages ? 'default' : 'pointer',
-            fontWeight: '600',
-            fontSize: '14px',
-            transition: 'all 0.15s',
-          }}
-        >
-          Next →
-        </button>
+        )}
       </div>
     </div>
   );
