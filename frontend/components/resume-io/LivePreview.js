@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import TemplateRenderer from './templates/TemplateRenderer';
 
-// A4 dimensions in pixels at 96 DPI
 const A4_WIDTH = 794;
 const A4_HEIGHT = 1123;
 
@@ -9,15 +8,15 @@ export default function LivePreview({ resume, TemplateComponent }) {
   const containerRef = useRef(null);
   const contentRef = useRef(null);
   const [scale, setScale] = useState(1);
-  const [pages, setPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Calculate how much to scale down the preview to fit the panel
+  // Scale to fit panel width
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {
         const parentWidth = containerRef.current.parentElement?.clientWidth || 600;
-        const padding = 40;
-        const availableWidth = parentWidth - padding * 2;
+        const availableWidth = parentWidth - 48;
         const newScale = Math.min(1, availableWidth / A4_WIDTH);
         setScale(newScale);
       }
@@ -27,18 +26,22 @@ export default function LivePreview({ resume, TemplateComponent }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // After render, measure actual content height to know how many A4 pages it spans
+  // Measure content height to determine number of pages
   useEffect(() => {
     if (contentRef.current) {
-      const contentHeight = contentRef.current.scrollHeight;
-      const numPages = Math.max(1, Math.ceil(contentHeight / A4_HEIGHT));
-      setPages(numPages);
+      const h = contentRef.current.scrollHeight;
+      const pages = Math.max(1, Math.ceil(h / A4_HEIGHT));
+      setTotalPages(pages);
+      // If current page is now out of range after content change, reset to 1
+      setCurrentPage(p => Math.min(p, pages));
     }
   });
 
-  // The content div is always full A4 width, rendered at natural height
-  // We scale the outer wrapper to fit the panel
-  const scaledHeight = A4_HEIGHT * pages * scale;
+  // The Y offset into the content for the current page
+  const pageOffset = (currentPage - 1) * A4_HEIGHT;
+
+  // Visible frame height after scaling
+  const visibleFrameHeight = A4_HEIGHT * scale;
 
   return (
     <div
@@ -48,25 +51,31 @@ export default function LivePreview({ resume, TemplateComponent }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '20px 0',
-        background: '#f0f0f0',
+        background: '#E5E7EB',
         minHeight: '100%',
-        overflowY: 'auto',
       }}
     >
-      {/* Outer wrapper scaled to fit panel width */}
+      {/* ── A4 Page Viewport ── */}
       <div
         style={{
-          transformOrigin: 'top center',
-          transform: `scale(${scale})`,
-          width: `${A4_WIDTH}px`,
-          // Reserve the correct height after scaling so parent scroll works
-          marginBottom: `${scaledHeight - A4_HEIGHT * pages}px`,
+          width: `${A4_WIDTH * scale}px`,
+          height: `${visibleFrameHeight}px`,
+          overflow: 'hidden',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+          background: '#fff',
+          margin: '24px 0 0 0',
+          position: 'relative',
+          flexShrink: 0,
         }}
       >
-        {/* Page guides — show grey lines between pages */}
-        <div style={{ position: 'relative' }}>
-          {/* The actual resume content — renders at full natural height */}
+        {/* Full-height content rendered inside, shifted up to show current page */}
+        <div
+          style={{
+            transformOrigin: 'top left',
+            transform: `scale(${scale}) translateY(${-pageOffset}px)`,
+            width: `${A4_WIDTH}px`,
+          }}
+        >
           <div
             id="resume-preview-content"
             ref={contentRef}
@@ -74,8 +83,6 @@ export default function LivePreview({ resume, TemplateComponent }) {
               width: `${A4_WIDTH}px`,
               background: '#ffffff',
               color: '#000000',
-              // No fixed height — let content flow naturally
-              position: 'relative',
             }}
           >
             {TemplateComponent ? (
@@ -84,55 +91,69 @@ export default function LivePreview({ resume, TemplateComponent }) {
               <TemplateRenderer resume={resume} />
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Page break lines overlay — show where A4 pages end */}
-          {Array.from({ length: pages - 1 }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                position: 'absolute',
-                top: `${A4_HEIGHT * (i + 1)}px`,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: '#3B82F6',
-                zIndex: 10,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <span style={{
-                background: '#3B82F6',
-                color: 'white',
-                fontSize: '10px',
-                padding: '1px 8px',
-                borderRadius: '0 0 4px 4px',
-                position: 'absolute',
-                top: '4px',
-                whiteSpace: 'nowrap',
-                fontFamily: 'sans-serif',
-              }}>
-                Page {i + 2}
-              </span>
+      {/* ── Pagination Controls ── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          padding: '14px 20px',
+          background: '#fff',
+          borderRadius: '10px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          margin: '16px 0 24px 0',
+          fontFamily: "'Inter', sans-serif",
+        }}
+      >
+        <button
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          style={{
+            padding: '8px 18px',
+            background: currentPage === 1 ? '#F3F4F6' : '#2563EB',
+            color: currentPage === 1 ? '#9CA3AF' : '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: currentPage === 1 ? 'default' : 'pointer',
+            fontWeight: '600',
+            fontSize: '14px',
+            transition: 'all 0.15s',
+          }}
+        >
+          ← Prev
+        </button>
+
+        <div style={{ textAlign: 'center', minWidth: '100px' }}>
+          <div style={{ fontWeight: '700', fontSize: '15px', color: '#111827' }}>
+            Page {currentPage} of {totalPages}
+          </div>
+          {totalPages > 1 && (
+            <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
+              {totalPages} pages total
             </div>
-          ))}
+          )}
         </div>
 
-        {/* Page count indicator */}
-        {pages > 1 && (
-          <div style={{
-            textAlign: 'center',
-            padding: '8px',
-            fontSize: '11px',
-            color: '#6B7280',
-            background: '#F3F4F6',
-            fontFamily: 'sans-serif',
-            borderTop: '1px solid #E5E7EB',
-          }}>
-            {pages} pages total
-          </div>
-        )}
+        <button
+          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          disabled={currentPage === totalPages}
+          style={{
+            padding: '8px 18px',
+            background: currentPage === totalPages ? '#F3F4F6' : '#2563EB',
+            color: currentPage === totalPages ? '#9CA3AF' : '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: currentPage === totalPages ? 'default' : 'pointer',
+            fontWeight: '600',
+            fontSize: '14px',
+            transition: 'all 0.15s',
+          }}
+        >
+          Next →
+        </button>
       </div>
     </div>
   );
