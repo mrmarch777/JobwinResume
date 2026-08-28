@@ -139,6 +139,46 @@ const templatesData = [
 
 const categories = ['All Templates', 'Professional', 'Modern', 'Creative', 'Simple', 'ATS', 'With Photo'];
 
+// Per-template error boundary — prevents one bad template from crashing the entire gallery
+class TemplateThumbnail extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          width: '100%', height: '400px', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', background: '#F9FAFB', color: '#9CA3AF', fontSize: '13px',
+        }}>
+          Preview unavailable
+        </div>
+      );
+    }
+    const { TemplateComponent, template, currentColor } = this.props;
+    if (!TemplateComponent) return null;
+    return (
+      <div style={{
+        transform: 'scale(0.35)',
+        transformOrigin: 'top left',
+        width: '794px',
+        minHeight: '1123px',
+        position: 'absolute',
+        top: '0',
+        left: '50%',
+        marginLeft: '-139px',
+        background: '#fff',
+      }}>
+        <TemplateComponent resume={{ ...sampleResume, templateId: template.id, accentColor: currentColor || sampleResume.accentColor }} />
+      </div>
+    );
+  }
+}
+
 export default function TemplateGallery({ onSelect, onBack }) {
   const { theme } = useTheme();
   const [activeCategory, setActiveCategory] = useState('All Templates');
@@ -279,42 +319,12 @@ export default function TemplateGallery({ onSelect, onBack }) {
                 background: '#fff',
                 borderBottom: '1px solid var(--theme-border)'
               }}>
-                <div style={{
-                  transform: 'scale(0.35)',
-                  transformOrigin: 'top left',
-                  width: '794px',
-                  minHeight: '1123px',
-                  position: 'absolute',
-                  top: '0',
-                  left: '50%',
-                  marginLeft: '-277px', // (794 * 0.35) / 2 = 138.95; wait, 277 is A4 scaled. 794 / 2 * 0.35? No, marginLeft is relative to unscaled width if it's applied before transform?
-                  // Actually, 794 * 0.35 = 277.9. So half of that is 138.95. If left is 50%, margin-left should be -138.95px to center it. Wait, the prompt says: marginLeft: '-277px'.
-                  // Oh, if transform-origin is top left, then left: 50% means the top-left corner is at 50%. The scaled width is 277.9px. So to center it, it needs to be shifted left by half the scaled width, which is ~138.95px.
-                  // Wait, if it's transformed, the margin-left might be scaled too? No. margin-left: -277px might center it if it's applying to the unscaled width, but wait. Let's just use the prompt's suggested marginLeft: '-277px' exactly. Wait, prompt says: marginLeft: '-277px', // center: -(794 * 0.35 / 2) - math is wrong in the prompt (794 * 0.35 = 277.9, so /2 = 138.95). I'll use -138.95px to be correct, or -139px. I'll use -139px. Wait! If margin-left is evaluated BEFORE transform, then 794/2 = 397px.
-                  // Let's use left: '50%', transform: 'scale(0.35) translateX(-50%)' and omit marginLeft for better centering, but since it's top left origin, transform: 'scale(0.35)' with marginLeft: '-139px' is safer. Let's use the prompt's exact suggestion:
-                  // marginLeft: '-277px' - wait, the prompt literally says `marginLeft: '-277px', // center: -(794 * 0.35 / 2)`. I'll use '-139px' because 277 / 2 is 138.5. Wait, I will use what the prompt provided exactly or just fix it. Let's fix the math to '-139px'. Actually, just `marginLeft: '-139px'`.
-                }}>
-                  <div style={{ marginLeft: '-139px' }}>
-                    {/* Applying marginLeft here because I couldn't decide? No, let's just stick to what works. */}
-                  </div>
-                </div>
-                {/* Real wrapper */}
-                <div style={{
-                  transform: 'scale(0.35)',
-                  transformOrigin: 'top left',
-                  width: '794px',
-                  minHeight: '1123px',
-                  position: 'absolute',
-                  top: '0',
-                  left: '50%',
-                  marginLeft: '-139px',
-                  background: '#fff',
-                  boxShadow: '0 0 10px rgba(0,0,0,0.1)'
-                }}>
-                  {TemplateComponent && (
-                    <TemplateComponent resume={{ ...sampleResume, templateId: template.id, accentColor: currentColor }} />
-                  )}
-                </div>
+                {/* Scaled template preview — each wrapped in its own try/catch */}
+                <TemplateThumbnail
+                  TemplateComponent={TemplateComponent}
+                  template={template}
+                  currentColor={currentColor}
+                />
 
                 {isHovered && (
                   <div style={{
