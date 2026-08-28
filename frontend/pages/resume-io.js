@@ -291,13 +291,23 @@ xmlns="http://www.w3.org/TR/REC-html40">
         <PageHead title="Resume IO" description="Build a professional resume with our advanced builder" />
         <main style={{ flex: 1, overflow: 'auto' }}>
           <div style={{ padding: '40px 40px 0 40px' }}>
+            {/* My Resumes section with manual refresh */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--theme-text, #E8E6F0)', margin: 0 }}>My Resumes</h2>
+              <button
+                onClick={loadSavedResumes}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.12)', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}
+              >
+                ↻ Refresh
+              </button>
+            </div>
             <MyResumes 
               resumes={savedResumes} 
               onSelect={handleSelectSaved} 
-              onCreateNew={() => {
-                setResume(defaultResume);
-                setResumeName('Untitled Resume');
-                setView('editor');
+              onCreateNew={() => { 
+                setResume(defaultResume); 
+                setResumeName('Untitled Resume'); 
+                setView('editor'); 
               }} 
             />
           </div>
