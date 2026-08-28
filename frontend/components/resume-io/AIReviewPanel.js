@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { Loader2, Lightbulb, ChevronDown, Check, X, CheckCircle, Search } from 'lucide-react';
+import { Lightbulb, CheckCircle, X } from 'lucide-react';
+
+// Inline spin animation since Tailwind isn't loaded here
+const spinKeyframes = `
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+`;
 
 const serializeResume = (r) => {
   if (!r) return '';
@@ -9,7 +14,7 @@ const serializeResume = (r) => {
     text += 'EXPERIENCE\n';
     r.experience.forEach(e => {
       text += `${e.title} at ${e.company}, ${e.location} (${e.startDate} - ${e.current ? 'Present' : e.endDate})\n`;
-      e.bullets?.forEach(b => { if (b) text += `• ${b}\n`; });
+      e.bullets?.forEach(b => { if (b) text += `\u2022 ${b}\n`; });
       text += '\n';
     });
   }
@@ -18,7 +23,21 @@ const serializeResume = (r) => {
     r.education.forEach(e => { text += `${e.degree} in ${e.field}, ${e.institution} (${e.year})\n`; });
     text += '\n';
   }
-  if (r.skills?.length) text += `SKILLS\n${r.skills.map(s => s?.name || s).filter(Boolean).join(', ')}\n\n`;
+  // Handle both canonical { items: [...] } shape and legacy flat array
+  const skillItems = Array.isArray(r.skills?.items)
+    ? r.skills.items
+    : Array.isArray(r.skills) ? r.skills : [];
+  if (skillItems.length) {
+    text += `SKILLS\n${skillItems.map(s => s?.name || s).filter(Boolean).join(', ')}\n\n`;
+  }
+  if (r.certifications?.length) {
+    text += 'CERTIFICATIONS\n';
+    r.certifications.forEach(c => { text += `${c.name} \u2014 ${c.issuer} (${c.year})\n`; });
+    text += '\n';
+  }
+  if (r.languages?.length) {
+    text += `LANGUAGES\n${r.languages.map(l => `${l.name} (${l.level})`).join(', ')}\n\n`;
+  }
   return text;
 };
 
@@ -110,8 +129,10 @@ export default function AIReviewPanel({ resume }) {
   if (status === 'loading') {
     return (
       <div style={{ fontFamily: "'Inter', sans-serif", backgroundColor: '#ffffff', color: '#111827', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <Loader2 className="animate-spin" style={{ width: 48, height: 48, color: '#2563EB', marginBottom: 16 }} />
+        <style>{spinKeyframes}</style>
+        <div style={{ width: 48, height: 48, border: '4px solid #DBEAFE', borderTopColor: '#2563EB', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: 16 }} />
         <h3 style={{ fontSize: 18, fontWeight: 500 }}>Analyzing your resume...</h3>
+        <p style={{ fontSize: 13, color: '#6B7280', marginTop: 6 }}>This usually takes 20-30 seconds</p>
       </div>
     );
   }

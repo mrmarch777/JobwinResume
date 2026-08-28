@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ChevronDown, ChevronUp, X, Plus, Upload, GripVertical, Sparkles } from 'lucide-react';
 import PersonalInfo from './PersonalInfo';
 import Summary from './Summary';
@@ -26,16 +26,47 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
   const [expandedSection, setExpandedSection] = useState('personal');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customSectionName, setCustomSectionName] = useState('');
+  const dragItem = useRef(null);
+  const dragOverItem = useRef(null);
 
-  // Calculate completeness
+  // Drag-and-drop handlers
+  const handleDragStart = (e, sectionKey) => {
+    dragItem.current = sectionKey;
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  const handleDragEnter = (e, sectionKey) => {
+    dragOverItem.current = sectionKey;
+    e.preventDefault();
+  };
+  const handleDragOver = (e) => { e.preventDefault(); };
+  const handleDrop = (e) => {
+    e.preventDefault();
+    if (!dragItem.current || dragItem.current === dragOverItem.current) return;
+    const newOrder = [...resume.sectionOrder];
+    const fromIdx = newOrder.indexOf(dragItem.current);
+    const toIdx = newOrder.indexOf(dragOverItem.current);
+    if (fromIdx === -1 || toIdx === -1) return;
+    newOrder.splice(fromIdx, 1);
+    newOrder.splice(toIdx, 0, dragItem.current);
+    reorderSections(newOrder);
+    dragItem.current = null;
+    dragOverItem.current = null;
+  };
+
+  // Improved completeness calculation
   let completedFields = 0;
-  let totalFields = 6;
+  const totalFields = 10;
   if (resume.personal?.name) completedFields++;
   if (resume.personal?.title) completedFields++;
   if (resume.personal?.email) completedFields++;
-  if (resume.summary?.length > 20) completedFields++;
-  if (resume.experience?.some(e => e.title)) completedFields++;
-  if (resume.education?.length > 0) completedFields++;
+  if (resume.personal?.phone) completedFields++;
+  if (resume.summary && resume.summary.split(/\s+/).filter(Boolean).length >= 20) completedFields++;
+  if (resume.experience?.some(e => e.title && e.company)) completedFields++;
+  if (resume.experience?.some(e => e.bullets?.some(b => b && b.length > 10))) completedFields++;
+  if (resume.education?.some(e => e.institution)) completedFields++;
+  const skillItems = Array.isArray(resume.skills?.items) ? resume.skills.items : [];
+  if (skillItems.some(s => s.name)) completedFields++;
+  if ((resume.certifications?.length || 0) > 0 || (resume.projects?.length || 0) > 0) completedFields++;
   
   const completeness = Math.round((completedFields / totalFields) * 100);
 
@@ -104,21 +135,39 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0', marginBottom: '32px' }}>
         {resume.sectionOrder.map((sectionKey) => {
           if (!resume.enabledSections.includes(sectionKey)) return null;
-          
+
           const sectionConfig = sectionComponents[sectionKey];
           const customSection = (resume.customSections || []).find(c => c.key === sectionKey);
           if (!sectionConfig && !customSection) return null;
-          
+
           const Component = sectionConfig?.component;
           const isExpanded = expandedSection === sectionKey;
-          
+
           return (
-            <div key={sectionKey} style={{ background: '#FFFFFF', borderBottom: '1px solid #F3F4F6', overflow: 'hidden', paddingBottom: isExpanded ? '20px' : '0' }}>
-              <div 
+            <div
+              key={sectionKey}
+              draggable
+              onDragStart={(e) => handleDragStart(e, sectionKey)}
+              onDragEnter={(e) => handleDragEnter(e, sectionKey)}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              style={{ background: '#FFFFFF', borderBottom: '1px solid #F3F4F6', overflow: 'hidden', paddingBottom: isExpanded ? '20px' : '0' }}
+            >
+              <div
                 style={{ padding: '16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: '#FFFFFF' }}
                 onClick={() => setExpandedSection(isExpanded ? null : sectionKey)}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {/* Drag handle */}
+                  <span
+                    draggable
+                    onMouseDown={(e) => e.stopPropagation()}
+                    title="Drag to reorder"
+                    style={{ color: '#D1D5DB', cursor: 'grab', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <GripVertical size={16} />
+                  </span>
                   <span style={{ fontSize: '16px', fontWeight: '600', color: '#111827' }}>{sectionConfig?.title || customSection?.title || sectionKey}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

@@ -76,7 +76,8 @@ export default function ResumeIO() {
     resume, updateSection, updateSettings,
     addSection, removeSection, reorderSections,
     switchTemplate, setResume,
-    resumeName, setResumeName, resumeId, saveDraft, loadResume
+    resumeName, setResumeName, resumeId, saveDraft, loadResume,
+    saveStatus, undo, redo, canUndo, canRedo,
   } = useResumeState();
 
   const [view, setView] = useState('gallery'); // 'gallery' | 'editor'
@@ -288,22 +289,13 @@ xmlns="http://www.w3.org/TR/REC-html40">
     return (
       <ErrorBoundary>
       <div style={{ display: 'flex', minHeight: '100vh', background: theme.bg }}>
-        <PageHead title="Resume IO" description="Build a professional resume with our advanced builder" />
+        <PageHead title="Free Resume Builder | JobWin Resume" description="Build a professional resume with our AI-powered resume builder. Choose from 21 templates, get ATS score, and download as PDF." />
         <main style={{ flex: 1, overflow: 'auto' }}>
           <div style={{ padding: '40px 40px 0 40px' }}>
-            {/* My Resumes section with manual refresh */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--theme-text, #E8E6F0)', margin: 0 }}>My Resumes</h2>
-              <button
-                onClick={loadSavedResumes}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.12)', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}
-              >
-                ↻ Refresh
-              </button>
-            </div>
             <MyResumes 
               resumes={savedResumes} 
               onSelect={handleSelectSaved} 
+              onRefresh={loadSavedResumes}
               onCreateNew={() => { 
                 setResume(defaultResume); 
                 setResumeName('Untitled Resume'); 
@@ -336,10 +328,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
         />
       );
       rightPanel = (
-        <>
-          <LivePreview resume={resume} />
-          <ExportPanel resume={resume} />
-        </>
+        <LivePreview resume={resume} />
       );
       break;
 
@@ -356,15 +345,23 @@ xmlns="http://www.w3.org/TR/REC-html40">
 
     case 'ai-review':
       leftPanel = (
-        <SectionManager
-          resume={resume}
-          updateSection={updateSection}
-          updateSettings={updateSettings}
-          addSection={addSection}
-          removeSection={removeSection}
-          reorderSections={reorderSections}
-          onUploadResume={() => setShowUpload(true)}
-        />
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          height: '100%', padding: '40px 24px', color: '#6B7280', textAlign: 'center',
+          fontFamily: "'Inter', sans-serif",
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🤖</div>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>AI Resume Review</h3>
+          <p style={{ fontSize: '14px', lineHeight: 1.6, maxWidth: '280px' }}>
+            Fill in your resume details on the <strong>Edit</strong> tab, then switch back here to run the AI analysis.
+          </p>
+          <button
+            onClick={() => setActiveTab('edit')}
+            style={{ marginTop: '20px', padding: '10px 24px', background: '#2563EB', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+          >
+            Go to Edit Tab
+          </button>
+        </div>
       );
       rightPanel = <AIReviewPanel resume={resume} />;
       break;
@@ -394,7 +391,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
   return (
     <ErrorBoundary>
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f9fafb' }}>
-      <PageHead title="Resume IO — Editor" />
+      <PageHead title="Resume Editor | JobWin Resume" />
       {/* Force dark text colors for all form inputs in the Resume IO editor */}
       <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: `
         .resume-io-editor input, .resume-io-editor textarea, .resume-io-editor select {
@@ -413,6 +410,11 @@ xmlns="http://www.w3.org/TR/REC-html40">
           resumeName={resumeName}
           onRenameSave={setResumeName}
           onSaveDraft={saveDraft}
+          saveStatus={saveStatus}
+          onUndo={undo}
+          onRedo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
           leftPanel={leftPanel}
           rightPanel={rightPanel}
         />

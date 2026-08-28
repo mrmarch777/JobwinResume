@@ -118,7 +118,7 @@ const templatesData = [
   { id: 'creative', name: 'Creative', category: 'Creative', desc: 'Bold headers and unique typography.', component: CreativeTemplate, colors: ['#7C3AED','#FF6584','#00D4FF','#F59E0B'] },
   { id: 'minimal', name: 'Minimal', category: 'Simple', desc: 'Ultra-clean focus on content.', component: MinimalTemplate, colors: ['#111111','#34495E','#444444'] },
   { id: 'executive', name: 'Executive', category: 'Professional', desc: 'Two-column elegant header.', component: ExecutiveTemplate, colors: ['#0A4A6B','#8B4513','#2c3e50'] },
-  { id: 'ats', name: 'ATS Optimized', category: 'ATS', desc: 'Simple single column for software parsing.', component: ATSOptimizedTemplate, colors: [] },
+  { id: 'ats', name: 'ATS Optimized', category: 'ATS', ats: true, desc: 'Simple single column for software parsing.', component: ATSOptimizedTemplate, colors: [] },
   // Photo templates (5)
   { id: 'photo-modern', name: 'Photo Modern', category: 'With Photo', desc: 'Modern sidebar with your professional photo.', component: PhotoModernTemplate, colors: ['#6C63FF','#0B7B3E','#E63946','#2c3e50'] },
   { id: 'photo-sidebar', name: 'Photo Sidebar', category: 'With Photo', desc: 'Dark sidebar with square photo placement.', component: PhotoSidebarTemplate, colors: ['#1a1a2e','#2c3e50','#0A4A6B'] },
@@ -127,7 +127,7 @@ const templatesData = [
   { id: 'photo-executive', name: 'Photo Executive', category: 'With Photo', desc: 'Elegant executive style with headshot.', component: PhotoExecutiveTemplate, colors: ['#0A4A6B','#8B4513','#2c3e50'] },
   // Standard templates (9)
   { id: 'traditional', name: 'Traditional', category: 'Professional', desc: 'Conservative layout for traditional industries.', component: TraditionalTemplate, colors: ['#111111','#2c3e50','#8B4513'] },
-  { id: 'prime-ats', name: 'Prime ATS', category: 'ATS', desc: 'Streamlined for maximum ATS compatibility.', component: PrimeATSTemplate, colors: [] },
+  { id: 'prime-ats', name: 'Prime ATS', category: 'ATS', ats: true, desc: 'Streamlined for maximum ATS compatibility.', component: PrimeATSTemplate, colors: [] },
   { id: 'clean', name: 'Clean', category: 'Simple', desc: 'Modern and clean with bold section dividers.', component: CleanTemplate, colors: ['#6C63FF','#0B7B3E','#E63946','#F59E0B'] },
   { id: 'corporate', name: 'Corporate', category: 'Professional', desc: 'Business-formal for corporate environments.', component: CorporateTemplate, colors: ['#2c3e50','#0A4A6B','#34495E'] },
   { id: 'elegant', name: 'Elegant', category: 'Creative', desc: 'Refined and sophisticated design.', component: ElegantTemplate, colors: ['#6C63FF','#8B4513','#7C3AED','#E63946'] },
@@ -182,12 +182,11 @@ class TemplateThumbnail extends React.Component {
 export default function TemplateGallery({ onSelect, onBack }) {
   const { theme } = useTheme();
   const [activeCategory, setActiveCategory] = useState('All Templates');
+  const [searchQuery, setSearchQuery] = useState('');
   const [hoveredId, setHoveredId] = useState(null);
   const [selectedColors, setSelectedColors] = useState(() => {
     const initial = {};
-    templatesData.forEach(t => {
-      initial[t.id] = t.colors.length > 0 ? t.colors[0] : null;
-    });
+    templatesData.forEach(t => { initial[t.id] = t.colors.length > 0 ? t.colors[0] : null; });
     return initial;
   });
 
@@ -196,9 +195,11 @@ export default function TemplateGallery({ onSelect, onBack }) {
     setSelectedColors(prev => ({ ...prev, [templateId]: color }));
   };
 
-  const filteredTemplates = activeCategory === 'All Templates' 
-    ? templatesData 
-    : templatesData.filter(t => t.category === activeCategory);
+  const filteredTemplates = templatesData.filter(t => {
+    const matchCategory = activeCategory === 'All Templates' || t.category === activeCategory;
+    const matchSearch = !searchQuery || t.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.desc.toLowerCase().includes(searchQuery.toLowerCase()) || t.category.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchCategory && matchSearch;
+  });
 
   const containerStyle = {
     padding: '40px',
@@ -252,8 +253,8 @@ export default function TemplateGallery({ onSelect, onBack }) {
 
   const gridStyle = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-    gap: '30px',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    gap: '24px',
   };
 
   const getCardStyle = (id) => {
@@ -282,7 +283,26 @@ export default function TemplateGallery({ onSelect, onBack }) {
           </button>
         )}
         <h1 style={{ fontFamily: "'Noto Serif', serif", fontSize: '42px', marginBottom: '16px', color: 'var(--theme-text)' }}>Choose a Template</h1>
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>Select from our professionally designed templates to get started building your resume.</p>
+        <p style={{ color: 'var(--theme-muted, rgba(255,255,255,0.6))', fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>Select from our professionally designed templates to get started.</p>
+      </div>
+
+      {/* Search bar */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+        <div style={{ position: 'relative', width: '100%', maxWidth: '480px' }}>
+          <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', fontSize: '16px', pointerEvents: 'none' }}>🔍</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search templates..."
+            style={{
+              width: '100%', padding: '10px 14px 10px 40px',
+              borderRadius: '10px', border: '1px solid rgba(255,255,255,0.15)',
+              background: 'rgba(255,255,255,0.08)', color: 'var(--theme-text, #fff)',
+              fontSize: '14px', outline: 'none', boxSizing: 'border-box',
+            }}
+          />
+        </div>
       </div>
 
       <div style={tabsStyle}>
@@ -360,9 +380,14 @@ export default function TemplateGallery({ onSelect, onBack }) {
               </div>
               
               <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                  <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0, color: 'var(--theme-text)', fontFamily: "'Noto Serif', serif" }}>{template.name}</h3>
-                  <span style={{ fontSize: '12px', padding: '4px 12px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px', color: 'rgba(255,255,255,0.8)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0, color: 'var(--theme-text)', fontFamily: "'Noto Serif', serif" }}>{template.name}</h3>
+                    {template.ats && (
+                      <span style={{ fontSize: '10px', padding: '2px 7px', background: '#DCFCE7', color: '#16A34A', borderRadius: '10px', fontWeight: '700', letterSpacing: '0.3px' }}>ATS ✓</span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '12px', padding: '4px 12px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px', color: 'rgba(255,255,255,0.8)', flexShrink: 0 }}>
                     {template.category}
                   </span>
                 </div>

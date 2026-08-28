@@ -3,14 +3,12 @@ import React from 'react';
 const STYLES = {
   label: { display: 'block', color: '#374151', fontSize: '12px', fontWeight: '600', marginBottom: '6px', fontFamily: "'Inter', sans-serif", textTransform: 'uppercase', letterSpacing: '0.3px' },
   input: { width: '100%', padding: '10px 14px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', color: '#111827', fontSize: '13px', fontFamily: "'Inter', sans-serif", outline: 'none', boxSizing: 'border-box', transition: 'border 0.15s' },
-  inputFocus: { borderColor: '#2563EB' },
-  row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' },
-  field: { marginBottom: '16px' },
-  addButton: { display: 'flex', alignItems: 'center', gap: '6px', color: '#2563EB', fontSize: '13px', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', fontFamily: "'Inter', sans-serif" },
-  removeButton: { background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '4px', borderRadius: '4px' },
-  helperText: { color: '#9CA3AF', fontSize: '12px', marginTop: '4px', fontFamily: "'Inter', sans-serif" },
-  sectionSubtext: { color: '#6B7280', fontSize: '13px', marginBottom: '16px', lineHeight: '1.5', fontFamily: "'Inter', sans-serif" },
 };
+
+function countWords(text) {
+  if (!text || !text.trim()) return 0;
+  return text.trim().split(/\s+/).length;
+}
 
 export default function Summary({ data = '', onChange, resumeContext }) {
   const insertFormatting = (prefix, suffix = '') => {
@@ -35,8 +33,9 @@ export default function Summary({ data = '', onChange, resumeContext }) {
     }
   };
 
-  const charCount = data ? data.length : 0;
-  const isGoodLength = charCount > 200;
+  const wordCount = countWords(data);
+  const wordColor = wordCount === 0 ? '#9CA3AF' : wordCount < 20 ? '#DC2626' : wordCount < 50 ? '#EAB308' : '#16A34A';
+  const wordLabel = wordCount === 0 ? 'Write 50–200 words for best results' : wordCount < 20 ? `${wordCount} words — too short` : wordCount > 200 ? `${wordCount} words — consider shortening` : `${wordCount} words ✔`;
 
   return (
     <div>
@@ -46,8 +45,8 @@ export default function Summary({ data = '', onChange, resumeContext }) {
           <button onClick={() => insertFormatting('*', '*')} style={{ background: 'none', border: 'none', fontStyle: 'italic', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px' }}>I</button>
           <button onClick={() => insertFormatting('__', '__')} style={{ background: 'none', border: 'none', textDecoration: 'underline', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px' }}>U</button>
           <button onClick={() => insertFormatting('\n- ')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px' }}>•</button>
-          <div style={{ flex: 1 }}></div>
-          <button style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ flex: 1 }} />
+          <button onClick={handleAiWriter} style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
             ✨ Get help with writing
           </button>
         </div>
@@ -61,8 +60,8 @@ export default function Summary({ data = '', onChange, resumeContext }) {
           <button onClick={handleAiWriter} style={{ background: '#2563EB', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '16px', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
             ✨ Ask AI writer
           </button>
-          <span style={{ fontSize: '12px', color: isGoodLength ? '#16A34A' : '#9CA3AF', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            {charCount}/600 {isGoodLength && '✓'}
+          <span style={{ fontSize: '12px', color: wordColor, display: 'flex', alignItems: 'center', gap: '4px', transition: 'color 0.2s' }}>
+            {wordLabel}
           </span>
         </div>
       </div>

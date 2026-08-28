@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Palette, Bot, Target, ArrowLeft, Download, ChevronDown, Save, Check } from 'lucide-react';
+import { FileText, Palette, Bot, Target, ArrowLeft, Download, ChevronDown, Save, Check, RotateCcw, RotateCw, Pencil } from 'lucide-react';
 
 const TABS = [
   { id: 'edit', label: 'Edit', icon: FileText },
@@ -24,7 +24,7 @@ const editorTheme = {
   '--editor-preview-bg': '#F3F4F6',
 };
 
-export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel, rightPanel, onExport, resumeName, onRenameSave, onSaveDraft }) {
+export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel, rightPanel, onExport, resumeName, onRenameSave, onSaveDraft, saveStatus, onUndo, onRedo, canUndo, canRedo }) {
   const [isMobile, setIsMobile] = useState(false);
   const [mobilePanel, setMobilePanel] = useState('form');
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -79,7 +79,7 @@ export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel,
         borderBottom: '1px solid #E5E7EB', flexShrink: 0, zIndex: 100,
       }}>
         {/* Left: Back + Title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '180px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '200px' }}>
           <button onClick={onBack} style={{
             display: 'flex', alignItems: 'center', gap: '6px', background: 'none',
             border: 'none', color: '#6B7280', cursor: 'pointer', fontSize: '14px',
@@ -114,14 +114,17 @@ export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel,
           ) : (
             <span
               onClick={() => setIsEditingName(true)}
-              style={{ 
-                fontWeight: '600', color: '#111827', fontSize: '15px', 
-                cursor: 'pointer', padding: '3px 7px', borderRadius: '4px' 
+              title="Click to rename"
+              style={{
+                fontWeight: '600', color: '#111827', fontSize: '15px',
+                cursor: 'pointer', padding: '3px 7px', borderRadius: '4px',
+                display: 'flex', alignItems: 'center', gap: '6px',
               }}
-              onMouseEnter={e => e.currentTarget.style.background = '#F3F4F6'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              onMouseEnter={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.querySelector('.pencil-icon').style.opacity = '1'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.querySelector('.pencil-icon').style.opacity = '0'; }}
             >
               {resumeName || 'Untitled Resume'}
+              <Pencil size={13} className="pencil-icon" style={{ opacity: 0, color: '#9CA3AF', transition: 'opacity 0.15s', flexShrink: 0 }} />
             </span>
           )}
         </div>
@@ -156,9 +159,46 @@ export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel,
           })}
         </nav>
 
-        {/* Right: Download */}
-        <div style={{ minWidth: '180px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px', position: 'relative' }}>
-          
+        {/* Right: Undo / Redo / Save / Download */}
+        <div style={{ minWidth: '220px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', position: 'relative' }}>
+
+          {/* Undo */}
+          <button
+            onClick={onUndo}
+            disabled={!canUndo}
+            title="Undo (Ctrl+Z)"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '32px', height: '32px', borderRadius: '6px', border: '1px solid #E5E7EB',
+              background: '#FFFFFF', color: canUndo ? '#374151' : '#D1D5DB',
+              cursor: canUndo ? 'pointer' : 'default', transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { if (canUndo) { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.borderColor = '#D1D5DB'; } }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.borderColor = '#E5E7EB'; }}
+          >
+            <RotateCcw size={15} />
+          </button>
+
+          {/* Redo */}
+          <button
+            onClick={onRedo}
+            disabled={!canRedo}
+            title="Redo (Ctrl+Y)"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '32px', height: '32px', borderRadius: '6px', border: '1px solid #E5E7EB',
+              background: '#FFFFFF', color: canRedo ? '#374151' : '#D1D5DB',
+              cursor: canRedo ? 'pointer' : 'default', transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { if (canRedo) { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.borderColor = '#D1D5DB'; } }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.borderColor = '#E5E7EB'; }}
+          >
+            <RotateCw size={15} />
+          </button>
+
+          <div style={{ width: '1px', height: '24px', background: '#E5E7EB', margin: '0 2px' }} />
+
+          {/* Save + status indicator */}
           <div style={{ position: 'relative' }}>
             <button onClick={handleSaveClick} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -182,6 +222,18 @@ export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel,
               </div>
             )}
           </div>
+
+          {/* Auto-save status pill */}
+          {saveStatus !== 'idle' && (
+            <span style={{
+              fontSize: '11px', fontWeight: '500',
+              color: saveStatus === 'saved' ? '#16A34A' : '#9CA3AF',
+              display: 'flex', alignItems: 'center', gap: '3px',
+              whiteSpace: 'nowrap',
+            }}>
+              {saveStatus === 'saving' ? '● Saving…' : '✓ Saved'}
+            </span>
+          )}
 
           <button onClick={() => setShowExportMenu(!showExportMenu)} style={{
             display: 'flex', alignItems: 'center', gap: '8px',
@@ -260,7 +312,7 @@ export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel,
         {/* Left Panel — 42% */}
         <div style={{
           width: isFullWidth ? '50%' : '42%',
-          minWidth: '380px',
+          minWidth: isMobile ? 0 : '380px',
           background: '#FFFFFF', borderRight: '1px solid #E5E7EB',
           overflowY: 'auto', overflowX: 'hidden',
           display: isMobile && mobilePanel !== 'form' ? 'none' : 'block',
