@@ -48,21 +48,23 @@ export default function LivePreview({ resume, TemplateComponent }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        background: '#E8E8E8',
+        background: '#656565',
         minHeight: '100%',
-        padding: '16px 0 24px 0',
+        padding: '24px 0 32px 0',
       }}
     >
-      {/* ── Page Viewport — clips to exactly one A4 page ── */}
+      {/* ── A4 Page Viewport ── */}
       <div
         style={{
-          width: `${scaledWidth}px`,
-          height: `${scaledHeight}px`,
+          width: `${A4_WIDTH * scale}px`,
+          height: `${visibleFrameHeight}px`,
           overflow: 'hidden',
-          boxShadow: '0 2px 16px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.12)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.25)',
           background: '#fff',
+          border: '1px solid rgba(255,255,255,0.06)',
           position: 'relative',
           flexShrink: 0,
+          borderRadius: '1px',
         }}
       >
         {/* Full-height content, shifted up to show current page */}

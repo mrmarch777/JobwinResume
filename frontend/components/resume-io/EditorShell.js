@@ -126,29 +126,30 @@ export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel,
           )}
         </div>
 
-        {/* Center: 4 Tabs */}
-        <nav style={{ display: 'flex', gap: '4px', background: '#F9FAFB', borderRadius: '10px', padding: '4px' }}>
+        {/* Center: Tabs — underline style like resume.io */}
+        <nav style={{ display: 'flex', gap: '0', height: '56px', alignItems: 'flex-end' }}>
           {TABS.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
               <button key={tab.id} onClick={() => onTabChange(tab.id)} style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                background: isActive ? '#FFFFFF' : 'transparent',
+                padding: '0 20px', height: '100%', border: 'none', cursor: 'pointer',
+                background: 'transparent',
                 color: isActive ? '#2563EB' : '#6B7280',
                 fontWeight: isActive ? '600' : '500', fontSize: '14px',
-                boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                transition: 'all 0.2s',
+                borderBottom: isActive ? '2px solid #2563EB' : '2px solid transparent',
+                transition: 'all 0.15s',
                 fontFamily: "'Inter', 'DM Sans', sans-serif",
+                whiteSpace: 'nowrap',
               }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#374151'; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = '#6B7280'; }}
               >
-                <Icon size={16} />
+                <Icon size={15} />
                 {tab.label}
                 {tab.id === 'tailor' && (
-                  <Target size={12} style={{ opacity: 0.6 }} />
+                  <span style={{ fontSize: '10px', background: '#FEF3C7', color: '#92400E', padding: '1px 5px', borderRadius: '4px', fontWeight: '600' }}>AI</span>
                 )}
               </button>
             );
@@ -256,9 +257,10 @@ export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel,
 
       {/* Main Content Area */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Left Panel */}
+        {/* Left Panel — 42% */}
         <div style={{
-          width: isFullWidth ? '50%' : '55%',
+          width: isFullWidth ? '50%' : '42%',
+          minWidth: '380px',
           background: '#FFFFFF', borderRight: '1px solid #E5E7EB',
           overflowY: 'auto', overflowX: 'hidden',
           display: isMobile && mobilePanel !== 'form' ? 'none' : 'block',
@@ -266,13 +268,13 @@ export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel,
           {leftPanel}
         </div>
 
-        {/* Right Panel */}
+        {/* Right Panel — 58% preview */}
         <div style={{
           flex: 1, background: isFullWidth ? '#FFFFFF' : '#656565',
           overflowY: 'auto', overflowX: 'hidden',
           display: isMobile && mobilePanel !== 'preview' ? 'none' : 'flex',
           flexDirection: 'column', alignItems: isFullWidth ? 'stretch' : 'center',
-          padding: isFullWidth ? '0' : '32px 24px',
+          padding: isFullWidth ? '0' : '0',
         }}>
           {rightPanel}
         </div>

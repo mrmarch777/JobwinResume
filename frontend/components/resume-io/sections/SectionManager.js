@@ -44,7 +44,7 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
   );
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", padding: '0 16px 60px 16px', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", padding: '0 20px 60px 20px', maxWidth: '100%' }}>
       
       {/* Import Resume Button */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
@@ -101,7 +101,7 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
       </div>
 
       {/* Sections */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '40px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0', marginBottom: '32px' }}>
         {resume.sectionOrder.map((sectionKey) => {
           if (!resume.enabledSections.includes(sectionKey)) return null;
           
@@ -113,25 +113,27 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
           const isExpanded = expandedSection === sectionKey;
           
           return (
-            <div key={sectionKey} style={{ background: '#FFFFFF', borderBottom: '1px solid #E5E7EB', overflow: 'hidden', paddingBottom: isExpanded ? '24px' : '0', marginBottom: '8px' }}>
+            <div key={sectionKey} style={{ background: '#FFFFFF', borderBottom: '1px solid #F3F4F6', overflow: 'hidden', paddingBottom: isExpanded ? '20px' : '0' }}>
               <div 
-                style={{ padding: '24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: '#FFFFFF' }}
+                style={{ padding: '16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: '#FFFFFF' }}
                 onClick={() => setExpandedSection(isExpanded ? null : sectionKey)}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '20px', fontWeight: '700', color: '#111827' }}>{sectionConfig?.title || customSection?.title || sectionKey}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#111827' }}>{sectionConfig?.title || customSection?.title || sectionKey}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   {(!sectionConfig?.required) && (
                     <button 
                       onClick={(e) => { e.stopPropagation(); removeSection(sectionKey); }}
-                      style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '4px', borderRadius: '4px' }}
+                      style={{ background: 'none', border: 'none', color: '#D1D5DB', cursor: 'pointer', padding: '4px', borderRadius: '4px' }}
+                      onMouseEnter={e => e.currentTarget.style.color = '#6B7280'}
+                      onMouseLeave={e => e.currentTarget.style.color = '#D1D5DB'}
                     >
-                      <X size={18} />
+                      <X size={16} />
                     </button>
                   )}
-                  <div style={{ color: '#2563EB' }}>
-                    {isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                  <div style={{ color: '#9CA3AF' }}>
+                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                   </div>
                 </div>
               </div>
