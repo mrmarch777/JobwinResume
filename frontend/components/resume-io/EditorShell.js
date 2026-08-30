@@ -22,6 +22,7 @@ const editorTheme = {
   '--editor-input-bg': '#F9FAFB',
   '--editor-shadow': '0 1px 3px rgba(0,0,0,0.08)',
   '--editor-preview-bg': '#F3F4F6',
+  '--editor-preview-gray': '#656565', // shared preview canvas color
 };
 
 export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel, rightPanel, onExport, resumeName, onRenameSave, onSaveDraft, saveStatus, onUndo, onRedo, canUndo, canRedo }) {
@@ -322,7 +323,7 @@ export default function EditorShell({ activeTab, onTabChange, onBack, leftPanel,
 
         {/* Right Panel — 58% preview */}
         <div style={{
-          flex: 1, background: isFullWidth ? '#FFFFFF' : '#656565',
+          flex: 1, background: isFullWidth ? '#FFFFFF' : 'var(--editor-preview-gray)',
           overflowY: 'auto', overflowX: 'hidden',
           display: isMobile && mobilePanel !== 'preview' ? 'none' : 'flex',
           flexDirection: 'column', alignItems: isFullWidth ? 'stretch' : 'center',

@@ -16,11 +16,17 @@ const serializeResume = (r) => {
     r.education.forEach(e => { text += `${e.degree} in ${e.field}, ${e.institution} (${e.year})\n`; });
     text += '\n';
   }
-  if (r.skills?.length) {
-    text += `SKILLS\n${r.skills.map(s => s.name).filter(Boolean).join(', ')}\n\n`;
+  // Handle both flat array and canonical {items:[]} skills shape
+  const skillsList = Array.isArray(r.skills) ? r.skills : (r.skills?.items || []);
+  if (skillsList.length) {
+    text += `SKILLS\n${skillsList.map(s => s?.name || s).filter(Boolean).join(', ')}\n\n`;
+  }
+  if (r.certifications?.length) {
+    text += `CERTIFICATIONS\n${r.certifications.map(c => `${c.name} — ${c.issuer} (${c.year})`).join('\n')}\n\n`;
   }
   return text;
 };
+
 
 export default function ATSChecker({ resume, onClose }) {
   const [jd, setJd] = useState('');

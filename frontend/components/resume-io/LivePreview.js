@@ -4,12 +4,15 @@ import TemplateRenderer from './templates/TemplateRenderer';
 const A4_WIDTH = 794;
 const A4_HEIGHT = 1123;
 
-export default function LivePreview({ resume, TemplateComponent }) {
+export default function LivePreview({ resume, TemplateComponent, currentPage: currentPageProp, setCurrentPage: setCurrentPageProp }) {
   const containerRef = useRef(null);
   const contentRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPageInternal, setCurrentPageInternal] = useState(1);
+  // Use lifted state if provided (persists across tab switches), else use internal state
+  const currentPage = currentPageProp !== undefined ? currentPageProp : currentPageInternal;
+  const setCurrentPage = setCurrentPageProp || setCurrentPageInternal;
 
   // Scale to fit panel width
   useEffect(() => {
@@ -48,7 +51,7 @@ export default function LivePreview({ resume, TemplateComponent }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        background: '#656565',
+        background: 'var(--editor-preview-gray, #656565)',
         minHeight: '100%',
         padding: '24px 0 32px 0',
       }}
@@ -56,8 +59,8 @@ export default function LivePreview({ resume, TemplateComponent }) {
       {/* ── A4 Page Viewport ── */}
       <div
         style={{
-          width: `${A4_WIDTH * scale}px`,
-          height: `${visibleFrameHeight}px`,
+          width: `${scaledWidth}px`,
+          height: `${scaledHeight}px`,
           overflow: 'hidden',
           boxShadow: '0 8px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.25)',
           background: '#fff',

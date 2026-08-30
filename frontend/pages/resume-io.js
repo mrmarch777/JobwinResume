@@ -19,6 +19,7 @@ const CustomizePanel = dynamic(() => import('../components/resume-io/CustomizePa
 const AIReviewPanel = dynamic(() => import('../components/resume-io/AIReviewPanel'), { ssr: false });
 const TailorPanel = dynamic(() => import('../components/resume-io/TailorPanel'), { ssr: false });
 const TailorJobDetail = dynamic(() => import('../components/resume-io/TailorJobDetail'), { ssr: false });
+const ATSChecker = dynamic(() => import('../components/resume-io/ATSChecker'), { ssr: false });
 
 // Error Boundary to prevent full-page crashes
 class ErrorBoundary extends React.Component {
@@ -84,6 +85,8 @@ export default function ResumeIO() {
   const [activeTab, setActiveTab] = useState('edit');
   const [showUpload, setShowUpload] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [previewPage, setPreviewPage] = useState(1); // lifted from LivePreview — persists across tab switches
+  const [showATSChecker, setShowATSChecker] = useState(false);
   
   const [savedResumes, setSavedResumes] = useState([]);
 
@@ -328,7 +331,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
         />
       );
       rightPanel = (
-        <LivePreview resume={resume} />
+        <LivePreview resume={resume} currentPage={previewPage} setCurrentPage={setPreviewPage} />
       );
       break;
 
@@ -340,7 +343,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
           switchTemplate={switchTemplate}
         />
       );
-      rightPanel = <LivePreview resume={resume} />;
+      rightPanel = <LivePreview resume={resume} currentPage={previewPage} setCurrentPage={setPreviewPage} />;
       break;
 
     case 'ai-review':
@@ -361,6 +364,15 @@ xmlns="http://www.w3.org/TR/REC-html40">
           >
             Go to Edit Tab
           </button>
+          <div style={{ marginTop: '16px', width: '100%', borderTop: '1px solid #E5E7EB', paddingTop: '16px' }}>
+            <button
+              onClick={() => setShowATSChecker(true)}
+              style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #6C63FF 0%, #4CAF50 100%)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
+            >
+              🎯 Check ATS Score
+            </button>
+            <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '8px' }}>Paste a job description to see your keyword match score</p>
+          </div>
         </div>
       );
       rightPanel = <AIReviewPanel resume={resume} />;
@@ -425,6 +437,14 @@ xmlns="http://www.w3.org/TR/REC-html40">
         <ResumeUpload
           onDataExtracted={handleDataExtracted}
           onClose={() => setShowUpload(false)}
+        />
+      )}
+
+      {/* ATS Checker Modal */}
+      {showATSChecker && (
+        <ATSChecker
+          resume={resume}
+          onClose={() => setShowATSChecker(false)}
         />
       )}
     </div>

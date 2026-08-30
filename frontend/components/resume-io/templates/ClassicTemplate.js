@@ -17,6 +17,9 @@ export default function ClassicTemplate({ resume }) {
     fontFamily = 'DM Sans',
     fontSize = 'medium',
     spacing = 'normal',
+    skillsLayout = 'Inline',
+    skillsColumns = 2,
+    showSkillLevel = true,
     personal = {},
     summary = '',
     experience = [],
@@ -126,12 +129,20 @@ export default function ClassicTemplate({ resume }) {
     skills: () => {
       const skillsList = Array.isArray(skills) ? skills : (skills?.items || []);
       if (!skillsList.length) return null;
-      const validSkills = skillsList.filter(s => s.name).map(s => s.name);
+      const validSkills = skillsList.filter(s => s.name);
       if (!validSkills.length) return null;
       return (
         <div key="skills" style={styles.section}>
           <div style={styles.sectionTitle}>Skills</div>
-          <div>{validSkills.join(', ')}</div>
+          {skillsLayout === 'Columns' ? (
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${skillsColumns}, 1fr)`, gap: '4px 16px' }}>
+              {validSkills.map((s, i) => (
+                <div key={i} style={{ fontSize: fSize.body, color: '#333' }}>• {s.name}</div>
+              ))}
+            </div>
+          ) : (
+            <div>{validSkills.map(s => s.name).join(', ')}</div>
+          )}
         </div>
       );
     },

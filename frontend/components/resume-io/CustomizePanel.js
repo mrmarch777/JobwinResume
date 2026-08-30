@@ -1,29 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { 
   Check, Plus, AlignLeft, AlignCenter, AlignRight, 
   Layout, List, ToggleLeft, ToggleRight
 } from 'lucide-react';
 
-import ClassicTemplate from './templates/ClassicTemplate';
-import ModernTemplate from './templates/ModernTemplate';
-import CreativeTemplate from './templates/CreativeTemplate';
-import MinimalTemplate from './templates/MinimalTemplate';
-import ExecutiveTemplate from './templates/ExecutiveTemplate';
-import ATSOptimizedTemplate from './templates/ATSOptimizedTemplate';
-import PhotoModernTemplate from './templates/PhotoModernTemplate';
-import PhotoSidebarTemplate from './templates/PhotoSidebarTemplate';
-import PhotoBoldTemplate from './templates/PhotoBoldTemplate';
-import PhotoMinimalTemplate from './templates/PhotoMinimalTemplate';
-import PhotoExecutiveTemplate from './templates/PhotoExecutiveTemplate';
-import TraditionalTemplate from './templates/TraditionalTemplate';
-import PrimeATSTemplate from './templates/PrimeATSTemplate';
-import CleanTemplate from './templates/CleanTemplate';
-import CorporateTemplate from './templates/CorporateTemplate';
-import ElegantTemplate from './templates/ElegantTemplate';
-import BoldTemplate from './templates/BoldTemplate';
-import IndustrialTemplate from './templates/IndustrialTemplate';
-import SpecialistTemplate from './templates/SpecialistTemplate';
-import TwoColumnTemplate from './templates/TwoColumnTemplate';
+const ClassicTemplate = lazy(() => import('./templates/ClassicTemplate'));
+const ModernTemplate = lazy(() => import('./templates/ModernTemplate'));
+const CreativeTemplate = lazy(() => import('./templates/CreativeTemplate'));
+const MinimalTemplate = lazy(() => import('./templates/MinimalTemplate'));
+const ExecutiveTemplate = lazy(() => import('./templates/ExecutiveTemplate'));
+const ATSOptimizedTemplate = lazy(() => import('./templates/ATSOptimizedTemplate'));
+const PhotoModernTemplate = lazy(() => import('./templates/PhotoModernTemplate'));
+const PhotoSidebarTemplate = lazy(() => import('./templates/PhotoSidebarTemplate'));
+const PhotoBoldTemplate = lazy(() => import('./templates/PhotoBoldTemplate'));
+const PhotoMinimalTemplate = lazy(() => import('./templates/PhotoMinimalTemplate'));
+const PhotoExecutiveTemplate = lazy(() => import('./templates/PhotoExecutiveTemplate'));
+const TraditionalTemplate = lazy(() => import('./templates/TraditionalTemplate'));
+const PrimeATSTemplate = lazy(() => import('./templates/PrimeATSTemplate'));
+const CleanTemplate = lazy(() => import('./templates/CleanTemplate'));
+const CorporateTemplate = lazy(() => import('./templates/CorporateTemplate'));
+const ElegantTemplate = lazy(() => import('./templates/ElegantTemplate'));
+const BoldTemplate = lazy(() => import('./templates/BoldTemplate'));
+const IndustrialTemplate = lazy(() => import('./templates/IndustrialTemplate'));
+const SpecialistTemplate = lazy(() => import('./templates/SpecialistTemplate'));
+const TwoColumnTemplate = lazy(() => import('./templates/TwoColumnTemplate'));
+
+// Lightweight fallback for lazy-loaded template thumbnails
+const TemplateSkeleton = () => (
+  <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+);
 
 const sampleResume = {
   templateId: 'classic',
@@ -142,6 +147,31 @@ const PRESET_COLORS = ['#2563EB', '#16A34A', '#DC2626', '#7C3AED', '#F59E0B'];
 const FILTER_CATEGORIES = ['All', 'With Photo', 'Two Column', 'ATS', 'Professional', 'Simple'];
 const PRIMARY_FONTS = ['Lato', 'Inter', 'DM Sans', 'Roboto', 'Open Sans', 'Merriweather', 'Playfair Display', 'Montserrat'];
 const SECONDARY_FONTS = ['PT Serif', 'Georgia', 'Noto Serif', 'Times New Roman', 'Lora', 'Source Sans Pro'];
+
+const TEMPLATE_DEFAULTS = {
+  accentColor: '#2563EB',
+  fontFamily: 'DM Sans',
+  secondaryFont: 'PT Serif',
+  fontSize: 'medium',
+  lineHeight: 100,
+  headerAlignment: 'Left',
+  dateAlignment: 'Right',
+  locationAlignment: 'Right',
+  skillsLayout: 'Inline',
+  skillsColumns: 2,
+  educationLayout: 'Stacked',
+  showSkillLevel: true,
+  format: 'A4',
+  margins: {
+    headerFooter: 0.5,
+    topBottom: 1.0,
+    leftRight: 1.0,
+    betweenSections: 16,
+    betweenTitlesContent: 12,
+    betweenContentBlocks: 8,
+    insideContentBlock: 4
+  }
+};
 
 export default function CustomizePanel({ resume, updateSettings, switchTemplate }) {
   const [activeTab, setActiveTab] = useState('Template & Colors');
@@ -299,7 +329,9 @@ export default function CustomizePanel({ resume, updateSettings, switchTemplate 
                         top: 0,
                         left: 0,
                       }}>
-                        <TemplateComp resume={{ ...sampleResume, templateId: template.id, accentColor: currentAccent }} />
+                        <Suspense fallback={<TemplateSkeleton />}>
+                          <TemplateComp resume={{ ...sampleResume, templateId: template.id, accentColor: currentAccent }} />
+                        </Suspense>
                       </div>
                       
                       {isActive && (
@@ -323,26 +355,35 @@ export default function CustomizePanel({ resume, updateSettings, switchTemplate 
         {/* TAB 2: Text */}
         {activeTab === 'Text' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Google Fonts for preview */}
+            <style>{`@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Inter:wght@400;700&family=DM+Sans:wght@400;700&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&family=Montserrat:wght@400;700&family=PT+Serif:wght@400;700&family=Noto+Serif:wght@400;700&family=Lora:wght@400;700&family=Source+Sans+Pro:wght@400;700&display=swap');`}</style>
+
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>Primary Font</label>
-              <select 
+              <select
                 value={resume?.fontFamily || 'Inter'}
                 onChange={(e) => updateSettings({ fontFamily: e.target.value })}
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #E5E7EB', background: '#ffffff', fontSize: '14px', color: '#111827', outline: 'none' }}
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #E5E7EB', background: '#ffffff', fontSize: '14px', color: '#111827', outline: 'none', fontFamily: resume?.fontFamily || 'Inter' }}
               >
-                {PRIMARY_FONTS.map(font => <option key={font} value={font}>{font}</option>)}
+                {PRIMARY_FONTS.map(font => <option key={font} value={font} style={{ fontFamily: font }}>{font}</option>)}
               </select>
+              <div style={{ marginTop: '8px', padding: '10px 12px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', fontFamily: resume?.fontFamily || 'Inter', fontSize: '14px', color: '#374151', lineHeight: 1.5 }}>
+                The quick brown fox jumps over the lazy dog.
+              </div>
             </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>Secondary Font</label>
-              <select 
+              <select
                 value={resume?.secondaryFont || 'PT Serif'}
                 onChange={(e) => updateSettings({ secondaryFont: e.target.value })}
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #E5E7EB', background: '#ffffff', fontSize: '14px', color: '#111827', outline: 'none' }}
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #E5E7EB', background: '#ffffff', fontSize: '14px', color: '#111827', outline: 'none', fontFamily: resume?.secondaryFont || 'PT Serif' }}
               >
-                {SECONDARY_FONTS.map(font => <option key={font} value={font}>{font}</option>)}
+                {SECONDARY_FONTS.map(font => <option key={font} value={font} style={{ fontFamily: font }}>{font}</option>)}
               </select>
+              <div style={{ marginTop: '8px', padding: '10px 12px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', fontFamily: resume?.secondaryFont || 'PT Serif', fontSize: '14px', color: '#374151', lineHeight: 1.5 }}>
+                The quick brown fox jumps over the lazy dog.
+              </div>
             </div>
 
             <div>
@@ -350,8 +391,8 @@ export default function CustomizePanel({ resume, updateSettings, switchTemplate 
                 <label style={{ fontSize: '13px', fontWeight: '500', color: '#374151' }}>Line Height</label>
                 <span style={{ fontSize: '13px', color: '#6B7280' }}>{resume?.lineHeight || 100}%</span>
               </div>
-              <input 
-                type="range" 
+              <input
+                type="range"
                 min="80" max="150" step="5"
                 value={resume?.lineHeight || 100}
                 onChange={(e) => updateSettings({ lineHeight: Number(e.target.value) })}
@@ -389,8 +430,26 @@ export default function CustomizePanel({ resume, updateSettings, switchTemplate 
                 })}
               </div>
             </div>
+
+            {/* Reset to Defaults */}
+            <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '20px' }}>
+              <button
+                onClick={() => updateSettings(TEMPLATE_DEFAULTS)}
+                style={{
+                  width: '100%', padding: '10px 0', background: '#FFF7ED',
+                  border: '1px solid #FED7AA', color: '#92400E',
+                  borderRadius: '6px', fontSize: '14px', fontWeight: '500', cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#FFEDD5'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#FFF7ED'; }}
+              >
+                ↺ Reset All to Default Settings
+              </button>
+            </div>
           </div>
         )}
+
 
         {/* TAB 3: Layout */}
         {activeTab === 'Layout' && (
