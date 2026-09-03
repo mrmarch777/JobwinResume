@@ -39,6 +39,7 @@ export default function ModernTemplate({ resume }) {
       margin: '0 auto',
       backgroundColor: '#FFFFFF',
       display: 'flex',
+      alignItems: 'stretch',
       fontFamily: fontFamily,
       fontSize: fSize.body,
       lineHeight: spc.line,
@@ -46,14 +47,16 @@ export default function ModernTemplate({ resume }) {
     },
     sidebar: {
       width: '30%',
+      minWidth: '30%',
       backgroundColor: accentColor,
       color: '#FFFFFF',
       padding: '30px 20px',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      flexShrink: 0,
     },
     main: {
       width: '70%',
-      padding: '40px',
+      padding: '40px 35px 40px 35px',
       color: '#333333',
       boxSizing: 'border-box'
     },

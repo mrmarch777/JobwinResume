@@ -198,10 +198,12 @@ export default function ResumeIO() {
   <meta charset="utf-8">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { margin: 0; background: white; }
+    body { margin: 0; background: white; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
     ${styles}
     p, li { page-break-inside: avoid; orphans: 3; widows: 3; }
     h1, h2, h3, h4 { page-break-after: avoid; }
+    /* Ensure sidebar backgrounds print across all pages */
+    div[style*="display: flex"] > div:first-child { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   </style>
 </head>
 <body>${source.outerHTML}</body>

@@ -42,11 +42,11 @@ const PhotoSidebarTemplate = ({ resume }) => {
 
   return (
     <div style={{ 
-      width: '794px', minHeight: '1123px', background: 'white', color: '#222', 
-      fontFamily, lineHeight: spaces.line, display: 'flex', flexDirection: 'row', boxSizing: 'border-box' 
+      width: '794px', minHeight: '1123px', background: 'white', color: '#333', 
+      fontFamily, lineHeight: spaces.line, display: 'flex', flexDirection: 'row', alignItems: 'stretch', boxSizing: 'border-box' 
     }}>
-      {/* NARROW SIDEBAR */}
-      <div style={{ width: '25%', backgroundColor: '#1a1a2e', color: '#e0e0e0', padding: '30px 15px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: spaces.section }}>
+      {/* DARK SIDEBAR */}
+      <div style={{ width: '25%', minWidth: '25%', backgroundColor: '#1a1a2e', color: '#e0e0e0', padding: '30px 15px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: spaces.section, flexShrink: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: spaces.item }}>
           {renderPhoto(personal.photo, personal.name, 120)}
         </div>
