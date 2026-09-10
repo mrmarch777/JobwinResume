@@ -1,10 +1,116 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import TemplateRenderer from './templates/TemplateRenderer';
 
 const A4_WIDTH = 794;
 const A4_HEIGHT = 1123;
-// Visual gap between pages in the preview (gives clear visual separation)
 const PAGE_GAP = 20;
+
+/**
+ * applyPageBreaks — JavaScript-based page-break algorithm
+ * 
+ * Scans all "breakable" elements (li, headers, bold divs, flex rows)
+ * inside the container. If any element crosses a page boundary AND is
+ * small enough to fit on a single page, a transparent spacer div is
+ * inserted before it to push it to the next page.
+ * 
+ * This runs post-render and modifies the DOM directly (outside React).
+ * Spacers are tagged with a data attribute so they can be cleaned up.
+ */
+function applyPageBreaks(container, pageHeight) {
+  if (!container) return;
+
+  // 1. Remove previous spacers
+  container.querySelectorAll('[data-page-spacer]').forEach(el => el.remove());
+
+  // 2. Collect all "atomic" elements that should not be split across pages.
+  //    We target: list items, headings, bold divs (job titles), flex rows (title+date),
+  //    italic divs (company names), and any div with page-break-inside: avoid.
+  const selectors = [
+    'li',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  ];
+  const candidates = Array.from(container.querySelectorAll(selectors.join(', ')));
+
+  // Also collect divs that have inline styles indicating they're "atomic"
+  const allDivs = container.querySelectorAll('div');
+  for (const div of allDivs) {
+    const s = div.style;
+    // Bold divs (job titles, section titles)
+    if (s.fontWeight === 'bold' || s.fontWeight === '700') {
+      candidates.push(div);
+      continue;
+    }
+    // Flex rows with space-between (title + date rows)
+    if (s.justifyContent === 'space-between' && s.display === 'flex') {
+      candidates.push(div);
+      continue;
+    }
+    // Italic divs (company/subtitle)
+    if (s.fontStyle === 'italic') {
+      candidates.push(div);
+      continue;
+    }
+    // Divs with explicit page-break-inside: avoid
+    if (s.pageBreakInside === 'avoid' || s.breakInside === 'avoid') {
+      candidates.push(div);
+      continue;
+    }
+  }
+
+  // Deduplicate (a div might match multiple criteria)
+  const uniqueSet = new Set(candidates);
+  const elements = Array.from(uniqueSet);
+
+  // 3. Sort by vertical position (top to bottom)
+  const containerTop = container.getBoundingClientRect().top;
+  elements.sort((a, b) => {
+    return (a.getBoundingClientRect().top - containerTop) - (b.getBoundingClientRect().top - containerTop);
+  });
+
+  // 4. Process each element: if it crosses a page boundary, insert a spacer
+  let insertedSpacers = 0;
+  const MAX_SPACERS = 50; // safety limit
+
+  for (const el of elements) {
+    if (insertedSpacers >= MAX_SPACERS) break;
+
+    const rect = el.getBoundingClientRect();
+    const relTop = rect.top - container.getBoundingClientRect().top;
+    const relBottom = relTop + rect.height;
+    const elHeight = rect.height;
+
+    // Skip elements taller than 60% of a page (they can't fit on one page anyway)
+    if (elHeight > pageHeight * 0.6) continue;
+
+    // Skip tiny elements (< 5px)
+    if (elHeight < 5) continue;
+
+    // Which page does the element start and end on?
+    const startPage = Math.floor(relTop / pageHeight);
+    const endPage = Math.floor(Math.max(0, relBottom - 1) / pageHeight);
+
+    if (startPage !== endPage) {
+      // Element crosses a page boundary — push it to the next page
+      const nextPageTop = (startPage + 1) * pageHeight;
+      const spacerHeight = nextPageTop - relTop;
+
+      // Only insert if the spacer is reasonable (< 200px gap)
+      if (spacerHeight > 0 && spacerHeight < 200) {
+        const spacer = document.createElement('div');
+        spacer.setAttribute('data-page-spacer', 'true');
+        spacer.style.height = spacerHeight + 'px';
+        spacer.style.width = '100%';
+        spacer.style.flexShrink = '0';
+        // Insert before the element
+        el.parentNode.insertBefore(spacer, el);
+        insertedSpacers++;
+      }
+    }
+  }
+
+  return insertedSpacers;
+}
+
 
 export default function LivePreview({ resume, TemplateComponent, currentPage: _cp, setCurrentPage: _scp }) {
   const containerRef = useRef(null);
@@ -12,6 +118,7 @@ export default function LivePreview({ resume, TemplateComponent, currentPage: _c
   const [scale, setScale] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [contentHeight, setContentHeight] = useState(A4_HEIGHT);
+  const pageBreakApplied = useRef(false);
 
   // Scale to fit the available panel width
   useEffect(() => {
@@ -28,19 +135,22 @@ export default function LivePreview({ resume, TemplateComponent, currentPage: _c
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Measure total content height and derive page count
+  // Apply page breaks and measure content after render
   useEffect(() => {
-    if (contentRef.current) {
-      const h = contentRef.current.scrollHeight;
-      setContentHeight(h);
-      const pages = Math.max(1, Math.ceil(h / A4_HEIGHT));
-      setTotalPages(pages);
-    }
+    if (!contentRef.current) return;
+
+    // Apply page-break algorithm (inserts spacer divs)
+    applyPageBreaks(contentRef.current, A4_HEIGHT);
+
+    // Measure total height AFTER spacers are inserted
+    const h = contentRef.current.scrollHeight;
+    setContentHeight(h);
+    const pages = Math.max(1, Math.ceil(h / A4_HEIGHT));
+    setTotalPages(pages);
   });
 
   const scaledWidth = A4_WIDTH * scale;
   const scaledPageHeight = A4_HEIGHT * scale;
-  // Total visual height = all page heights + gaps between them
   const totalVisualHeight = contentHeight * scale + (totalPages - 1) * PAGE_GAP;
 
   return (
@@ -74,11 +184,7 @@ export default function LivePreview({ resume, TemplateComponent, currentPage: _c
         </div>
       )}
 
-      {/*
-        Outer wrapper.
-        Height = total visual height (scaled content + all page gaps).
-        We render each page as a white card, stacked vertically.
-      */}
+      {/* Page cards container */}
       <div style={{
         position: 'relative',
         width: `${scaledWidth}px`,
@@ -86,20 +192,10 @@ export default function LivePreview({ resume, TemplateComponent, currentPage: _c
         flexShrink: 0,
       }}>
 
-        {/*
-          Render individual page "cards".
-          Each card clips to one A4_HEIGHT of content via:
-          - position: absolute at the right offset in visual space
-          - overflow: hidden at the scaledPageHeight
-          - The resume content inside is shifted by -pageIndex * scaledPageHeight
-            to show only the relevant slice of content.
-        */}
+        {/* Render each page as a clipped card */}
         {Array.from({ length: totalPages }, (_, pageIndex) => {
-          // Visual top of this card = pages before it + gaps before it
           const cardTop = pageIndex * (scaledPageHeight + PAGE_GAP);
-          // How much content to skip (shift up) for this page
           const contentShift = pageIndex * A4_HEIGHT;
-          // Height of this card: last page may be shorter
           const remainingContent = contentHeight - pageIndex * A4_HEIGHT;
           const cardContentHeight = Math.min(A4_HEIGHT, remainingContent);
           const cardHeight = cardContentHeight * scale;
@@ -119,11 +215,6 @@ export default function LivePreview({ resume, TemplateComponent, currentPage: _c
                 borderRadius: '1px',
               }}
             >
-              {/*
-                The resume content rendered at full A4 width,
-                scaled down, shifted up by the page offset.
-                Only the current page's slice is visible (overflow: hidden above).
-              */}
               <div
                 style={{
                   position: 'absolute',
@@ -131,12 +222,10 @@ export default function LivePreview({ resume, TemplateComponent, currentPage: _c
                   left: 0,
                   width: `${A4_WIDTH}px`,
                   transformOrigin: 'top left',
-                  // Scale then shift up to show the correct page
                   transform: `scale(${scale}) translateY(-${contentShift}px)`,
                 }}
               >
                 {pageIndex === 0 ? (
-                  // Only the first page renders the actual content — others reuse via ref
                   <div
                     id="resume-preview-content"
                     ref={contentRef}
@@ -153,7 +242,6 @@ export default function LivePreview({ resume, TemplateComponent, currentPage: _c
                     )}
                   </div>
                 ) : (
-                  // Pages 2+ clone the content from the DOM (read from the first page ref)
                   <div
                     id={`resume-preview-page-${pageIndex + 1}`}
                     style={{
@@ -174,7 +262,7 @@ export default function LivePreview({ resume, TemplateComponent, currentPage: _c
           );
         })}
 
-        {/* Page separator labels between cards */}
+        {/* Page separator labels */}
         {Array.from({ length: totalPages - 1 }, (_, i) => {
           const gapTop = (i + 1) * (scaledPageHeight + PAGE_GAP) - PAGE_GAP;
           return (
