@@ -183,61 +183,62 @@ export default function ResumeIO() {
     const name = resume.personal?.name || 'Resume';
 
     if (format === 'pdf') {
-      // Build a standalone HTML page with all inline styles intact
-      const styles = Array.from(document.styleSheets)
-        .map(sheet => {
-          try {
-            return Array.from(sheet.cssRules).map(r => r.cssText).join('\n');
-          } catch { return ''; }
-        })
-        .join('\n');
+      // Get the resume content (includes user edits from contentEditable)
+      const resumeHtml = source.innerHTML;
+
+      // Remove page-spacer divs (browser/Puppeteer handles page breaks via CSS)
+      const cleanHtml = resumeHtml.replace(/<div data-page-spacer="true"[^>]*><\/div>/g, '');
+
+      // Build the outermost container from the source (preserves template styles)
+      const wrapper = source.cloneNode(false);
+      wrapper.innerHTML = cleanHtml;
+      wrapper.style.width = '794px';
+      wrapper.removeAttribute('contenteditable');
+
+      const printCss = `
+        @page { size: A4; margin: 0; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: white; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+
+        /* Page break rules — the browser's print engine respects these */
+        li, p { break-inside: avoid; page-break-inside: avoid; orphans: 3; widows: 3; }
+        h1, h2, h3, h4, h5, h6 { break-after: avoid; page-break-after: avoid; break-inside: avoid; page-break-inside: avoid; }
+
+        /* Bold divs (job titles, section headers) */
+        div[style*="font-weight: bold"], div[style*="font-weight: 700"] {
+          break-inside: avoid; page-break-inside: avoid;
+          break-after: avoid; page-break-after: avoid;
+        }
+
+        /* Flex rows (title + date) */
+        div[style*="justify-content: space-between"] {
+          break-inside: avoid; page-break-inside: avoid;
+          break-after: avoid; page-break-after: avoid;
+        }
+
+        /* Italic divs (company/subtitle) */
+        div[style*="font-style: italic"] {
+          break-before: avoid; page-break-before: avoid;
+        }
+
+        /* Sidebar backgrounds */
+        div[style*="display: flex"] > div:first-child {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      `;
 
       const fullHtml = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { margin: 0; background: white; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-    ${styles}
-
-    /* === Page Break Rules === */
-    /* Prevent splitting inside paragraphs and list items */
-    p, li { page-break-inside: avoid; break-inside: avoid; orphans: 3; widows: 3; }
-
-    /* Section headers: never break after (keep with following content) */
-    h1, h2, h3, h4, h5, h6 { page-break-after: avoid; break-after: avoid; page-break-inside: avoid; break-inside: avoid; }
-
-    /* Bold divs = job titles, section titles — never split across pages */
-    div[style*="font-weight: bold"], div[style*="font-weight: 700"] {
-      page-break-inside: avoid; break-inside: avoid;
-      page-break-after: avoid; break-after: avoid;
-    }
-
-    /* Italic divs = company names — keep with preceding title */
-    div[style*="font-style: italic"] {
-      page-break-before: avoid; break-before: avoid;
-    }
-
-    /* Flex row divs (title + date rows) — never split */
-    div[style*="justify-content: space-between"] {
-      page-break-inside: avoid; break-inside: avoid;
-      page-break-after: avoid; break-after: avoid;
-    }
-
-    /* Keep bullet lists from being orphaned — at least 2 items together */
-    ul { orphans: 2; widows: 2; }
-    ul li:first-child { page-break-before: avoid; break-before: avoid; }
-
-    /* Ensure sidebar/accent backgrounds print on all pages */
-    div[style*="display: flex"] > div:first-child { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  </style>
+  <style>${printCss}</style>
 </head>
-<body>${source.outerHTML}</body>
+<body>${wrapper.outerHTML}</body>
 </html>`;
 
+      // Strategy 1: Try server-side Puppeteer (direct download)
       try {
-        // Try server-side Puppeteer PDF first (perfect rendering)
         const response = await fetch('/api/generate-pdf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -255,33 +256,30 @@ export default function ResumeIO() {
           return;
         }
       } catch (err) {
-        console.warn('Server PDF failed, falling back to html2pdf:', err);
+        console.warn('Server PDF unavailable, using browser print:', err.message);
       }
 
-      // Fallback: html2pdf client-side
-      const scaledWrapper = source.parentElement;
-      const originalTransform = scaledWrapper?.style.transform;
-      const originalWidth = scaledWrapper?.style.width;
-      if (scaledWrapper) {
-        scaledWrapper.style.transform = 'none';
-        scaledWrapper.style.width = '794px';
+      // Strategy 2: Browser's native print → Save as PDF
+      // This is the MOST RELIABLE method — the browser's print engine handles
+      // page breaks, margins, and backgrounds natively (like MS Word).
+      const printWindow = window.open('', '_blank', 'width=900,height=700');
+      if (!printWindow) {
+        alert('Please allow popups to download your resume as PDF.');
+        return;
       }
-      try {
-        const html2pdf = (await import('html2pdf.js')).default;
-        await html2pdf().set({
-          margin: 0,
-          filename: `${name}_Resume.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 794 },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: 'css' },
-        }).from(source).save();
-      } finally {
-        if (scaledWrapper) {
-          scaledWrapper.style.transform = originalTransform || '';
-          scaledWrapper.style.width = originalWidth || '';
-        }
-      }
+
+      printWindow.document.write(fullHtml);
+      printWindow.document.close();
+
+      // Wait for content to load, then trigger print
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.focus();
+          printWindow.print();
+          // Close after print dialog is dismissed
+          printWindow.onafterprint = () => printWindow.close();
+        }, 300);
+      };
     } else {
       // Word export
       const outerHtml = source.outerHTML;
