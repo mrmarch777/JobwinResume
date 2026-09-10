@@ -9,15 +9,15 @@ export default function CleanTemplate({ resume }) {
   const spc = spacings[spacing] || spacings.normal;
 
   const styles = {
-    container: { width: '100%', maxWidth: '794px', minHeight: '1123px', margin: '0 auto', backgroundColor: '#FFFFFF', color: '#333333', fontFamily: fontFamily, fontSize: fSize.body, lineHeight: spc.line, padding: '40px', boxSizing: 'border-box' },
+    container: { width: '100%', maxWidth: '794px', minHeight: '1123px', margin: '0 auto', backgroundColor: '#FFFFFF', color: '#333333', fontFamily: fontFamily, fontSize: fSize.body, lineHeight: spc.line, padding: '40px 50px', boxSizing: 'border-box' },
     header: { textAlign: 'left', marginBottom: spc.section },
     name: { fontSize: fSize.name, fontWeight: 'bold', color: '#000000', marginBottom: '4px', borderBottom: `4px solid ${accentColor}`, display: 'inline-block', paddingBottom: '4px' },
     title: { fontSize: fSize.title, color: '#555555', marginTop: '8px', marginBottom: '8px', fontWeight: '500' },
     contact: { fontSize: fSize.small, color: '#666666', display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '10px' },
     section: { marginBottom: spc.section },
-    sectionTitle: { fontSize: fSize.heading, fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', borderLeft: `3px solid ${accentColor}`, paddingLeft: '10px', marginBottom: spc.item, letterSpacing: '1px' },
+    sectionTitle: { pageBreakAfter: 'avoid', breakAfter: 'avoid', fontSize: fSize.heading, fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', borderLeft: `3px solid ${accentColor}`, paddingLeft: '10px', marginBottom: spc.item, letterSpacing: '1px' },
     item: { marginBottom: spc.item },
-    itemHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' },
+    itemHeader: { display: 'flex', justifyContent: 'space-between', pageBreakInside: 'avoid', breakInside: 'avoid', pageBreakAfter: 'avoid', breakAfter: 'avoid', alignItems: 'baseline', marginBottom: '4px' },
     itemTitle: { fontWeight: 'bold', color: '#000000' },
     itemDate: { fontSize: fSize.small, color: '#555555', fontWeight: '500' },
     itemSubtitle: { fontStyle: 'normal', color: accentColor, fontWeight: '500' },

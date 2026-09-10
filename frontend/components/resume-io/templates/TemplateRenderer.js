@@ -115,7 +115,23 @@ export default function TemplateRenderer({ resume }) {
       customSections: resume.customSections || [],
     };
 
-    return <Template resume={normalizedResume} />;
+    return (
+      <>
+        {/* Page break CSS — injected once, applies to all templates for PDF quality */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          /* Prevent experience/education/project entries from splitting across printed pages */
+          #resume-preview-content ul li { break-inside: avoid; page-break-inside: avoid; }
+          #resume-preview-content p     { orphans: 3; widows: 3; }
+          /* Prevent a section heading from being stranded at the bottom of a page */
+          h1,h2,h3,h4,h5,h6 { break-after: avoid; page-break-after: avoid; }
+          @media print {
+            @page { margin: 0; size: A4; }
+            body  { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
+        ` }} />
+        <Template resume={normalizedResume} />
+      </>
+    );
   } catch (err) {
     // Last-resort fallback — render Classic if the selected template crashes
     console.error(`Template "${resume.templateId}" crashed:`, err);

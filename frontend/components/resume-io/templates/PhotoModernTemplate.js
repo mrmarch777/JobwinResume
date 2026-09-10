@@ -46,7 +46,7 @@ const PhotoModernTemplate = ({ resume }) => {
       fontFamily, lineHeight: spaces.line, display: 'flex', flexDirection: 'row', alignItems: 'stretch', boxSizing: 'border-box' 
     }}>
       {/* LEFT SIDEBAR */}
-      <div style={{ width: '30%', minWidth: '30%', backgroundColor: accentColor, color: 'white', padding: '30px 20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: spaces.section, flexShrink: 0 }}>
+      <div style={{ width: '28%', minWidth: '28%', backgroundColor: accentColor, color: 'white', padding: '30px 18px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: spaces.section, flexShrink: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: spaces.item }}>
           {renderPhoto(personal.photo, personal.name, 140)}
         </div>
@@ -96,7 +96,7 @@ const PhotoModernTemplate = ({ resume }) => {
       </div>
 
       {/* MAIN AREA */}
-      <div style={{ width: '70%', padding: '40px 35px 40px 35px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: spaces.section }}>
+      <div style={{ width: '72%', padding: '40px 45px 40px 35px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: spaces.section }}>
         <div>
           <h1 style={{ fontSize: sizes.name, fontWeight: 'bold', margin: '0 0 5px 0', color: '#111' }}>{personal.name}</h1>
           <h2 style={{ fontSize: sizes.title, color: accentColor, margin: 0, fontWeight: '500' }}>{personal.title}</h2>

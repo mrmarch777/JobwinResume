@@ -47,7 +47,7 @@ export default function ATSOptimizedTemplate({ resume }) {
     name: { fontSize: fSize.name, fontWeight: 'bold', marginBottom: '8px' },
     contact: { fontSize: fSize.body, display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' },
     section: { marginBottom: spc.section },
-    sectionTitle: { fontSize: fSize.heading, fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '1px solid #000000', marginBottom: spc.item },
+    sectionTitle: { pageBreakAfter: 'avoid', breakAfter: 'avoid', fontSize: fSize.heading, fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '1px solid #000000', marginBottom: spc.item },
     item: { marginBottom: spc.item },
     itemHeader: { marginBottom: '4px' },
     itemTitle: { fontWeight: 'bold' }

@@ -26,7 +26,7 @@ const PrimeATSTemplate = ({ resume }) => {
   return (
     <div style={{ 
       width: '794px', minHeight: '1123px', background: 'white', color: 'black', 
-      fontFamily: font, lineHeight: spaces.line, padding: '50px', boxSizing: 'border-box' 
+      fontFamily: font, lineHeight: spaces.line, padding: '45px 50px', boxSizing: 'border-box' 
     }}>
       {/* HEADER */}
       <div style={{ textAlign: 'left', marginBottom: spaces.section }}>

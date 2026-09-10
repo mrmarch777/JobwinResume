@@ -91,7 +91,7 @@ const PhotoSidebarTemplate = ({ resume }) => {
       </div>
 
       {/* MAIN AREA */}
-      <div style={{ width: '75%', padding: '40px 30px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: spaces.section }}>
+      <div style={{ width: '75%', padding: '40px 45px 40px 30px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: spaces.section }}>
         <div style={{ borderBottom: `3px solid ${accentColor}`, paddingBottom: '15px', marginBottom: '10px' }}>
           <h1 style={{ fontSize: sizes.name, fontWeight: '800', margin: '0 0 5px 0', color: '#1a1a2e', textTransform: 'uppercase', letterSpacing: '1px' }}>{personal.name}</h1>
           <h2 style={{ fontSize: sizes.title, color: accentColor, margin: 0, fontWeight: '600', textTransform: 'uppercase', letterSpacing: '2px' }}>{personal.title}</h2>

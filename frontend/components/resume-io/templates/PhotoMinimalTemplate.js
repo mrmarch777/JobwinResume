@@ -39,7 +39,7 @@ const PhotoMinimalTemplate = ({ resume }) => {
   return (
     <div style={{ 
       width: '794px', minHeight: '1123px', background: 'white', color: '#444', 
-      fontFamily, lineHeight: spaces.line, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '60px' 
+      fontFamily, lineHeight: spaces.line, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '50px 55px' 
     }}>
       {/* HEADER */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: spaces.section }}>

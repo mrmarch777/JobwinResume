@@ -9,7 +9,7 @@ export default function CorporateTemplate({ resume }) {
   const spc = spacings[spacing] || spacings.normal;
 
   const styles = {
-    container: { width: '100%', maxWidth: '794px', minHeight: '1123px', margin: '0 auto', backgroundColor: '#FFFFFF', color: '#333333', fontFamily: fontFamily, fontSize: fSize.body, lineHeight: spc.line, padding: '40px', boxSizing: 'border-box' },
+    container: { width: '100%', maxWidth: '794px', minHeight: '1123px', margin: '0 auto', backgroundColor: '#FFFFFF', color: '#333333', fontFamily: fontFamily, fontSize: fSize.body, lineHeight: spc.line, padding: '40px 50px', boxSizing: 'border-box' },
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spc.section, borderBottom: `2px solid ${accentColor}`, paddingBottom: '15px' },
     headerLeft: { flex: 1 },
     headerRight: { textAlign: 'right', fontSize: fSize.small, color: '#444' },
@@ -18,9 +18,9 @@ export default function CorporateTemplate({ resume }) {
     section: { marginBottom: spc.section },
     sectionTitleContainer: { display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: spc.item },
     sectionLine: { flex: 1, height: '1px', backgroundColor: '#ddd' },
-    sectionTitle: { fontSize: fSize.heading, fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', padding: '0 15px', fontFamily: '"Noto Serif", serif' },
+    sectionTitle: { pageBreakAfter: 'avoid', breakAfter: 'avoid', fontSize: fSize.heading, fontWeight: 'bold', color: '#000000', textTransform: 'uppercase', padding: '0 15px', fontFamily: '"Noto Serif", serif' },
     item: { marginBottom: spc.item },
-    itemHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' },
+    itemHeader: { display: 'flex', justifyContent: 'space-between', pageBreakInside: 'avoid', breakInside: 'avoid', pageBreakAfter: 'avoid', breakAfter: 'avoid', alignItems: 'baseline', marginBottom: '4px' },
     itemTitle: { fontWeight: 'normal', color: '#333' },
     itemDate: { fontSize: fSize.small, color: '#555555' },
     itemCompany: { fontWeight: 'bold', color: '#000' },

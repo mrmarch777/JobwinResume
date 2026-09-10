@@ -9,15 +9,15 @@ export default function ElegantTemplate({ resume }) {
   const spc = spacings[spacing] || spacings.normal;
 
   const styles = {
-    container: { width: '100%', maxWidth: '794px', minHeight: '1123px', margin: '0 auto', backgroundColor: '#FFFFFF', color: '#333333', fontFamily: fontFamily, fontSize: fSize.body, lineHeight: spc.line, padding: '40px', boxSizing: 'border-box', borderTop: `6px solid ${accentColor}` },
+    container: { width: '100%', maxWidth: '794px', minHeight: '1123px', margin: '0 auto', backgroundColor: '#FFFFFF', color: '#333333', fontFamily: fontFamily, fontSize: fSize.body, lineHeight: spc.line, padding: '40px 50px', boxSizing: 'border-box', borderTop: `6px solid ${accentColor}` },
     header: { textAlign: 'center', marginBottom: spc.section, paddingBottom: '20px' },
     name: { fontSize: fSize.name, fontWeight: 'normal', color: '#000000', marginBottom: '4px', fontFamily: '"Noto Serif", serif' },
     title: { fontSize: fSize.title, color: '#555555', marginBottom: '8px', fontStyle: 'italic' },
     contact: { fontSize: fSize.small, color: '#777777', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' },
     section: { marginBottom: spc.section },
-    sectionTitle: { fontSize: fSize.heading, fontWeight: 'normal', color: '#000000', fontFamily: '"Noto Serif", serif', fontStyle: 'italic', marginBottom: spc.item, display: 'inline-block', borderBottom: `1px solid ${accentColor}`, paddingBottom: '2px' },
+    sectionTitle: { pageBreakAfter: 'avoid', breakAfter: 'avoid', fontSize: fSize.heading, fontWeight: 'normal', color: '#000000', fontFamily: '"Noto Serif", serif', fontStyle: 'italic', marginBottom: spc.item, display: 'inline-block', borderBottom: `1px solid ${accentColor}`, paddingBottom: '2px' },
     item: { marginBottom: spc.item },
-    itemHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' },
+    itemHeader: { display: 'flex', justifyContent: 'space-between', pageBreakInside: 'avoid', breakInside: 'avoid', pageBreakAfter: 'avoid', breakAfter: 'avoid', alignItems: 'baseline', marginBottom: '4px' },
     itemTitle: { fontWeight: 'bold', color: '#000000' },
     itemDate: { fontSize: fSize.small, color: '#555555' },
     itemSubtitle: { fontStyle: 'italic', color: '#444444' },

@@ -41,7 +41,7 @@ const PhotoExecutiveTemplate = ({ resume }) => {
   return (
     <div style={{ 
       width: '794px', minHeight: '1123px', background: 'white', color: '#2c3e50', 
-      fontFamily, lineHeight: spaces.line, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '50px' 
+      fontFamily, lineHeight: spaces.line, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '45px 50px' 
     }}>
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: `2px solid ${accentColor}`, paddingBottom: '20px', marginBottom: spaces.section }}>

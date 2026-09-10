@@ -200,9 +200,36 @@ export default function ResumeIO() {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { margin: 0; background: white; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
     ${styles}
-    p, li { page-break-inside: avoid; orphans: 3; widows: 3; }
-    h1, h2, h3, h4 { page-break-after: avoid; }
-    /* Ensure sidebar backgrounds print across all pages */
+
+    /* === Page Break Rules === */
+    /* Prevent splitting inside paragraphs and list items */
+    p, li { page-break-inside: avoid; break-inside: avoid; orphans: 3; widows: 3; }
+
+    /* Section headers: never break after (keep with following content) */
+    h1, h2, h3, h4, h5, h6 { page-break-after: avoid; break-after: avoid; page-break-inside: avoid; break-inside: avoid; }
+
+    /* Bold divs = job titles, section titles — never split across pages */
+    div[style*="font-weight: bold"], div[style*="font-weight: 700"] {
+      page-break-inside: avoid; break-inside: avoid;
+      page-break-after: avoid; break-after: avoid;
+    }
+
+    /* Italic divs = company names — keep with preceding title */
+    div[style*="font-style: italic"] {
+      page-break-before: avoid; break-before: avoid;
+    }
+
+    /* Flex row divs (title + date rows) — never split */
+    div[style*="justify-content: space-between"] {
+      page-break-inside: avoid; break-inside: avoid;
+      page-break-after: avoid; break-after: avoid;
+    }
+
+    /* Keep bullet lists from being orphaned — at least 2 items together */
+    ul { orphans: 2; widows: 2; }
+    ul li:first-child { page-break-before: avoid; break-before: avoid; }
+
+    /* Ensure sidebar/accent backgrounds print on all pages */
     div[style*="display: flex"] > div:first-child { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   </style>
 </head>

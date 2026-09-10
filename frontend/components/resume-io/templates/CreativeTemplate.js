@@ -53,7 +53,7 @@ export default function CreativeTemplate({ resume }) {
     title: { fontSize: fSize.title, opacity: 0.9, marginBottom: '16px', letterSpacing: '1px', textTransform: 'uppercase' },
     contactRow: { display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', fontSize: fSize.small },
     contactItem: { display: 'flex', alignItems: 'center', gap: '4px' },
-    content: { padding: '40px' },
+    content: { padding: '40px 50px' },
     section: { marginBottom: spc.section },
     sectionTitle: { 
       fontSize: fSize.heading, 

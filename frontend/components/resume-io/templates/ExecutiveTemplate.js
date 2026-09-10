@@ -50,9 +50,9 @@ export default function ExecutiveTemplate({ resume }) {
     title: { fontSize: fSize.title, color: '#555555' },
     hr: { border: 'none', borderBottom: `1px solid ${accentColor}`, margin: `0 0 ${spc.section} 0` },
     section: { marginBottom: spc.section },
-    sectionTitle: { fontSize: fSize.heading, fontWeight: 'bold', color: accentColor, textTransform: 'uppercase', borderBottom: '1px solid #DDDDDD', paddingBottom: '4px', marginBottom: spc.item },
+    sectionTitle: { pageBreakAfter: 'avoid', breakAfter: 'avoid', fontSize: fSize.heading, fontWeight: 'bold', color: accentColor, textTransform: 'uppercase', borderBottom: '1px solid #DDDDDD', paddingBottom: '4px', marginBottom: spc.item },
     item: { marginBottom: spc.item },
-    itemHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' },
+    itemHeader: { display: 'flex', justifyContent: 'space-between', pageBreakInside: 'avoid', breakInside: 'avoid', pageBreakAfter: 'avoid', breakAfter: 'avoid', alignItems: 'baseline' },
     itemCompany: { fontWeight: 'bold', color: '#000000', fontSize: fSize.body },
     itemTitle: { color: accentColor, fontStyle: 'italic', fontSize: fSize.body },
     itemDate: { fontSize: fSize.small, color: '#555555', fontWeight: 'bold' }
