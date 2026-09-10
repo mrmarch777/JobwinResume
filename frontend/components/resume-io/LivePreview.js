@@ -66,7 +66,7 @@ export default function LivePreview({ resume }) {
   const [scale, setScale] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [contentHeight, setContentHeight] = useState(A4_HEIGHT);
-  const [isEditing, setIsEditing] = useState(false);
+  const isEditingRef = useRef(false);  // ref, NOT state — prevents re-render on blur
   const debounceRef = useRef(null);
 
   // Scale to fit panel width
@@ -82,9 +82,10 @@ export default function LivePreview({ resume }) {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Copy template to editable div when resume changes (only if not editing)
+  // Copy template to editable div ONLY when resume form data changes
+  // Uses a ref for isEditing so blur/focus DON'T trigger this effect
   useEffect(() => {
-    if (isEditing) return;
+    if (isEditingRef.current) return;
     if (!hiddenRef.current || !contentRef.current) return;
 
     contentRef.current.innerHTML = hiddenRef.current.innerHTML;
@@ -93,7 +94,7 @@ export default function LivePreview({ resume }) {
     const h = contentRef.current.scrollHeight;
     setContentHeight(h);
     setTotalPages(Math.max(1, Math.ceil(h / A4_HEIGHT)));
-  }, [resume, isEditing]);
+  }, [resume]);  // ONLY resume — not isEditing
 
   // Recalculate pages after user edits (debounced)
   const handleInput = useCallback(() => {
@@ -166,8 +167,8 @@ export default function LivePreview({ resume }) {
             contentEditable
             suppressContentEditableWarning
             onInput={handleInput}
-            onFocus={() => setIsEditing(true)}
-            onBlur={() => setTimeout(() => setIsEditing(false), 200)}
+            onFocus={() => { isEditingRef.current = true; }}
+            onBlur={() => { setTimeout(() => { isEditingRef.current = false; }, 500); }}
             style={{
               width: `${A4_WIDTH}px`,
               minHeight: `${A4_HEIGHT}px`,
