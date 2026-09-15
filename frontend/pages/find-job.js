@@ -98,17 +98,39 @@ export default function FindJob() {
 
   const removeLocation = (loc) => setLocations(prev => prev.filter(l => l !== loc));
 
-  const fetchJobs = async (role, city, numResults) => {
+  const fetchJobs = async (role, city, numResults, retryCount = 0) => {
     setLoading(true); setError(""); setSearched(false); setProgress(5);
     const limit = numResults || maxResults;
     try {
-      // Pass the current plan to the backend for tier-enforcement
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jobs?role=${encodeURIComponent(role)}&city=${encodeURIComponent(city)}&num_results=${limit}&plan=premium`);
+      // Use Next.js API proxy (calls SerpAPI directly from Vercel — no cold start!)
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+      const res = await fetch(
+        `/api/search-jobs?role=${encodeURIComponent(role)}&city=${encodeURIComponent(city)}&num_results=${limit}`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Server returned ${res.status}`);
+      }
+
       const data = await res.json();
       setProgress(100);
-      setTimeout(() => { setJobs(data.jobs || []); setLoading(false); setSearched(true); }, 500);
+      setTimeout(() => { setJobs(data.jobs || []); setLoading(false); setSearched(true); }, 300);
     } catch (err) {
-      setError("Could not connect to the JobwinResume search engine. Please make sure the service is online.");
+      if (err.name === 'AbortError') {
+        if (retryCount < 1) {
+          // Auto-retry once (backend might have been waking up)
+          setStep(2);
+          return fetchJobs(role, city, numResults, retryCount + 1);
+        }
+        setError("Search timed out. The server may be starting up — please try again in a few seconds.");
+      } else {
+        setError(err.message || "Could not connect to the job search service. Please try again.");
+      }
       setLoading(false);
     }
   };
