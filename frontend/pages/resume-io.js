@@ -192,17 +192,46 @@ export default function ResumeIO() {
       // Build the outermost container from the source (preserves template styles)
       const wrapper = source.cloneNode(false);
       wrapper.innerHTML = cleanHtml;
-      wrapper.style.width = '794px';
+      // A4 at 96dpi = 794px wide. Must fill exact A4 width with no outer margin
+      // since @page margin handles the white space.
+      wrapper.style.width = '100%';
+      wrapper.style.minHeight = '1123px'; // A4 height at 96dpi — fills full page
       wrapper.removeAttribute('contenteditable');
 
       const printCss = `
-        @page { size: A4; margin: 0; }
+        @page {
+          size: A4;
+          margin: 15mm 18mm; /* Standard document margin: top/bottom 15mm, left/right 18mm */
+        }
         * { box-sizing: border-box; }
-        body { margin: 0; background: white; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+        html, body {
+          margin: 0;
+          padding: 0;
+          background: white;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
 
-        /* Page break rules — the browser's print engine respects these */
+        /* Make resume fill the full page */
+        body > div {
+          width: 100% !important;
+          max-width: 100% !important;
+          min-height: calc(297mm - 30mm); /* A4 height minus top+bottom margins */
+        }
+
+        /* Page break rules */
         li, p { break-inside: avoid; page-break-inside: avoid; orphans: 3; widows: 3; }
-        h1, h2, h3, h4, h5, h6 { break-after: avoid; page-break-after: avoid; break-inside: avoid; page-break-inside: avoid; }
+        h1, h2, h3, h4, h5, h6 {
+          break-after: avoid; page-break-after: avoid;
+          break-inside: avoid; page-break-inside: avoid;
+        }
+
+        /* Keep section headers with their content */
+        div[style*="border-bottom"], div[style*="text-transform: uppercase"] {
+          break-after: avoid; page-break-after: avoid;
+          break-inside: avoid; page-break-inside: avoid;
+        }
 
         /* Bold divs (job titles, section headers) */
         div[style*="font-weight: bold"], div[style*="font-weight: 700"] {
@@ -210,21 +239,26 @@ export default function ResumeIO() {
           break-after: avoid; page-break-after: avoid;
         }
 
-        /* Flex rows (title + date) */
+        /* Flex rows (title + date header rows) */
         div[style*="justify-content: space-between"] {
           break-inside: avoid; page-break-inside: avoid;
           break-after: avoid; page-break-after: avoid;
         }
 
-        /* Italic divs (company/subtitle) */
+        /* Italic divs (company/subtitle stay with header above) */
         div[style*="font-style: italic"] {
           break-before: avoid; page-break-before: avoid;
         }
 
-        /* Sidebar backgrounds */
-        div[style*="display: flex"] > div:first-child {
+        /* Sidebar & two-column backgrounds — must print with color */
+        div[style*="background"], aside, .sidebar {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
+        }
+
+        /* Two-column layout: sidebar must extend full page height */
+        div[style*="display: flex"] {
+          align-items: stretch !important;
         }
       `;
 
@@ -237,7 +271,7 @@ export default function ResumeIO() {
 <body>${wrapper.outerHTML}</body>
 </html>`;
 
-      // Strategy 1: Try server-side Puppeteer (direct download)
+      // Strategy 1: Try server-side Puppeteer (direct download, best quality)
       try {
         const response = await fetch('/api/generate-pdf', {
           method: 'POST',
@@ -260,8 +294,7 @@ export default function ResumeIO() {
       }
 
       // Strategy 2: Browser's native print → Save as PDF
-      // This is the MOST RELIABLE method — the browser's print engine handles
-      // page breaks, margins, and backgrounds natively (like MS Word).
+      // The browser's print engine handles page breaks and margins natively (like Word).
       const printWindow = window.open('', '_blank', 'width=900,height=700');
       if (!printWindow) {
         alert('Please allow popups to download your resume as PDF.');
@@ -271,14 +304,12 @@ export default function ResumeIO() {
       printWindow.document.write(fullHtml);
       printWindow.document.close();
 
-      // Wait for content to load, then trigger print
       printWindow.onload = () => {
         setTimeout(() => {
           printWindow.focus();
           printWindow.print();
-          // Close after print dialog is dismissed
           printWindow.onafterprint = () => printWindow.close();
-        }, 300);
+        }, 400);
       };
     } else {
       // Word export

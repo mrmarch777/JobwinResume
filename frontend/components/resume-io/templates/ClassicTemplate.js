@@ -70,6 +70,8 @@ export default function ClassicTemplate({ resume }) {
     if (personal.email) parts.push(personal.email);
     if (personal.phone) parts.push(personal.phone);
     if (personal.location) parts.push(personal.location);
+    if (personal.address) parts.push(personal.address);
+    if (personal.dob) parts.push(`DOB: ${personal.dob}`);
     if (personal.linkedin) parts.push(personal.linkedin);
     if (personal.website) parts.push(personal.website);
     return parts.join(' | ');
@@ -214,6 +216,60 @@ export default function ClassicTemplate({ resume }) {
               {ach.description && <div style={styles.itemDesc}>{ach.description}</div>}
             </div>
           ))}
+        </div>
+      );
+    },
+    strengths: () => {
+      const strengthList = Array.isArray(resume.strengths) ? resume.strengths : [];
+      if (!strengthList.length) return null;
+      return (
+        <div key="strengths" style={styles.section}>
+          <div style={styles.sectionTitle}>Core Strengths</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {strengthList.map((str, i) => (
+              <span key={i} style={{ padding: '4px 8px', border: `1px solid ${accentColor}`, borderRadius: '4px', fontSize: fSize.small, color: '#333' }}>
+                {str.text || str}
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+    },
+    hobbies: () => {
+      const hobbyList = Array.isArray(resume.hobbies) ? resume.hobbies : [];
+      if (!hobbyList.length) return null;
+      return (
+        <div key="hobbies" style={styles.section}>
+          <div style={styles.sectionTitle}>Hobbies & Interests</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {hobbyList.map((hobby, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: fSize.body, color: '#333' }}>
+                {hobby.emoji && <span>{hobby.emoji}</span>}
+                <span>{hobby.name}</span>
+                {i < hobbyList.length - 1 && <span style={{ color: '#ccc', marginLeft: '4px' }}>|</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    },
+    declaration: () => {
+      const decl = resume.declaration || {};
+      if (!decl.text) return null;
+      return (
+        <div key="declaration" style={{ ...styles.section, marginTop: '40px', pageBreakInside: 'avoid' }}>
+          <div style={styles.sectionTitle}>Declaration</div>
+          <div style={{ marginBottom: '20px' }}>{decl.text}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div>
+              {decl.place && <div style={{ marginBottom: '4px' }}><strong>Place:</strong> {decl.place}</div>}
+              {decl.date && <div><strong>Date:</strong> {decl.date}</div>}
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ width: '150px', borderBottom: '1px solid #000', marginBottom: '8px', height: '30px' }}></div>
+              <div>({personal.name})</div>
+            </div>
+          </div>
         </div>
       );
     }

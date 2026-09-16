@@ -11,8 +11,8 @@ export default function Sidebar({ activeId, collapsed, setCollapsed, user }) {
 
   const navItems = [
     { id: "home", icon: "⊞", label: "Home", href: "/dashboard" },
-    { id: "resume", icon: "📄", label: "Resume Builder", href: "/resume" },
-    { id: "resume-io", icon: "✨", label: "Resume IO", href: "/resume-io", badge: "NEW" },
+    { id: "resume-io", icon: "📄", label: "Resume Builder", href: "/resume-io" },
+    { id: "jobs", icon: "🔍", label: "Find Job", href: "/find-job" },
     { id: "tracker", icon: "📊", label: "Application Tracker", href: "/tracker" },
     { id: "cover", icon: "✉️", label: "Cover Letter Generator", href: "/apply" },
     { id: "interview", icon: "🎯", label: "Interview Prep", href: "/interview" },

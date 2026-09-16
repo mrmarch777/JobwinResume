@@ -37,11 +37,13 @@ export default async function handler(req, res) {
     // Set full HTML content
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
-    // Generate PDF with proper A4 settings
+    // Generate PDF with proper A4 settings and document margins
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
-      margin: { top: '0', right: '0', bottom: '0', left: '0' },
+      // 15mm top/bottom, 18mm left/right — matches the @page margin in the print CSS
+      // This gives the resume a proper document look (like Word) with white borders
+      margin: { top: '15mm', right: '18mm', bottom: '15mm', left: '18mm' },
     });
 
     res.setHeader('Content-Type', 'application/pdf');

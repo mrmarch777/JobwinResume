@@ -9,6 +9,9 @@ import Projects from './Projects';
 import Certifications from './Certifications';
 import Languages from './Languages';
 import Achievements from './Achievements';
+import Hobbies from './Hobbies';
+import Strengths from './Strengths';
+import Declaration from './Declaration';
 
 const sectionComponents = {
   personal: { component: PersonalInfo, icon: '👤', title: 'Personal Details', required: true, helperText: 'Add your contact information.' },
@@ -20,6 +23,9 @@ const sectionComponents = {
   certifications: { component: Certifications, icon: '📜', title: 'Certifications', required: false, helperText: 'List your certifications.' },
   languages: { component: Languages, icon: '🌐', title: 'Languages', required: false, helperText: 'List languages you speak.' },
   achievements: { component: Achievements, icon: '🏆', title: 'Achievements', required: false, helperText: 'List your achievements and awards.' },
+  strengths: { component: Strengths, icon: '💪', title: 'Core Strengths', required: false, helperText: 'Highlight your key professional strengths.' },
+  hobbies: { component: Hobbies, icon: '🎨', title: 'Hobbies & Interests', required: false, helperText: 'Share what you enjoy doing outside of work.' },
+  declaration: { component: Declaration, icon: '✒️', title: 'Declaration', required: false, helperText: 'Formal declaration statement.' },
 };
 
 export default function SectionManager({ resume, updateSection, updateSettings, addSection, removeSection, reorderSections, onUploadResume }) {

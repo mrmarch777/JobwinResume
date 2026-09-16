@@ -291,6 +291,31 @@ export default function PersonalInfo({ data = {}, onChange }) {
           />
         </div>
       </div>
+
+      <div style={STYLES.row}>
+        <div>
+          <label style={STYLES.label}>Website / Portfolio</label>
+          <input type="url" name="website" value={data.website || ''} onChange={handleChange} style={STYLES.input} placeholder="e.g. johndoe.com"
+            onFocus={e => { e.target.style.background = '#FFFFFF'; e.target.style.borderColor = '#2563EB'; }}
+            onBlur={e => { e.target.style.background = '#F3F4F6'; e.target.style.borderColor = 'transparent'; }}
+          />
+        </div>
+        <div>
+          <label style={STYLES.label}>Date of Birth</label>
+          <input type="text" name="dob" value={data.dob || ''} onChange={handleChange} style={STYLES.input} placeholder="e.g. 15 Jan 1995"
+            onFocus={e => { e.target.style.background = '#FFFFFF'; e.target.style.borderColor = '#2563EB'; }}
+            onBlur={e => { e.target.style.background = '#F3F4F6'; e.target.style.borderColor = 'transparent'; }}
+          />
+        </div>
+      </div>
+
+      <div style={STYLES.field}>
+        <label style={STYLES.label}>Street Address <span style={{ fontWeight: '400', color: '#9CA3AF' }}>(optional)</span></label>
+        <input type="text" name="address" value={data.address || ''} onChange={handleChange} style={STYLES.input} placeholder="e.g. 123 Main St, Apt 4B"
+          onFocus={e => { e.target.style.background = '#FFFFFF'; e.target.style.borderColor = '#2563EB'; }}
+          onBlur={e => { e.target.style.background = '#F3F4F6'; e.target.style.borderColor = 'transparent'; }}
+        />
+      </div>
     </div>
   );
 }

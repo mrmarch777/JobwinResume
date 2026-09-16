@@ -116,7 +116,7 @@ export default function Dashboard() {
   const [showPulse, setShowPulse] = useState(false);
   const [showActivity, setShowActivity] = useState(true);
   const checklist = [
-    { id: "resume", label: "Build your resume", done: false, path: "/resume", icon: "📄" },
+    { id: "resume", label: "Build your resume", done: false, path: "/resume-io", icon: "📄" },
     { id: "jobs", label: "Search your first job", done: false, path: "/find-job", icon: "🔍" },
     { id: "tracker", label: "Add an application to tracker", done: false, path: "/tracker", icon: "📊" },
     { id: "interview", label: "Try AI Interview Prep", done: false, path: "/interview", icon: "🎯" },
@@ -133,7 +133,7 @@ export default function Dashboard() {
 
   const handleNav = (id) => {
     setActiveNav(id);
-    if (id === "resume") router.push("/resume");
+    if (id === "resume") router.push("/resume-io");
     if (id === "tracker") router.push("/tracker");
     if (id === "cover") router.push("/apply");
     if (id === "apply") router.push("/apply");
@@ -255,7 +255,7 @@ export default function Dashboard() {
             {/* Quick Actions */}
             <div className="mobile-actions" style={{ display: "flex", gap: "12px", overflowX: "auto", paddingBottom: "4px" }}>
               {[
-                { icon: "📄", label: "Create Resume", path: "/resume" },
+                { icon: "📄", label: "Create Resume", path: "/resume-io" },
                 { icon: "📊", label: "Application Tracker", path: "/tracker" },
                 { icon: "✉️", label: "Generate Cover Letter", path: "/apply" },
                 { icon: "🎯", label: "Practice Interview", path: "/interview" },
@@ -313,7 +313,7 @@ export default function Dashboard() {
           <div className="mobile-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "16px", position: "relative", zIndex: 1, alignItems: "stretch" }}>
 
             {/* Smart Resume Card */}
-            <div className="dash-card mobile-card" onClick={() => router.push("/resume")} style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(20px)", border: `1px solid ${t.border}`, borderRadius: "24px", padding: "28px", cursor: "pointer", animationDelay: "0s" }}>
+            <div className="dash-card mobile-card" onClick={() => router.push("/resume-io")} style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(20px)", border: `1px solid ${t.border}`, borderRadius: "24px", padding: "28px", cursor: "pointer", animationDelay: "0s" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
                 <div style={{ width: "36px", height: "36px", background: "rgba(67,217,162,0.12)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>📄</div>
                 <div>
