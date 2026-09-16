@@ -305,8 +305,8 @@ export default function FindJob() {
               margin: '20px 0'
             }}>
               <div style={{ fontSize: '32px', marginBottom: '12px' }}>⚠️</div>
-              <h3 style={{ color: '#FF6584', marginBottom: '8px', fontFamily: "'Noto Serif', serif" }}>Service Temporarily Unavailable</h3>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', marginBottom: '16px' }}>Our job search service is temporarily unavailable. Please try again.</p>
+              <h3 style={{ color: '#FF6584', marginBottom: '8px', fontFamily: "'Noto Serif', serif" }}>Something went wrong</h3>
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', marginBottom: '16px' }}>{error}</p>
               <button onClick={handleSearch} style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #6C63FF, #FF6584)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Try Again</button>
             </div>
           )}
