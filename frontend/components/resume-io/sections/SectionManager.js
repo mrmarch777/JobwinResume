@@ -83,11 +83,24 @@ export default function SectionManager({ resume, updateSection, updateSettings, 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", padding: '0 20px 60px 20px', maxWidth: '100%' }}>
       
-      {/* Import Resume Button */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-        <button onClick={onUploadResume} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#F3F4F6', color: '#374151', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s' }}>
-          <Upload size={16} /> Upload Resume (Auto-fill)
+      {/* Top Actions Row: Upload + My Resumes */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #F3F4F6' }}>
+        <button 
+          onClick={onUploadResume} 
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+          onMouseEnter={e => e.currentTarget.style.background = '#DBEAFE'}
+          onMouseLeave={e => e.currentTarget.style.background = '#EFF6FF'}
+        >
+          <Upload size={15} /> Import Resume
         </button>
+        {onMyResumes && (
+          <button 
+            onClick={onMyResumes}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', color: '#6B7280', border: '1px solid #E5E7EB', padding: '7px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' }}
+          >
+            📂 My Resumes
+          </button>
+        )}
       </div>
 
       {/* Progress Bar (Resume.io style) */}

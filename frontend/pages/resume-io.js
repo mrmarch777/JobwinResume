@@ -116,6 +116,29 @@ export default function ResumeIO() {
     loadSavedResumes();
   }, [view]);
 
+  // Auto-set resume name to "Name - Role" when personal info is filled in
+  // Only do this when name is still default ("Untitled Resume") — don't overwrite user's custom name
+  const prevPersonalRef = React.useRef({ name: '', title: '' });
+  React.useEffect(() => {
+    const name = resume.personal?.name?.trim();
+    const title = resume.personal?.title?.trim();
+    const prev = prevPersonalRef.current;
+    if ((name || title) && (name !== prev.name || title !== prev.title)) {
+      prevPersonalRef.current = { name: name || '', title: title || '' };
+      // Only auto-update if user hasn't customized the name
+      setResumeName(current => {
+        if (current === 'Untitled Resume' || current === '' ||
+            (prev.name && current === prev.name) ||
+            (prev.name && prev.title && current === `${prev.name} - ${prev.title}`)) {
+          if (name && title) return `${name} - ${title}`;
+          if (name) return name;
+          if (title) return title;
+        }
+        return current;
+      });
+    }
+  }, [resume.personal?.name, resume.personal?.title, setResumeName]);
+
   // Template selection from gallery
   const handleSelectTemplate = (templateId, accentColor) => {
     switchTemplate(templateId);
@@ -201,7 +224,7 @@ export default function ResumeIO() {
       const printCss = `
         @page {
           size: A4;
-          margin: 15mm 18mm; /* Standard document margin: top/bottom 15mm, left/right 18mm */
+          margin: 15mm 18mm; /* Standard document margin — like Word */
         }
         * { box-sizing: border-box; }
         html, body {
@@ -213,11 +236,14 @@ export default function ResumeIO() {
           color-adjust: exact !important;
         }
 
-        /* Make resume fill the full page */
+        /* Resume container fills full width within page margins */
         body > div {
           width: 100% !important;
           max-width: 100% !important;
-          min-height: calc(297mm - 30mm); /* A4 height minus top+bottom margins */
+          /* CRITICAL: Override template's min-height: 1123px to prevent blank last page.
+             The browser already adds proper page height via @page rules.
+             We only want 1 page minimum, so use 'auto' after the first page fills. */
+          min-height: 0 !important;
         }
 
         /* Page break rules */
@@ -245,20 +271,20 @@ export default function ResumeIO() {
           break-after: avoid; page-break-after: avoid;
         }
 
-        /* Italic divs (company/subtitle stay with header above) */
+        /* Italic divs (company/subtitle) stay with the header above */
         div[style*="font-style: italic"] {
           break-before: avoid; page-break-before: avoid;
         }
 
-        /* Sidebar & two-column backgrounds — must print with color */
-        div[style*="background"], aside, .sidebar {
+        /* All backgrounds must print with color */
+        div[style*="background"] {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
 
-        /* Two-column layout: sidebar must extend full page height */
+        /* Two-column layout: sidebar stretches to content height (not forced full page) */
         div[style*="display: flex"] {
-          align-items: stretch !important;
+          align-items: stretch;
         }
       `;
 
@@ -359,7 +385,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
               onRefresh={loadSavedResumes}
               onCreateNew={() => { 
                 setResume(defaultResume); 
-                setResumeName('Untitled Resume'); 
+                setResumeName('Untitled Resume');
                 setView('editor'); 
               }} 
             />
@@ -386,6 +412,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
           removeSection={removeSection}
           reorderSections={reorderSections}
           onUploadResume={() => setShowUpload(true)}
+          onMyResumes={() => setView('gallery')}
         />
       );
       rightPanel = (
