@@ -8,6 +8,7 @@ export default function MyResumes({ resumes, onSelect, onCreateNew, onUploadResu
   const [renamingId, setRenamingId] = useState(null);
   const [renameValue, setRenameValue] = useState('');
   const menuRef = useRef(null);
+  const savedResumesRef = useRef(null);  // must be here — before any early returns
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -85,8 +86,6 @@ export default function MyResumes({ resumes, onSelect, onCreateNew, onUploadResu
   };
 
   if (isLoggedIn === null) return null;
-
-  const savedResumesRef = React.useRef(null);
 
   const quickActions = [
     {
