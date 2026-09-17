@@ -86,6 +86,8 @@ export default function MyResumes({ resumes, onSelect, onCreateNew, onUploadResu
 
   if (isLoggedIn === null) return null;
 
+  const savedResumesRef = React.useRef(null);
+
   const quickActions = [
     {
       emoji: '✨',
@@ -102,6 +104,14 @@ export default function MyResumes({ resumes, onSelect, onCreateNew, onUploadResu
       cta: 'Upload Resume →',
       color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE',
       onClick: onUploadResume,
+    },
+    {
+      emoji: '📂',
+      title: 'My Saved Resumes',
+      desc: 'Open or continue editing one of your previously saved resumes',
+      cta: 'View Saved →',
+      color: '#D97706', bg: '#FFFBEB', border: '#FDE68A',
+      onClick: () => savedResumesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
     },
     {
       emoji: '🎯',
@@ -143,7 +153,7 @@ export default function MyResumes({ resumes, onSelect, onCreateNew, onUploadResu
 
       {/* ─── Saved Resumes Section ──────────────────────── */}
       {isLoggedIn ? (
-        <div>
+        <div ref={savedResumesRef}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <h2 style={{ fontSize: '20px', fontWeight: '700', color: 'var(--theme-text, #E8E6F0)', margin: 0 }}>
               📂 My Saved Resumes
