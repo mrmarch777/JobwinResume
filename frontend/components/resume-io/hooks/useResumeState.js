@@ -73,7 +73,7 @@ const defaultResume = {
   fontFamily: 'DM Sans',
 
   // Content sections
-  personal: { name: '', title: '', email: '', phone: '', location: '', linkedin: '', website: '', photo: null },
+  personal: { name: '', title: '', email: '', phone: '', location: '', linkedin: '', website: '', photo: null, dob: '', address: '' },
   summary: '',
   experience: [{ id: generateId('exp'), title: '', company: '', location: '', startDate: '', endDate: '', current: false, bullets: [''] }],
   education: [{ id: generateId('edu'), degree: '', field: '', institution: '', year: '', grade: '' }],
@@ -82,6 +82,9 @@ const defaultResume = {
   certifications: [],
   languages: [],
   achievements: [],
+  hobbies: [],
+  strengths: [],
+  declaration: { text: '', place: '', date: '' },
   customSections: [],
   sectionOrder: ['personal', 'summary', 'experience', 'education', 'skills'],
   enabledSections: ['personal', 'summary', 'experience', 'education', 'skills'],
@@ -112,6 +115,9 @@ function sanitizeResume(data) {
       certifications: Array.isArray(data.certifications) ? data.certifications : [],
       languages: Array.isArray(data.languages) ? data.languages : [],
       achievements: Array.isArray(data.achievements) ? data.achievements : [],
+      hobbies: Array.isArray(data.hobbies) ? data.hobbies : [],
+      strengths: Array.isArray(data.strengths) ? data.strengths : [],
+      declaration: (data.declaration && typeof data.declaration === 'object') ? { text: data.declaration.text || '', place: data.declaration.place || '', date: data.declaration.date || '' } : { text: '', place: '', date: '' },
       customSections: Array.isArray(data.customSections) ? data.customSections : [],
       sectionOrder: Array.isArray(data.sectionOrder) && data.sectionOrder.length > 0
         ? data.sectionOrder

@@ -28,7 +28,7 @@ const sectionComponents = {
   declaration: { component: Declaration, icon: '✒️', title: 'Declaration', required: false, helperText: 'Formal declaration statement.' },
 };
 
-export default function SectionManager({ resume, updateSection, updateSettings, addSection, removeSection, reorderSections, onUploadResume }) {
+export default function SectionManager({ resume, updateSection, updateSettings, addSection, removeSection, reorderSections, onUploadResume, onMyResumes }) {
   const [expandedSection, setExpandedSection] = useState('personal');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customSectionName, setCustomSectionName] = useState('');
