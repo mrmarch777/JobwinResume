@@ -59,9 +59,13 @@ class ErrorBoundary extends React.Component {
               Go to Dashboard
             </button>
           </div>
-          <details style={{ marginTop: '24px', color: '#9CA3AF', fontSize: '12px', maxWidth: '500px' }}>
-            <summary style={{ cursor: 'pointer' }}>Error details</summary>
-            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', marginTop: '8px' }}>{this.state.error?.toString()}</pre>
+          <details style={{ marginTop: '24px', color: '#9CA3AF', fontSize: '12px', maxWidth: '600px', width: '100%' }}>
+            <summary style={{ cursor: 'pointer', fontWeight: '600', color: '#374151' }}>▶ Error details (share this with support)</summary>
+            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', marginTop: '8px', background: '#F3F4F6', padding: '12px', borderRadius: '8px', color: '#374151', fontSize: '11px', textAlign: 'left' }}>
+              {this.state.error?.toString()}
+              {'\n\n'}
+              {this.state.error?.stack}
+            </pre>
           </details>
         </div>
       );
@@ -386,6 +390,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
               onSelect={handleSelectSaved} 
               onRefresh={loadSavedResumes}
               onCreateNew={() => { 
+                try { localStorage.removeItem('jobwin_resume_draft'); } catch(e) {}
                 setResume(defaultResume); 
                 setResumeName('Untitled Resume');
                 setView('editor'); 

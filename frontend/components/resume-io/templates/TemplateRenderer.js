@@ -47,7 +47,8 @@ const templates = {
 // that don't know about custom sections
 const BUILTIN_SECTIONS = new Set([
   'personal','summary','experience','education','skills',
-  'projects','certifications','languages','achievements'
+  'projects','certifications','languages','achievements',
+  'strengths','hobbies','declaration'
 ]);
 
 export default function TemplateRenderer({ resume }) {
