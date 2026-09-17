@@ -117,27 +117,29 @@ export default function ResumeIO() {
   }, [view]);
 
   // Auto-set resume name to "Name - Role" when personal info is filled in
-  // Only do this when name is still default ("Untitled Resume") — don't overwrite user's custom name
+  // Only updates if name is still default — won't overwrite user's custom title
+  const resumeNameRef = React.useRef(resumeName);
+  React.useEffect(() => { resumeNameRef.current = resumeName; }, [resumeName]);
+
   const prevPersonalRef = React.useRef({ name: '', title: '' });
   React.useEffect(() => {
-    const name = resume.personal?.name?.trim();
-    const title = resume.personal?.title?.trim();
+    const name = resume.personal?.name?.trim() || '';
+    const title = resume.personal?.title?.trim() || '';
     const prev = prevPersonalRef.current;
-    if ((name || title) && (name !== prev.name || title !== prev.title)) {
-      prevPersonalRef.current = { name: name || '', title: title || '' };
-      // Only auto-update if user hasn't customized the name
-      setResumeName(current => {
-        if (current === 'Untitled Resume' || current === '' ||
-            (prev.name && current === prev.name) ||
-            (prev.name && prev.title && current === `${prev.name} - ${prev.title}`)) {
-          if (name && title) return `${name} - ${title}`;
-          if (name) return name;
-          if (title) return title;
-        }
-        return current;
-      });
+    if (!name && !title) return;
+    if (name === prev.name && title === prev.title) return;
+    prevPersonalRef.current = { name, title };
+
+    const current = resumeNameRef.current;
+    const wasDefault = current === 'Untitled Resume' || current === '' ||
+      (prev.name && current === prev.name) ||
+      (prev.name && prev.title && current === `${prev.name} - ${prev.title}`);
+
+    if (wasDefault) {
+      const newName = name && title ? `${name} - ${title}` : (name || title);
+      setResumeName(newName);
     }
-  }, [resume.personal?.name, resume.personal?.title, setResumeName]);
+  }, [resume.personal?.name, resume.personal?.title]); // eslint-disable-line
 
   // Template selection from gallery
   const handleSelectTemplate = (templateId, accentColor) => {
@@ -387,7 +389,19 @@ xmlns="http://www.w3.org/TR/REC-html40">
                 setResume(defaultResume); 
                 setResumeName('Untitled Resume');
                 setView('editor'); 
-              }} 
+              }}
+              onUploadResume={() => {
+                setResume(defaultResume);
+                setResumeName('Untitled Resume');
+                setView('editor');
+                // Small delay so editor mounts before opening upload modal
+                setTimeout(() => setShowUpload(true), 150);
+              }}
+              onCheckATS={() => {
+                setView('editor');
+                setActiveTab('ai-review');
+                setTimeout(() => setShowATSChecker(true), 150);
+              }}
             />
           </div>
           <TemplateGallery onSelect={handleSelectTemplate} onBack={() => router.push('/dashboard')} />
