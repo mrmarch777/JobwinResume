@@ -191,35 +191,45 @@ export default function useResumeState() {
     return () => window.removeEventListener('keydown', handler);
   }, [undo, redo]);
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount — scoped to the logged-in user
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('jobwin_resume_draft');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const { _name, _id, ...resumeData } = parsed;
-        const clean = sanitizeResume(resumeData);
-        // Initialise history with the loaded state
-        historyRef.current = [clean];
-        historyIndexRef.current = 0;
-        skipHistoryRef.current = true;
-        setResumeState(clean);
-        skipHistoryRef.current = false;
-        if (_name) setResumeName(_name);
-        if (_id) setResumeId(_id);
+    const loadDraft = async () => {
+      try {
+        // Get user id first so we use the correct namespaced key
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id || 'guest';
+        const DRAFT_KEY = `jobwin_resume_draft_${uid}`;
+
+        const saved = localStorage.getItem(DRAFT_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const { _name, _id, ...resumeData } = parsed;
+          const clean = sanitizeResume(resumeData);
+          historyRef.current = [clean];
+          historyIndexRef.current = 0;
+          skipHistoryRef.current = true;
+          setResumeState(clean);
+          skipHistoryRef.current = false;
+          if (_name) setResumeName(_name);
+          if (_id) setResumeId(_id);
+        }
+      } catch (e) {
+        console.warn('Failed to load draft, starting fresh:', e);
       }
-    } catch (e) {
-      console.warn('Failed to load draft, starting fresh:', e);
-      try { localStorage.removeItem('jobwin_resume_draft'); } catch (_) {}
-    }
+    };
+    loadDraft();
   }, []);
 
-  // Debounced localStorage auto-save (1 s)
+
+  // Debounced localStorage auto-save (1s) — scoped to logged-in user
   useEffect(() => {
     setSaveStatus('saving');
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       try {
-        localStorage.setItem('jobwin_resume_draft', JSON.stringify({ ...resume, _name: resumeName, _id: resumeId }));
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id || 'guest';
+        const DRAFT_KEY = `jobwin_resume_draft_${uid}`;
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...resume, _name: resumeName, _id: resumeId }));
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 2000);
       } catch (e) {
@@ -229,6 +239,7 @@ export default function useResumeState() {
     }, 1000);
     return () => clearTimeout(timer);
   }, [resume, resumeName, resumeId]);
+
 
   const saveDraft = useCallback(async () => {
     try {

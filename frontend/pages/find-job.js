@@ -36,17 +36,32 @@ export default function FindJob() {
   const [savedJobIds, setSavedJobIds] = useState(new Set());
   const [savedJobs, setSavedJobs] = useState([]);
 
-  const SAVED_JOBS_KEY = 'jobwin_saved_jobs';
+  const [currentUserId, setCurrentUserId] = useState('guest');
+
+  // Resolve user ID for namespaced localStorage keys
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUserId(session?.user?.id || 'guest');
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUserId(session?.user?.id || 'guest');
+    });
+    return () => subscription?.unsubscribe();
+  }, []);
+
+  // Scoped per user — CRITICAL for privacy
+  const SAVED_JOBS_KEY = `jobwin_saved_jobs_${currentUserId}`;
   const getSavedJobs = () => { 
-    if (typeof window === "undefined") return [];
+    if (typeof window === 'undefined') return [];
     try { return JSON.parse(localStorage.getItem(SAVED_JOBS_KEY) || '[]'); } catch { return []; } 
   };
 
+  // Reload saved jobs when user changes
   useEffect(() => {
     const saved = getSavedJobs();
     setSavedJobs(saved);
     setSavedJobIds(new Set(saved.map(j => j.job_id)));
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -65,6 +80,7 @@ export default function FindJob() {
     setSavedJobs(saved);
     setSavedJobIds(new Set(saved.map(j => j.job_id)));
   };
+
 
   const loadingThemes = [
     { icon: "🐝", steps: ["Bzzzz... scanning job boards!", "Collecting the sweetest opportunities...", "Almost done buzzing!", "Results almost ready!"], color: "#FFB347", label: "Bee" },

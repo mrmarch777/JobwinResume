@@ -103,9 +103,24 @@ export default function ResumeIO() {
   const [showATSChecker, setShowATSChecker] = useState(false);
   
   const [savedResumes, setSavedResumes] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState('guest');
 
-  // Helpers to read/write localStorage resume list
-  const LOCAL_RESUMES_KEY = 'jobwin_local_resumes';
+  // Resolve and track the logged-in user ID — drives namespaced localStorage keys
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUserId(session?.user?.id || 'guest');
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const uid = session?.user?.id || 'guest';
+      setCurrentUserId(uid);
+      // Reload resumes for the new user on login/logout
+      setSavedResumes([]);
+    });
+    return () => subscription?.unsubscribe();
+  }, []);
+
+  // localStorage key scoped to each user — CRITICAL for privacy
+  const LOCAL_RESUMES_KEY = `jobwin_local_resumes_${currentUserId}`;
 
   const getLocalResumes = () => {
     try { return JSON.parse(localStorage.getItem(LOCAL_RESUMES_KEY) || '[]'); }
@@ -129,6 +144,7 @@ export default function ResumeIO() {
     try {
       const localResumes = getLocalResumes();
       const { data: { session } } = await supabase.auth.getSession();
+      // Supabase query is ALWAYS filtered by user_id server-side
       if (!session?.user) { setSavedResumes(localResumes); return; }
       const { data } = await supabase.from('resumes').select('*').eq('user_id', session.user.id).order('updated_at', { ascending: false }).limit(20);
       const supabaseIds = new Set((data || []).map(r => r.id));
@@ -139,7 +155,8 @@ export default function ResumeIO() {
 
   useEffect(() => {
     loadSavedResumes();
-  }, [view]);
+  }, [view, currentUserId]); // re-load when user switches accounts
+
 
   // Auto-set resume name to "Name - Role" when personal info is filled in
   // Only updates if name is still default — won't overwrite user's custom title
