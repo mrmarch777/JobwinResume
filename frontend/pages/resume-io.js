@@ -94,26 +94,37 @@ export default function ResumeIO() {
   
   const [savedResumes, setSavedResumes] = useState([]);
 
+  // Helpers to read/write localStorage resume list
+  const LOCAL_RESUMES_KEY = 'jobwin_local_resumes';
+
+  const getLocalResumes = () => {
+    try { return JSON.parse(localStorage.getItem(LOCAL_RESUMES_KEY) || '[]'); }
+    catch { return []; }
+  };
+
+  const saveToLocalList = (resumeData, nameOverride) => {
+    try {
+      const existing = getLocalResumes();
+      const id = resumeId || `local-${Date.now()}`;
+      const title = nameOverride || resumeName || 'Untitled Resume';
+      const payload = { id, title, template: resumeData.templateId || 'classic', form_data: resumeData, updated_at: new Date().toISOString(), source: 'local' };
+      const idx = existing.findIndex(r => r.id === id);
+      if (idx >= 0) existing[idx] = payload; else existing.unshift(payload);
+      localStorage.setItem(LOCAL_RESUMES_KEY, JSON.stringify(existing.slice(0, 20)));
+      return id;
+    } catch { return null; }
+  };
+
   const loadSavedResumes = async () => {
     try {
+      const localResumes = getLocalResumes();
       const { data: { session } } = await supabase.auth.getSession();
-      console.log('[MyResumes] session:', session?.user?.email);
-      if (!session?.user) {
-        console.warn('[MyResumes] No session — user not logged in, cannot load saved resumes');
-        setSavedResumes([]);
-        return;
-      }
-      const { data, error } = await supabase
-        .from('resumes')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('updated_at', { ascending: false })
-        .limit(20);
-      console.log('[MyResumes] loaded resumes:', data?.length, error);
-      if (data) setSavedResumes(data);
-    } catch (e) { 
-      console.error('[MyResumes] load error:', e); 
-    }
+      if (!session?.user) { setSavedResumes(localResumes); return; }
+      const { data } = await supabase.from('resumes').select('*').eq('user_id', session.user.id).order('updated_at', { ascending: false }).limit(20);
+      const supabaseIds = new Set((data || []).map(r => r.id));
+      const localOnly = localResumes.filter(r => !supabaseIds.has(r.id));
+      setSavedResumes([...(data || []), ...localOnly]);
+    } catch { setSavedResumes(getLocalResumes()); }
   };
 
   useEffect(() => {
@@ -525,7 +536,12 @@ xmlns="http://www.w3.org/TR/REC-html40">
           onExport={handleExport}
           resumeName={resumeName}
           onRenameSave={setResumeName}
-          onSaveDraft={saveDraft}
+          onSaveDraft={async () => {
+            // Always save to local list (works without login)
+            saveToLocalList(resume, resumeName);
+            // Also save to Supabase if logged in
+            return saveDraft();
+          }}
           saveStatus={saveStatus}
           onUndo={undo}
           onRedo={redo}
