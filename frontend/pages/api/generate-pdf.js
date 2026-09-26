@@ -34,16 +34,20 @@ export default async function handler(req, res) {
 
     const page = await browser.newPage();
     
-    // Set full HTML content
+    // CRITICAL: Emulate print media so @media print CSS rules apply correctly
+    await page.emulateMediaType('print');
+    
+    // Set full HTML content — wait for all resources to settle
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
-    // Generate PDF with proper A4 settings and document margins
+    // Generate PDF — Research finding: @page CSS margin and Puppeteer margin STACK (double margin bug).
+    // Fix: Set Puppeteer margin to 0, let CSS @page { margin: 20mm 18mm } be the ONLY source of margins.
+    // Use preferCSSPageSize:true so CSS @page size rules take full precedence.
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
-      // 15mm top/bottom, 18mm left/right — matches the @page margin in the print CSS
-      // This gives the resume a proper document look (like Word) with white borders
-      margin: { top: '15mm', right: '18mm', bottom: '15mm', left: '18mm' },
+      preferCSSPageSize: true,
+      margin: { top: 0, right: 0, bottom: 0, left: 0 },
     });
 
     res.setHeader('Content-Type', 'application/pdf');

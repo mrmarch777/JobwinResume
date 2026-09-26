@@ -1,8 +1,12 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import TemplateRenderer from './templates/TemplateRenderer';
 
-const A4_WIDTH = 794;
-const A4_HEIGHT = 1123;
+const A4_WIDTH = 794;   // A4 at 96dpi
+const A4_HEIGHT = 1123; // A4 at 96dpi (full page)
+// Content area height after @page margins (18mm top + 18mm bottom at 96dpi = 18/25.4*96 ≈ 68px each)
+// 1123 - 68 - 68 = 987px usable content per page. Preview uses this for accurate page break preview.
+const PAGE_MARGIN_PX = 68; // 18mm at 96dpi
+const PAGE_CONTENT_HEIGHT = A4_HEIGHT - PAGE_MARGIN_PX * 2; // 987px
 const PAGE_GAP = 24;
 
 /**
@@ -89,11 +93,11 @@ export default function LivePreview({ resume }) {
     if (!hiddenRef.current || !contentRef.current) return;
 
     contentRef.current.innerHTML = hiddenRef.current.innerHTML;
-    applyPageBreaks(contentRef.current, A4_HEIGHT);
+    applyPageBreaks(contentRef.current, PAGE_CONTENT_HEIGHT);
 
     const h = contentRef.current.scrollHeight;
     setContentHeight(h);
-    setTotalPages(Math.max(1, Math.ceil(h / A4_HEIGHT)));
+    setTotalPages(Math.max(1, Math.ceil(h / PAGE_CONTENT_HEIGHT)));
   }, [resume]);  // ONLY resume — not isEditing
 
   // Recalculate pages after user edits (debounced)
@@ -101,10 +105,10 @@ export default function LivePreview({ resume }) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       if (!contentRef.current) return;
-      applyPageBreaks(contentRef.current, A4_HEIGHT);
+      applyPageBreaks(contentRef.current, PAGE_CONTENT_HEIGHT);
       const h = contentRef.current.scrollHeight;
       setContentHeight(h);
-      setTotalPages(Math.max(1, Math.ceil(h / A4_HEIGHT)));
+      setTotalPages(Math.max(1, Math.ceil(h / PAGE_CONTENT_HEIGHT)));
     }, 400);
   }, []);
 

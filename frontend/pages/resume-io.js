@@ -232,79 +232,97 @@ export default function ResumeIO() {
       // Build the outermost container from the source (preserves template styles)
       const wrapper = source.cloneNode(false);
       wrapper.innerHTML = cleanHtml;
-      // A4 at 96dpi = 794px wide. Must fill exact A4 width with no outer margin
-      // since @page margin handles the white space.
       wrapper.style.width = '100%';
-      wrapper.style.minHeight = '1123px'; // A4 height at 96dpi — fills full page
+      wrapper.style.minHeight = '0'; // CRITICAL: do NOT force 1123px — causes blank last page
       wrapper.removeAttribute('contenteditable');
 
+      // RESEARCH-BACKED CSS:
+      // - @page margin is the ONLY margin source (Puppeteer margin is set to 0)
+      // - preferCSSPageSize:true means @page { size } takes effect
+      // - break-inside:avoid must be on PARENT containers, not just li/p
+      // - emulateMediaType('print') ensures these rules apply in Puppeteer
       const printCss = `
-                @page {
+        @page {
           size: A4;
-          margin: 15mm 18mm; /* Standard document margin — like Word */
+          margin: 18mm 16mm 18mm 16mm; /* top right bottom left — single source of truth */
         }
-        body > div { min-height: 0 !important; }
-        [data-page-spacer] { display: none !important; }
-        * { box-sizing: border-box; }
         html, body {
           margin: 0;
           padding: 0;
           background: white;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
-          color-adjust: exact !important;
         }
-
-        /* Resume container fills full width within page margins */
+        /* Template container: fill full width, no forced height */
         body > div {
           width: 100% !important;
           max-width: 100% !important;
-          /* CRITICAL: Override template's min-height: 1123px to prevent blank last page.
-             The browser already adds proper page height via @page rules.
-             We only want 1 page minimum, so use 'auto' after the first page fills. */
           min-height: 0 !important;
+          box-sizing: border-box !important;
         }
 
-        /* Page break rules */
-        li, p { break-inside: avoid; page-break-inside: avoid; orphans: 3; widows: 3; }
-        h1, h2, h3, h4, h5, h6 {
-          break-after: avoid; page-break-after: avoid;
+        /* ── Page Break Rules (research-proven for Puppeteer) ── */
+        
+        /* List items: keep each bullet on one page */
+        ul, ol { break-inside: avoid; page-break-inside: avoid; }
+        li { 
           break-inside: avoid; page-break-inside: avoid;
+          orphans: 3; widows: 3;
+        }
+        
+        /* Paragraphs */
+        p { orphans: 3; widows: 3; break-inside: avoid; }
+
+        /* Section headings: NEVER orphaned at bottom of page */
+        h1, h2, h3, h4, h5, h6,
+        div[style*="text-transform: uppercase"],
+        div[style*="border-bottom"],
+        div[style*="UPPERCASE"] {
+          break-after: avoid !important;
+          page-break-after: avoid !important;
+          break-inside: avoid !important;
         }
 
-        /* Keep section headers with their content */
-        div[style*="border-bottom"], div[style*="text-transform: uppercase"] {
-          break-after: avoid; page-break-after: avoid;
-          break-inside: avoid; page-break-inside: avoid;
+        /* MOST IMPORTANT: Job/Education entry parent containers must NOT split.
+           These are the divs with marginBottom (spacing items) in templates. */
+        div[style*="margin-bottom"] {
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
 
-        /* Bold divs (job titles, section headers) */
-        div[style*="font-weight: bold"], div[style*="font-weight: 700"] {
-          break-inside: avoid; page-break-inside: avoid;
-          break-after: avoid; page-break-after: avoid;
+        /* Header rows (Title | Date on same line) stay together with their subtitle */
+        div[style*="justify-content: space-between"],
+        div[style*="space-between"] {
+          break-inside: avoid !important;
+          page-break-inside: avoid !important;
+          break-after: avoid !important;
+          page-break-after: avoid !important;
         }
 
-        /* Flex rows (title + date header rows) */
-        div[style*="justify-content: space-between"] {
-          break-inside: avoid; page-break-inside: avoid;
-          break-after: avoid; page-break-after: avoid;
+        /* Italic lines (company name) stay with the header above */
+        div[style*="font-style: italic"],
+        div[style*="italic"] {
+          break-before: avoid !important;
+          page-break-before: avoid !important;
         }
 
-        /* Italic divs (company/subtitle) stay with the header above */
-        div[style*="font-style: italic"] {
-          break-before: avoid; page-break-before: avoid;
+        /* Bold section headers stay with content below */
+        div[style*="font-weight: bold"],
+        div[style*="font-weight:bold"],
+        div[style*="font-weight: 700"],
+        div[style*="font-weight:700"] {
+          break-after: avoid !important;
+          page-break-after: avoid !important;
         }
 
-        /* All backgrounds must print with color */
-        div[style*="background"] {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
+        /* Backgrounds/colors must print */
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
-        /* Two-column layout: sidebar stretches to content height (not forced full page) */
-        div[style*="display: flex"] {
-          align-items: stretch;
-        }
+        /* Flex containers: stretch to content, not forced full-page height */
+        div[style*="display: flex"] { align-items: stretch; }
+
+        /* Hide preview spacers — CSS handles real breaks */
+        [data-page-spacer] { display: none !important; }
       `;
 
       const fullHtml = `<!DOCTYPE html>
