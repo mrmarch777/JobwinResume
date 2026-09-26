@@ -5,7 +5,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const { personal, experience, education, skills } = req.body;
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
   // Build prompt to create professional resume JSON
   const prompt = `You are a professional resume writer. Given this information, create a polished resume.
   Personal: ${JSON.stringify(personal)}
