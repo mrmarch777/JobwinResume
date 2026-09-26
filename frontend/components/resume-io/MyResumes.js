@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { FileText, Clock, LogIn, MoreVertical, Pencil, Copy, Trash2, Check } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
-export default function MyResumes({ resumes, onSelect, onCreateNew, onUploadResume, onCheckATS, onRefresh }) {
+export default function MyResumes({ resumes, onSelect, onCreateNew, onUploadResume, onCheckATS, onRefresh, onViewSaved }) {
   const [isLoggedIn, setIsLoggedIn] = useState(null);
   const [activeMenu, setActiveMenu] = useState(null);
   const [renamingId, setRenamingId] = useState(null);
@@ -109,10 +109,7 @@ export default function MyResumes({ resumes, onSelect, onCreateNew, onUploadResu
       desc: 'Open or continue editing one of your previously saved resumes',
       cta: 'View Saved →',
       color: '#D97706', bg: '#FFFBEB', border: '#FDE68A',
-      onClick: async () => {
-        await onRefresh?.();
-        setTimeout(() => savedResumesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
-      },
+      onClick: onViewSaved,
     },
     {
       emoji: '🎯',

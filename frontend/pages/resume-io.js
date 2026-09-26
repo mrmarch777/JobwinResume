@@ -85,7 +85,7 @@ export default function ResumeIO() {
     saveStatus, undo, redo, canUndo, canRedo,
   } = useResumeState();
 
-  const [view, setView] = useState('gallery'); // 'gallery' | 'editor'
+  const [view, setView] = useState('gallery'); // 'gallery' | 'editor' | 'saved'
   const [activeTab, setActiveTab] = useState('edit');
   const [showUpload, setShowUpload] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -236,15 +236,11 @@ export default function ResumeIO() {
       wrapper.style.minHeight = '0'; // CRITICAL: do NOT force 1123px — causes blank last page
       wrapper.removeAttribute('contenteditable');
 
-      // RESEARCH-BACKED CSS:
-      // - @page margin is the ONLY margin source (Puppeteer margin is set to 0)
-      // - preferCSSPageSize:true means @page { size } takes effect
-      // - break-inside:avoid must be on PARENT containers, not just li/p
-      // - emulateMediaType('print') ensures these rules apply in Puppeteer
       const printCss = `
         @page {
           size: A4;
-          margin: 18mm 16mm 18mm 16mm; /* top right bottom left — single source of truth */
+          /* NO margin here — Puppeteer page.pdf() margin option handles this.
+             Setting margin in BOTH places causes double-margin bug. */
         }
         html, body {
           margin: 0;
@@ -253,75 +249,60 @@ export default function ResumeIO() {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
-        /* Template container: fill full width, no forced height */
+        /* Template outer container */
         body > div {
           width: 100% !important;
           max-width: 100% !important;
           min-height: 0 !important;
           box-sizing: border-box !important;
         }
-
-        /* ── Page Break Rules (research-proven for Puppeteer) ── */
-        
-        /* List items: keep each bullet on one page */
-        ul, ol { break-inside: avoid; page-break-inside: avoid; }
-        li { 
-          break-inside: avoid; page-break-inside: avoid;
-          orphans: 3; widows: 3;
+        /* Template's own inner container forces minHeight:1123px — override to prevent blank page */
+        body > div > div, body > div > div > div {
+          min-height: 0 !important;
         }
-        
-        /* Paragraphs */
-        p { orphans: 3; widows: 3; break-inside: avoid; }
 
-        /* Section headings: NEVER orphaned at bottom of page */
+        /* ── Page Break Rules ── */
+        ul, ol { break-inside: avoid; page-break-inside: avoid; }
+        li { break-inside: avoid; page-break-inside: avoid; orphans: 3; widows: 3; }
+        p { orphans: 3; widows: 3; }
+
         h1, h2, h3, h4, h5, h6,
         div[style*="text-transform: uppercase"],
-        div[style*="border-bottom"],
-        div[style*="UPPERCASE"] {
+        div[style*="border-bottom"] {
           break-after: avoid !important;
           page-break-after: avoid !important;
           break-inside: avoid !important;
         }
 
-        /* MOST IMPORTANT: Job/Education entry parent containers must NOT split.
-           These are the divs with marginBottom (spacing items) in templates. */
+        /* Job/Education entry containers — prevent mid-entry splits */
         div[style*="margin-bottom"] {
           break-inside: avoid;
           page-break-inside: avoid;
         }
 
-        /* Header rows (Title | Date on same line) stay together with their subtitle */
-        div[style*="justify-content: space-between"],
-        div[style*="space-between"] {
+        /* Title | Date rows */
+        div[style*="justify-content: space-between"] {
           break-inside: avoid !important;
           page-break-inside: avoid !important;
           break-after: avoid !important;
           page-break-after: avoid !important;
         }
 
-        /* Italic lines (company name) stay with the header above */
-        div[style*="font-style: italic"],
-        div[style*="italic"] {
+        /* Company/subtitle stays with job title above */
+        div[style*="font-style: italic"] {
           break-before: avoid !important;
           page-break-before: avoid !important;
         }
 
-        /* Bold section headers stay with content below */
-        div[style*="font-weight: bold"],
-        div[style*="font-weight:bold"],
-        div[style*="font-weight: 700"],
-        div[style*="font-weight:700"] {
+        /* Section headers with content below */
+        div[style*="font-weight: bold"], div[style*="font-weight: 700"],
+        div[style*="font-weight:bold"], div[style*="font-weight:700"] {
           break-after: avoid !important;
           page-break-after: avoid !important;
         }
 
-        /* Backgrounds/colors must print */
         * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-
-        /* Flex containers: stretch to content, not forced full-page height */
         div[style*="display: flex"] { align-items: stretch; }
-
-        /* Hide preview spacers — CSS handles real breaks */
         [data-page-spacer] { display: none !important; }
       `;
 
@@ -430,7 +411,6 @@ xmlns="http://www.w3.org/TR/REC-html40">
                 setResume(defaultResume);
                 setResumeName('Untitled Resume');
                 setView('editor');
-                // Small delay so editor mounts before opening upload modal
                 setTimeout(() => setShowUpload(true), 150);
               }}
               onCheckATS={() => {
@@ -438,9 +418,74 @@ xmlns="http://www.w3.org/TR/REC-html40">
                 setActiveTab('ai-review');
                 setTimeout(() => setShowATSChecker(true), 150);
               }}
+              onViewSaved={() => {
+                loadSavedResumes();
+                setView('saved');
+              }}
             />
           </div>
           <TemplateGallery onSelect={handleSelectTemplate} onBack={() => router.push('/dashboard')} />
+        </main>
+      </div>
+      </ErrorBoundary>
+    );
+  }
+
+  // ─── Saved Resumes View ───────────────────────────────────
+  if (view === 'saved') {
+    return (
+      <ErrorBoundary>
+      <div style={{ display: 'flex', minHeight: '100vh', background: theme.bg, fontFamily: "'Inter', sans-serif" }}>
+        <PageHead title="My Saved Resumes | JobWin Resume" />
+        <main style={{ flex: 1, overflow: 'auto', padding: '40px' }}>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+            <button onClick={() => setView('gallery')} style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.12)', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              ← Back
+            </button>
+            <h1 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--theme-text, #E8E6F0)', margin: 0 }}>📂 My Saved Resumes</h1>
+            <button onClick={loadSavedResumes} style={{ marginLeft: 'auto', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>↻ Refresh</button>
+            <button onClick={() => { try { localStorage.removeItem('jobwin_resume_draft'); } catch(e) {} setResume(defaultResume); setResumeName('Untitled Resume'); setView('editor'); }} style={{ background: 'linear-gradient(135deg, #6C63FF, #2563EB)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
+              + Create New Resume
+            </button>
+          </div>
+
+          {/* Resumes Grid */}
+          {savedResumes.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: '16px' }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>📄</div>
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>No saved resumes yet</p>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', marginBottom: '24px' }}>Build your first resume and click Save to see it here.</p>
+              <button onClick={() => { setResume(defaultResume); setResumeName('Untitled Resume'); setView('editor'); }} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #6C63FF, #2563EB)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>
+                ✨ Create My First Resume
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
+              {savedResumes.map(r => {
+                let accent = '#2563EB';
+                try { const fd = typeof r.form_data === 'string' ? JSON.parse(r.form_data) : r.form_data; accent = fd?.accentColor || '#2563EB'; } catch {}
+                const updDate = r.updated_at ? new Date(r.updated_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+                return (
+                  <div key={r.id} onClick={() => handleSelectSaved(r)} style={{ background: '#fff', borderRadius: '14px', padding: '24px', cursor: 'pointer', position: 'relative', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', transition: 'all 0.2s' }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = `0 12px 32px ${accent}25`; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'; }}
+                  >
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '5px', background: accent }} />
+                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#111827', marginBottom: '6px', marginTop: '8px' }}>{r.title || 'Untitled Resume'}</div>
+                    <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '12px' }}>Updated {updDate}</div>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+                      <span style={{ background: '#F3F4F6', color: '#374151', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', textTransform: 'capitalize' }}>{r.template || 'classic'}</span>
+                      {r.source === 'local' && <span style={{ background: '#FEF3C7', color: '#92400E', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' }}>💾 Local</span>}
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); handleSelectSaved(r); }} style={{ marginTop: '16px', width: '100%', padding: '8px', background: accent, color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                      Open & Edit →
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </main>
       </div>
       </ErrorBoundary>
@@ -552,7 +597,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
         <EditorShell
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          onBack={() => setView('gallery')}
+          onBack={() => { saveToLocalList(resume, resumeName); setView('gallery'); }}
           onExport={handleExport}
           resumeName={resumeName}
           onRenameSave={setResumeName}

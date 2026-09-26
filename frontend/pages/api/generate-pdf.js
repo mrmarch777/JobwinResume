@@ -34,20 +34,17 @@ export default async function handler(req, res) {
 
     const page = await browser.newPage();
     
-    // CRITICAL: Emulate print media so @media print CSS rules apply correctly
+    // Must emulate print BEFORE setContent so @media print CSS rules apply
     await page.emulateMediaType('print');
     
-    // Set full HTML content — wait for all resources to settle
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
-    // Generate PDF — Research finding: @page CSS margin and Puppeteer margin STACK (double margin bug).
-    // Fix: Set Puppeteer margin to 0, let CSS @page { margin: 20mm 18mm } be the ONLY source of margins.
-    // Use preferCSSPageSize:true so CSS @page size rules take full precedence.
+    // Use Puppeteer margin as the ONLY margin source.
+    // Do NOT also set @page margin in CSS — they stack and double the margin.
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
-      preferCSSPageSize: true,
-      margin: { top: 0, right: 0, bottom: 0, left: 0 },
+      margin: { top: '18mm', right: '15mm', bottom: '18mm', left: '15mm' },
     });
 
     res.setHeader('Content-Type', 'application/pdf');
