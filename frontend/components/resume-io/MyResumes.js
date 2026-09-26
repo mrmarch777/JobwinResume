@@ -40,15 +40,31 @@ export default function MyResumes({ resumes, onSelect, onCreateNew, onUploadResu
     } catch { return '#2563EB'; }
   };
 
-  const handleDelete = async (resumeId, e) => {
+  const handleDelete = async (resume, e) => {
     e.stopPropagation();
     setActiveMenu(null);
     if (!window.confirm('Delete this resume? This cannot be undone.')) return;
     try {
-      await supabase.from('resumes').delete().eq('id', resumeId);
+      if (resume.source === 'local') {
+        // Delete from localStorage — find the user-scoped key
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id || 'guest';
+        const key = `jobwin_local_resumes_${uid}`;
+        const existing = JSON.parse(localStorage.getItem(key) || '[]');
+        const updated = existing.filter(r => r.id !== resume.id);
+        localStorage.setItem(key, JSON.stringify(updated));
+      } else {
+        // Delete from Supabase
+        const { error } = await supabase.from('resumes').delete().eq('id', resume.id);
+        if (error) throw error;
+      }
       onRefresh?.();
-    } catch (err) { console.error('Delete failed:', err); }
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('Failed to delete resume. Please try again.');
+    }
   };
+
 
   const handleDuplicate = async (resume, e) => {
     e.stopPropagation();
@@ -200,7 +216,7 @@ export default function MyResumes({ resumes, onSelect, onCreateNew, onUploadResu
                           {[
                             { icon: Pencil, label: 'Rename', color: '#374151', action: (e) => handleRenameStart(resume, e) },
                             { icon: Copy, label: 'Duplicate', color: '#374151', action: (e) => handleDuplicate(resume, e) },
-                            { icon: Trash2, label: 'Delete', color: '#DC2626', action: (e) => handleDelete(resume.id, e), danger: true },
+                            { icon: Trash2, label: 'Delete', color: '#DC2626', action: (e) => handleDelete(resume, e), danger: true },
                           ].map(({ icon: Icon, label, color, action, danger }) => (
                             <button key={label} onClick={action} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', color, textAlign: 'left', borderTop: danger ? '1px solid #F3F4F6' : 'none' }} onMouseEnter={e => { e.currentTarget.style.background = danger ? '#FEF2F2' : '#F9FAFB'; }} onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}>
                               <Icon size={14} />{label}

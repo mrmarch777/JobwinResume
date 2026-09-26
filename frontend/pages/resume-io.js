@@ -282,9 +282,18 @@ export default function ResumeIO() {
           max-width: 100% !important;
           min-height: 0 !important;
           box-sizing: border-box !important;
+          /* Remove template outer wrapper padding — Puppeteer margin handles all spacing */
+          padding: 0 !important;
+          margin: 0 !important;
         }
-        /* Template's own inner container forces minHeight:1123px — override to prevent blank page */
-        body > div > div, body > div > div > div {
+        /* Template's inner containers: remove forced minHeight (causes blank last page)
+           and remove padding so Puppeteer margin is the ONLY source of whitespace */
+        body > div > div {
+          min-height: 0 !important;
+          padding: 0 !important;
+        }
+        /* Two-column sidebar templates: the content column keeps its own padding */
+        body > div > div > div {
           min-height: 0 !important;
         }
 
