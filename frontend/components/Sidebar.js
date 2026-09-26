@@ -13,6 +13,7 @@ export default function Sidebar({ activeId, collapsed, setCollapsed, user }) {
     { id: "home", icon: "⊞", label: "Home", href: "/dashboard" },
     { id: "profile", icon: "👤", label: "Profile", href: "/profile" },
     { id: "resume-io", icon: "📄", label: "Resume Builder", href: "/resume-io" },
+    { id: "ai-builder", icon: "🤖", label: "AI Builder", href: "/ai-resume-builder" },
     { id: "jobs", icon: "🔍", label: "Find Job", href: "/find-job" },
     { id: "tracker", icon: "📊", label: "Application Tracker", href: "/tracker" },
     { id: "cover", icon: "✉️", label: "Cover Letter", href: "/cover-letter" },

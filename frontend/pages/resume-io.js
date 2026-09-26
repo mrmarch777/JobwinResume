@@ -86,6 +86,16 @@ export default function ResumeIO() {
   } = useResumeState();
 
   const [view, setView] = useState('gallery'); // 'gallery' | 'editor' | 'saved'
+
+  useEffect(() => {
+    if (router.query.from === 'wizard') {
+      try {
+        const data = JSON.parse(localStorage.getItem('jobwin_wizard_resume') || '{}');
+        if (data.personal) { setResume({ ...defaultResume, ...data }); setView('editor'); }
+        localStorage.removeItem('jobwin_wizard_resume');
+      } catch (err) {}
+    }
+  }, [router.query.from]);
   const [activeTab, setActiveTab] = useState('edit');
   const [showUpload, setShowUpload] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);

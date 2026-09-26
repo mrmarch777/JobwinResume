@@ -32,7 +32,39 @@ export default function FindJob() {
   const [progress, setProgress] = useState(0);
   const [fact, setFact] = useState(0);
   const [themeIdx] = useState(() => Math.floor(Math.random() * 4));
-  const [selectedJobJD, setSelectedJobJD] = useState(null);
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [savedJobIds, setSavedJobIds] = useState(new Set());
+  const [savedJobs, setSavedJobs] = useState([]);
+
+  const SAVED_JOBS_KEY = 'jobwin_saved_jobs';
+  const getSavedJobs = () => { 
+    if (typeof window === "undefined") return [];
+    try { return JSON.parse(localStorage.getItem(SAVED_JOBS_KEY) || '[]'); } catch { return []; } 
+  };
+
+  useEffect(() => {
+    const saved = getSavedJobs();
+    setSavedJobs(saved);
+    setSavedJobIds(new Set(saved.map(j => j.job_id)));
+  }, []);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setSelectedJob(null);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
+
+  const toggleSaveJob = (e, job) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const saved = getSavedJobs();
+    const idx = saved.findIndex(j => j.job_id === job.job_id);
+    if (idx >= 0) saved.splice(idx, 1); else saved.unshift(job);
+    localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(saved));
+    setSavedJobs(saved);
+    setSavedJobIds(new Set(saved.map(j => j.job_id)));
+  };
 
   const loadingThemes = [
     { icon: "🐝", steps: ["Bzzzz... scanning job boards!", "Collecting the sweetest opportunities...", "Almost done buzzing!", "Results almost ready!"], color: "#FFB347", label: "Bee" },
@@ -59,7 +91,7 @@ export default function FindJob() {
   ];
 
   const popularLocations = ["Mumbai", "Navi Mumbai", "Pune", "Bangalore", "Delhi NCR", "Hyderabad", "Remote 🌐"];
-  const filters = ["ALL", "FULL-TIME", "DESIGN", "ENGINEERING", "REMOTE", "FRESHERS"];
+  const filters = ["ALL", "SAVED", "FULL-TIME", "DESIGN", "ENGINEERING", "REMOTE", "FRESHERS"];
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -168,7 +200,7 @@ export default function FindJob() {
     router.push("/");
   };
 
-  const filteredJobs = jobs.filter(job => {
+  const filteredJobs = activeFilter === "SAVED" ? savedJobs : jobs.filter(job => {
     if (activeFilter === "ALL") return true;
     if (activeFilter === "REMOTE") return job.location?.toLowerCase().includes("remote") || job.job_type?.toLowerCase().includes("remote");
     if (activeFilter === "FULL-TIME") return job.job_type?.toLowerCase().includes("full");
@@ -288,7 +320,7 @@ export default function FindJob() {
               {filters.map(f => (
                 <button key={f} className="filter-pill" onClick={() => setActiveFilter(f)}
                   style={{ padding: "6px 16px", borderRadius: "100px", border: `1px solid ${activeFilter === f ? "rgba(108,99,255,0.5)" : t.border}`, background: activeFilter === f ? "rgba(108,99,255,0.15)" : "rgba(255,255,255,0.03)", color: activeFilter === f ? "#A29BFE" : t.muted, fontSize: "11px", fontWeight: "600", cursor: "pointer", transition: "all 0.2s", letterSpacing: "0.5px" }}>
-                  {f}
+                  {f === "SAVED" ? `Saved (${savedJobs.length})` : f}
                 </button>
               ))}
             </div>
@@ -360,15 +392,21 @@ export default function FindJob() {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "16px" }}>
                   {filteredJobs.map((job, i) => (
                     <div key={i} className="job-card" onMouseEnter={() => setHoveredJob(i)} onMouseLeave={() => setHoveredJob(null)}
-                      style={{ background: isSelected(job) ? "rgba(108,99,255,0.08)" : "rgba(255,255,255,0.03)", backdropFilter: "blur(20px)", border: `1px solid ${isSelected(job) ? "rgba(108,99,255,0.4)" : t.border}`, borderRadius: "20px", padding: "22px", position: "relative", animationDelay: `${i * 0.05}s` }}>
+                      onClick={() => setSelectedJob(job)}
+                      style={{ background: isSelected(job) ? "rgba(108,99,255,0.08)" : "rgba(255,255,255,0.03)", backdropFilter: "blur(20px)", border: `1px solid ${isSelected(job) ? "rgba(108,99,255,0.4)" : t.border}`, borderRadius: "20px", padding: "22px", position: "relative", animationDelay: `${i * 0.05}s`, cursor: "pointer" }}>
+
+                      {/* Bookmark */}
+                      <div onClick={(e) => toggleSaveJob(e, job)} style={{ position: "absolute", top: "16px", right: "46px", fontSize: "18px", cursor: "pointer", color: savedJobIds.has(job.job_id) ? "#FF6584" : t.muted, zIndex: 2 }}>
+                        {savedJobIds.has(job.job_id) ? "♥" : "♡"}
+                      </div>
 
                       {/* Checkbox */}
-                      <div onClick={() => toggleSelect(job)} style={{ position: "absolute", top: "16px", right: "16px", width: "22px", height: "22px", borderRadius: "6px", border: isSelected(job) ? "none" : `2px solid ${t.border}`, background: isSelected(job) ? "#6C63FF" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "white", fontWeight: "bold", fontSize: "11px", zIndex: 1 }}>
+                      <div onClick={(e) => { e.stopPropagation(); toggleSelect(job); }} style={{ position: "absolute", top: "16px", right: "16px", width: "22px", height: "22px", borderRadius: "6px", border: isSelected(job) ? "none" : `2px solid ${t.border}`, background: isSelected(job) ? "#6C63FF" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "white", fontWeight: "bold", fontSize: "11px", zIndex: 2 }}>
                         {isSelected(job) ? "✓" : ""}
                       </div>
 
                       {/* Company + title */}
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "14px", paddingRight: "32px" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "14px", paddingRight: "60px" }}>
                         <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: `rgba(108,99,255,0.15)`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "700", fontSize: "16px", color: "#6C63FF", flexShrink: 0 }}>
                           {job.company?.[0]?.toUpperCase()}
                         </div>
@@ -403,16 +441,16 @@ export default function FindJob() {
                       )}
 
                       {/* Actions */}
-                      <div style={{ display: "flex", gap: "8px" }}>
+                      <div style={{ display: "flex", gap: "8px" }} onClick={(e) => e.stopPropagation()}>
                         {job.apply_link && (
                           <a href={job.apply_link} target="_blank" rel="noreferrer" className="apply-btn"
                             style={{ flex: 1, padding: "9px", background: "linear-gradient(135deg,#6C63FF,#FF6584)", color: "white", border: "none", borderRadius: "8px", textDecoration: "none", textAlign: "center", fontSize: "12px", fontWeight: "600", display: "block", transition: "all 0.2s" }}>
                             Apply Now →
                           </a>
                         )}
-                        <button onClick={() => setSelectedJobJD(job)}
+                        <button onClick={() => setSelectedJob(job)}
                           style={{ padding: "9px 12px", background: "rgba(255,255,255,0.05)", color: "#A29BFE", border: `1px solid ${t.border}`, borderRadius: "8px", fontSize: "11px", fontWeight: "600", cursor: "pointer", transition: "all 0.2s" }}>
-                          📜 JD
+                          🔍 View Details
                         </button>
                         <button onClick={() => toggleSelect(job)}
                           style={{ padding: "9px 14px", background: isSelected(job) ? "rgba(108,99,255,0.2)" : "rgba(255,255,255,0.05)", color: isSelected(job) ? "#A29BFE" : t.muted, border: `1px solid ${isSelected(job) ? "rgba(108,99,255,0.4)" : t.border}`, borderRadius: "8px", fontSize: "12px", fontWeight: "500", cursor: "pointer", transition: "all 0.2s", whiteSpace: "nowrap" }}>
