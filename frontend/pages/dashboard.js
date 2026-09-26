@@ -48,6 +48,29 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ applied: 0, interviews: 0, offers: 0, saved: 0 });
   const [resumesCount, setResumesCount] = useState(0);
   const [recentResumes, setRecentResumes] = useState([]);
+  const [resumesCount, setResumesCount] = useState(0);
+  const [recentResumes, setRecentResumes] = useState([]);
+
+  
+  const fetchResumes = async (userId) => {
+    try {
+      let localResumes = [];
+      try {
+        localResumes = JSON.parse(localStorage.getItem('jobwin_local_resumes') || '[]');
+      } catch(e) {}
+      
+      setResumesCount(localResumes.length);
+      setRecentResumes(localResumes.slice(0, 3));
+      
+      const { data } = await supabase.from('resumes').select('*').eq('user_id', userId).order('updated_at', { ascending: false }).limit(3);
+      if (data && data.length > 0) {
+        setResumesCount((prev) => Math.max(prev, data.length)); // rough estimate
+        setRecentResumes(data.slice(0, 3));
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  };
 
   
   const fetchResumes = async (userId) => {
@@ -150,6 +173,7 @@ export default function Dashboard() {
       if (!session) { router.push("/login"); return; }
       setUser(session.user);
       fetchStats(session.user.id);
+      fetchResumes(session.user.id);
       fetchResumes(session.user.id);
       fetchActivities(session.user.id);
     });
@@ -498,7 +522,32 @@ export default function Dashboard() {
               )}
             </div>
 
+            
+            {/* Recent Activity (Resumes) */}
+            <div className="dash-card" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(20px)", border: `1px solid ${t.border}`, borderRadius: "24px", padding: "24px 28px", marginBottom: "16px" }}>
+              <h3 style={{ fontFamily: "'Noto Serif', serif", fontSize: "16px", fontWeight: "600", color: t.text, marginBottom: "16px" }}>📄 Recent Resumes</h3>
+              {recentResumes.length === 0 ? (
+                <p style={{ color: t.muted, fontSize: "13px" }}>No recent resumes found.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {recentResumes.map((resume, idx) => (
+                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", background: "rgba(255,255,255,0.02)", borderRadius: "12px", border: `1px solid ${t.border}` }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: "rgba(108,99,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>📄</div>
+                        <div>
+                          <div style={{ fontSize: "14px", fontWeight: "600", color: t.text }}>{resume.title || resume.name || "Untitled Resume"}</div>
+                          <div style={{ fontSize: "12px", color: t.muted }}>Updated {new Date(resume.updated_at).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                      <button onClick={() => router.push("/resume-io")} style={{ padding: "6px 12px", background: "rgba(108,99,255,0.1)", color: "#6C63FF", border: "none", borderRadius: "6px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>Edit</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Recent Activity Toggle */}
+
 
           <div className="dash-card mobile-card" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(20px)", border: `1px solid ${t.border}`, borderRadius: "24px", padding: showActivity ? "24px 28px" : "18px 28px", animationDelay: "0.5s", cursor: "pointer", marginBottom: "16px" }} onClick={() => setShowActivity(!showActivity)}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
