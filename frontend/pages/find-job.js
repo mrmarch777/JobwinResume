@@ -507,32 +507,68 @@ export default function FindJob() {
           </div>
       </main>
 
-      {/* ── JD MODAL ── */}
-      {selectedJobJD && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(10px)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }} onClick={() => setSelectedJobJD(null)}>
-          <div style={{ background: t.sidebar, border: `1px solid ${t.border}`, borderRadius: "24px", width: "100%", maxWidth: "700px", maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", boxShadow: "0 24px 80px rgba(0,0,0,0.5)" }} onClick={e => e.stopPropagation()}>
+      {/* ── FULL SCREEN JD MODAL ── */}
+      {selectedJob && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }} onClick={() => setSelectedJob(null)}>
+          <div style={{ background: t.sidebar, border: `1px solid ${t.border}`, borderRadius: "24px", width: "100%", maxWidth: "850px", height: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", boxShadow: "0 24px 80px rgba(0,0,0,0.5)" }} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div style={{ padding: "24px 32px", borderBottom: `1px solid ${t.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.02)" }}>
-              <div>
-                <h2 style={{ fontFamily: "'Noto Serif',serif", fontSize: "20px", fontWeight: "700", color: t.text, marginBottom: "4px" }}>{selectedJobJD.title}</h2>
-                <p style={{ color: "#6C63FF", fontSize: "14px", fontWeight: "600" }}>{selectedJobJD.company}</p>
+            <div style={{ padding: "32px", borderBottom: `1px solid ${t.border}`, display: "flex", justifyContent: "space-between", alignItems: "flex-start", background: "rgba(255,255,255,0.02)" }}>
+              <div style={{ flex: 1, paddingRight: "20px" }}>
+                <h2 style={{ fontFamily: "'Noto Serif',serif", fontSize: "28px", fontWeight: "700", color: t.text, marginBottom: "8px", lineHeight: "1.2" }}>{selectedJob.title}</h2>
+                <p style={{ color: "#6C63FF", fontSize: "18px", fontWeight: "600", marginBottom: "16px" }}>{selectedJob.company}</p>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <span style={{ background: "rgba(255,255,255,0.05)", color: t.muted, padding: "5px 12px", borderRadius: "100px", fontSize: "13px" }}>📍 {selectedJob.location}</span>
+                  <span style={{ background: "rgba(255,255,255,0.05)", color: t.muted, padding: "5px 12px", borderRadius: "100px", fontSize: "13px" }}>💼 {selectedJob.job_type || "Full-time"}</span>
+                  {selectedJob.date_posted && <span style={{ background: "rgba(255,179,71,0.1)", color: "#FFB347", padding: "5px 12px", borderRadius: "100px", fontSize: "13px" }}>🕐 {selectedJob.date_posted}</span>}
+                  {selectedJob.salary && selectedJob.salary !== "Not specified" && <span style={{ background: "rgba(67,217,162,0.1)", color: "#43D9A2", padding: "5px 12px", borderRadius: "100px", fontSize: "13px", fontWeight: "600" }}>{selectedJob.salary}</span>}
+                </div>
               </div>
-              <button onClick={() => setSelectedJobJD(null)} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${t.border}`, color: t.text, width: "36px", height: "36px", borderRadius: "50%", cursor: "pointer", fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+              <button onClick={() => setSelectedJob(null)} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${t.border}`, color: t.text, width: "40px", height: "40px", borderRadius: "50%", cursor: "pointer", fontSize: "20px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>×</button>
             </div>
+            
             {/* Content */}
-            <div style={{ padding: "32px", overflowY: "auto", flex: 1, lineHeight: "1.8", color: t.text, fontSize: "15px", whiteSpace: "pre-wrap" }}>
-              {selectedJobJD.description && selectedJobJD.description.trim() !== "" ? (
-                selectedJobJD.description
-              ) : (
-                <div style={{ textAlign: "center", padding: "40px 0", color: t.muted }}>
-                   <div style={{ fontSize: "40px", marginBottom: "16px" }}>📄</div>
-                   <p>NO JD mentioned for this job.</p>
+            <div style={{ padding: "32px", overflowY: "auto", flex: 1, color: t.text, fontSize: "15px" }}>
+              {selectedJob.key_skills && selectedJob.key_skills !== "Not specified" && (
+                <div style={{ marginBottom: "24px" }}>
+                  <h4 style={{ fontSize: "14px", fontWeight: "600", color: t.muted, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "1px" }}>Skills / Tags</h4>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {selectedJob.key_skills.split(",").map((s, j) => (
+                      <span key={j} style={{ background: "rgba(108,99,255,0.1)", color: "#A29BFE", border: "1px solid rgba(108,99,255,0.2)", padding: "4px 12px", borderRadius: "100px", fontSize: "12px", fontWeight: "500" }}>{s.trim()}</span>
+                    ))}
+                  </div>
                 </div>
               )}
+              
+              <h4 style={{ fontSize: "14px", fontWeight: "600", color: t.muted, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "1px" }}>Job Description</h4>
+              <div style={{ lineHeight: "1.8", whiteSpace: "pre-wrap" }}>
+                {selectedJob.description && selectedJob.description.trim() !== "" ? (
+                  selectedJob.description
+                ) : (
+                  <div style={{ textAlign: "center", padding: "40px 0", color: t.muted }}>
+                     <div style={{ fontSize: "40px", marginBottom: "16px" }}>📄</div>
+                     <p>NO JD mentioned for this job.</p>
+                  </div>
+                )}
+              </div>
             </div>
+            
             {/* Footer */}
-            <div style={{ padding: "20px 32px", borderTop: `1px solid ${t.border}`, background: "rgba(255,255,255,0.02)", display: "flex", justifyContent: "flex-end" }}>
-              <button onClick={() => setSelectedJobJD(null)} style={{ padding: "10px 24px", background: "rgba(255,255,255,0.05)", border: `1px solid ${t.border}`, color: t.text, borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>Close</button>
+            <div style={{ padding: "20px 32px", borderTop: `1px solid ${t.border}`, background: "rgba(255,255,255,0.02)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <button onClick={(e) => toggleSaveJob(e, selectedJob)} style={{ background: "none", border: "none", color: savedJobIds.has(selectedJob.job_id) ? "#FF6584" : t.muted, fontSize: "24px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
+                  {savedJobIds.has(selectedJob.job_id) ? "♥" : "♡"}
+                  <span style={{ fontSize: "14px", fontWeight: "600", color: t.text }}>{savedJobIds.has(selectedJob.job_id) ? "Saved" : "Save Job"}</span>
+                </button>
+              </div>
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button onClick={() => setSelectedJob(null)} style={{ padding: "12px 24px", background: "rgba(255,255,255,0.05)", border: `1px solid ${t.border}`, color: t.text, borderRadius: "10px", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>Close</button>
+                {selectedJob.apply_link && (
+                  <a href={selectedJob.apply_link} target="_blank" rel="noreferrer" 
+                    style={{ padding: "12px 28px", background: "linear-gradient(135deg,#6C63FF,#FF6584)", color: "white", border: "none", borderRadius: "10px", textDecoration: "none", textAlign: "center", fontSize: "14px", fontWeight: "700", display: "block", transition: "all 0.2s", boxShadow: "0 8px 24px rgba(108,99,255,0.3)" }}>
+                    Apply Now →
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         </div>
