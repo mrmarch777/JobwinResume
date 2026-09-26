@@ -20,6 +20,13 @@ import BoldTemplate from './templates/BoldTemplate';
 import IndustrialTemplate from './templates/IndustrialTemplate';
 import SpecialistTemplate from './templates/SpecialistTemplate';
 import TwoColumnTemplate from './templates/TwoColumnTemplate';
+import NeonTemplate from './templates/NeonTemplate';
+import TimelineTemplate from './templates/TimelineTemplate';
+import NavyTemplate from './templates/NavyTemplate';
+import SunsetTemplate from './templates/SunsetTemplate';
+import CompactTemplate from './templates/CompactTemplate';
+import AcademicTemplate from './templates/AcademicTemplate';
+
 
 const sampleResume = {
   templateId: 'classic',
@@ -135,6 +142,14 @@ const templatesData = [
   { id: 'industrial', name: 'Industrial', category: 'Modern', desc: 'Structured grid layout with technical feel.', component: IndustrialTemplate, colors: ['#1a1a2e','#2c3e50','#34495E'] },
   { id: 'specialist', name: 'Specialist', category: 'Professional', desc: 'Skills-focused layout for technical roles.', component: SpecialistTemplate, colors: ['#6C63FF','#0B7B3E','#E63946'] },
   { id: 'two-column', name: 'Two Column', category: 'Modern', desc: 'Balanced two-column professional layout.', component: TwoColumnTemplate, colors: ['#6C63FF','#2c3e50','#0A4A6B','#7C3AED'] },
+
+  { id: 'neon', name: 'Neon', category: 'Creative', desc: 'Dark theme with neon accents.', component: NeonTemplate, colors: ['#00FF88'] },
+  { id: 'timeline', name: 'Timeline', category: 'Modern', desc: 'Left sidebar with timeline dots.', component: TimelineTemplate, colors: ['#3B82F6'] },
+  { id: 'navy', name: 'Navy', category: 'Professional', desc: 'Navy blue header, professional look.', component: NavyTemplate, colors: ['#1E3A5F'] },
+  { id: 'sunset', name: 'Sunset', category: 'Creative', desc: 'Warm gradient header.', component: SunsetTemplate, colors: ['#FF6B6B'] },
+  { id: 'compact', name: 'Compact', category: 'ATS', ats: true, desc: 'Very dense 2-column layout.', component: CompactTemplate, colors: [] },
+  { id: 'academic', name: 'Academic', category: 'Professional', desc: 'Traditional academic CV format.', component: AcademicTemplate, colors: [] },
+
 ];
 
 const categories = ['All Templates', 'Professional', 'Modern', 'Creative', 'Simple', 'ATS', 'With Photo'];

@@ -239,10 +239,12 @@ export default function ResumeIO() {
       wrapper.removeAttribute('contenteditable');
 
       const printCss = `
-        @page {
+                @page {
           size: A4;
           margin: 15mm 18mm; /* Standard document margin — like Word */
         }
+        body > div { min-height: 0 !important; }
+        [data-page-spacer] { display: none !important; }
         * { box-sizing: border-box; }
         html, body {
           margin: 0;

@@ -19,6 +19,13 @@ import BoldTemplate from './BoldTemplate';
 import IndustrialTemplate from './IndustrialTemplate';
 import SpecialistTemplate from './SpecialistTemplate';
 import TwoColumnTemplate from './TwoColumnTemplate';
+import NeonTemplate from './NeonTemplate';
+import TimelineTemplate from './TimelineTemplate';
+import NavyTemplate from './NavyTemplate';
+import SunsetTemplate from './SunsetTemplate';
+import CompactTemplate from './CompactTemplate';
+import AcademicTemplate from './AcademicTemplate';
+
 
 const templates = {
   classic: ClassicTemplate,
@@ -41,6 +48,13 @@ const templates = {
   industrial: IndustrialTemplate,
   specialist: SpecialistTemplate,
   'two-column': TwoColumnTemplate,
+  neon: NeonTemplate,
+  timeline: TimelineTemplate,
+  navy: NavyTemplate,
+  sunset: SunsetTemplate,
+  compact: CompactTemplate,
+  academic: AcademicTemplate,
+
 };
 
 // Known built-in section keys — filter these out from sectionOrder when passing to templates

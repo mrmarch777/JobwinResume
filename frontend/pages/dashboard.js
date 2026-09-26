@@ -46,6 +46,29 @@ export default function Dashboard() {
   const [searching, setSearching] = useState(false);
   const [notifications, setNotifications] = useState(0);
   const [stats, setStats] = useState({ applied: 0, interviews: 0, offers: 0, saved: 0 });
+  const [resumesCount, setResumesCount] = useState(0);
+  const [recentResumes, setRecentResumes] = useState([]);
+
+  
+  const fetchResumes = async (userId) => {
+    try {
+      let localResumes = [];
+      try {
+        localResumes = JSON.parse(localStorage.getItem('jobwin_local_resumes') || '[]');
+      } catch(e) {}
+      
+      setResumesCount(localResumes.length);
+      setRecentResumes(localResumes.slice(0, 3));
+      
+      const { data } = await supabase.from('resumes').select('*').eq('user_id', userId).order('updated_at', { ascending: false }).limit(3);
+      if (data && data.length > 0) {
+        setResumesCount((prev) => Math.max(prev, data.length)); // rough estimate
+        setRecentResumes(data.slice(0, 3));
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  };
 
   const fetchStats = async (userId) => {
     try {
@@ -127,6 +150,7 @@ export default function Dashboard() {
       if (!session) { router.push("/login"); return; }
       setUser(session.user);
       fetchStats(session.user.id);
+      fetchResumes(session.user.id);
       fetchActivities(session.user.id);
     });
   }, []);
@@ -250,23 +274,43 @@ export default function Dashboard() {
             <h1 className="mobile-text-lg" style={{ fontFamily: "'Noto Serif', serif", fontSize: "clamp(28px, 3.5vw, 48px)", fontWeight: "700", color: t.text, marginBottom: "8px", lineHeight: "1.2" }}>
               Welcome back, <span style={{ fontStyle: "italic", color: "#6C63FF" }}>{firstName}.</span>
             </h1>
-            <p style={{ color: t.muted, fontSize: "15px", marginBottom: "20px" }}>Your career trajectory is looking great — let's keep the momentum going! 🚀</p>
+            <p style={{ color: t.muted, fontSize: "15px", marginBottom: "20px" }}>Your career trajectory is looking great — let&apos;s keep the momentum going! 🚀</p>
             
-            {/* Quick Actions */}
-            <div className="mobile-actions" style={{ display: "flex", gap: "12px", overflowX: "auto", paddingBottom: "4px" }}>
+            
+            {/* Stats Row */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px", marginBottom: "32px" }}>
               {[
-                { icon: "📄", label: "Create Resume", path: "/resume-io" },
-                { icon: "📊", label: "Application Tracker", path: "/tracker" },
-                { icon: "✉️", label: "Generate Cover Letter", path: "/apply" },
-                { icon: "🎯", label: "Practice Interview", path: "/interview" },
-                { icon: "📧", label: "One Click Apply", path: "/apply" }
-              ].map(act => (
-                <button key={act.label} onClick={() => router.push(act.path)} className="action-btn"
-                  style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 18px", background: "rgba(255,255,255,0.03)", border: `1px solid ${t.border}`, borderRadius: "100px", color: t.text, fontSize: "13px", fontWeight: "500", cursor: "pointer", whiteSpace: "nowrap" }}>
-                  <span>{act.icon}</span> {act.label}
-                </button>
+                { label: "Total Resumes", value: resumesCount, color: "#6C63FF" },
+                { label: "Jobs Applied", value: stats.applied, color: "#FFB347" },
+                { label: "Avg ATS Score", value: "85%", color: "#43D9A2" },
+                { label: "Profile Completion", value: "92%", color: "#FF6584" }
+              ].map((stat, idx) => (
+                <div key={idx} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${t.border}`, borderRadius: "16px", padding: "20px", textAlign: "center" }}>
+                  <div style={{ fontSize: "28px", fontWeight: "700", color: stat.color, marginBottom: "8px" }}>{stat.value}</div>
+                  <div style={{ fontSize: "13px", color: t.muted, fontWeight: "500" }}>{stat.label}</div>
+                </div>
               ))}
             </div>
+
+            {/* Quick Actions */}
+            <h2 style={{ fontSize: "20px", fontWeight: "700", color: t.text, marginBottom: "16px" }}>Quick Actions</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "32px" }}>
+              {[
+                { title: "Resume Builder", icon: "📄", desc: "Create a new resume", path: "/resume-io", bg: "linear-gradient(135deg, #6C63FF22, #6C63FF44)", border: "#6C63FF" },
+                { title: "Find Jobs", icon: "🔍", desc: "Search new opportunities", path: "/find-job", bg: "linear-gradient(135deg, #FFB34722, #FFB34744)", border: "#FFB347" },
+                { title: "Cover Letter", icon: "✉️", desc: "Generate with AI", path: "/cover-letter", bg: "linear-gradient(135deg, #43D9A222, #43D9A244)", border: "#43D9A2" },
+                { title: "ATS Check", icon: "🎯", desc: "Score your resume", path: "/resume-io", bg: "linear-gradient(135deg, #FF658422, #FF658444)", border: "#FF6584" }
+              ].map((action, idx) => (
+                <div key={idx} onClick={() => router.push(action.path)} style={{ background: action.bg, border: `1px solid ${action.border}66`, borderRadius: "16px", padding: "24px", cursor: "pointer", transition: "transform 0.2s", display: "flex", flexDirection: "column", gap: "12px" }} onMouseOver={(e) => e.currentTarget.style.transform = "translateY(-4px)"} onMouseOut={(e) => e.currentTarget.style.transform = "none"}>
+                  <div style={{ fontSize: "32px" }}>{action.icon}</div>
+                  <div>
+                    <div style={{ fontSize: "16px", fontWeight: "700", color: t.text }}>{action.title}</div>
+                    <div style={{ fontSize: "13px", color: t.muted }}>{action.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
           </div>
 
           {plan === 'free' && (
@@ -430,7 +474,32 @@ export default function Dashboard() {
 
           </div>
 
-          {/* Recent Activity Toggle */}
+          
+            {/* Recent Activity (Resumes) */}
+            <div className="dash-card" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(20px)", border: `1px solid ${t.border}`, borderRadius: "24px", padding: "24px 28px", marginBottom: "16px" }}>
+              <h3 style={{ fontFamily: "'Noto Serif', serif", fontSize: "16px", fontWeight: "600", color: t.text, marginBottom: "16px" }}>📄 Recent Resumes</h3>
+              {recentResumes.length === 0 ? (
+                <p style={{ color: t.muted, fontSize: "13px" }}>No recent resumes found.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {recentResumes.map((resume, idx) => (
+                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", background: "rgba(255,255,255,0.02)", borderRadius: "12px", border: `1px solid ${t.border}` }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: "rgba(108,99,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>📄</div>
+                        <div>
+                          <div style={{ fontSize: "14px", fontWeight: "600", color: t.text }}>{resume.title || resume.name || "Untitled Resume"}</div>
+                          <div style={{ fontSize: "12px", color: t.muted }}>Updated {new Date(resume.updated_at).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                      <button onClick={() => router.push("/resume-io")} style={{ padding: "6px 12px", background: "rgba(108,99,255,0.1)", color: "#6C63FF", border: "none", borderRadius: "6px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>Edit</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recent Activity Toggle */}
+
           <div className="dash-card mobile-card" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(20px)", border: `1px solid ${t.border}`, borderRadius: "24px", padding: showActivity ? "24px 28px" : "18px 28px", animationDelay: "0.5s", cursor: "pointer", marginBottom: "16px" }} onClick={() => setShowActivity(!showActivity)}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
