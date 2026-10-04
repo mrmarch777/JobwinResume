@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Sidebar from '../components/Sidebar';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../lib/contexts';
 
 export default function AIResumeBuilder() {
   const router = useRouter();
-  const { t } = useTheme();
+  const { theme: t } = useTheme();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);

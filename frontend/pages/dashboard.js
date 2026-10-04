@@ -3,7 +3,7 @@ import Head from "next/head";
 import PageHead from "../components/PageHead";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabase";
-import { useTheme, THEMES, ACTIVE_THEMES, usePlan, PLAN_LIMITS } from "../lib/contexts";
+import { useTheme, THEMES, usePlan, PLAN_LIMITS } from "../lib/contexts";
 import Sidebar from "../components/Sidebar";
 import { SkeletonPulse, SkeletonCard, shimmerKeyframes } from '../components/Skeleton';
 
@@ -238,14 +238,28 @@ export default function Dashboard() {
           {/* Right actions */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             {/* Mobile Theme Switcher — 3 themes only */}
-            <div className="desktop-hide" style={{ display: "flex", gap: "6px", alignItems: "center", marginRight: "4px" }}>
-               {ACTIVE_THEMES.map((stat, idx) => (
-                <div key={idx} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${t.border}`, borderRadius: "16px", padding: "20px", textAlign: "center" }}>
-                  <div style={{ fontSize: "28px", fontWeight: "700", color: stat.color, marginBottom: "8px" }}>{stat.value}</div>
-                  <div style={{ fontSize: "13px", color: t.muted, fontWeight: "500" }}>{stat.label}</div>
-                </div>
+            <div className="desktop-hide" style={{ display: "flex", gap: "8px", alignItems: "center", marginRight: "4px" }}>
+              {[
+                { key: "dark",     bg: "#09090f", dot: "#6C63FF" },
+                { key: "white",    bg: "#f4f6fb", dot: "#c0c0cc" },
+                { key: "colorful", bg: "#0f0c29", dot: "#FF6B6B" },
+              ].map(({ key, dot }) => (
+                <div key={key} onClick={() => setTheme(key)}
+                  role="button"
+                  style={{
+                    width: themeName === key ? "18px" : "12px",
+                    height: themeName === key ? "18px" : "12px",
+                    borderRadius: "50%",
+                    background: dot,
+                    cursor: "pointer",
+                    border: themeName === key ? "2.5px solid white" : "2px solid transparent",
+                    boxShadow: themeName === key ? `0 0 8px ${dot}99` : "none",
+                    transition: "all 0.2s",
+                  }}
+                />
               ))}
             </div>
+
 
             {/* Quick Actions */}
             <h2 style={{ fontSize: "20px", fontWeight: "700", color: t.text, marginBottom: "16px" }}>Quick Actions</h2>
