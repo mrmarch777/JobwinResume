@@ -237,20 +237,25 @@ export default function Dashboard() {
 
           {/* Right actions */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            {/* Mobile Theme Switcher */}
+            {/* Mobile Theme Switcher — 3 themes only */}
             <div className="desktop-hide" style={{ display: "flex", gap: "6px", alignItems: "center", marginRight: "4px" }}>
-               {Object.entries(THEMES).map(([thm, data]) => (
-                  <div key={thm} onClick={() => setTheme(thm)}
-                     role="button"
-                     aria-label={`Switch to ${thm} theme`}
-                     title={thm}
-                     style={{
-                        width: "16px", height: "16px", borderRadius: "50%", cursor: "pointer",
-                        background: data.bg, border: `2px solid ${themeName === thm ? data.accent || "#6C63FF" : "rgba(255,255,255,0.2)"}`
-                     }} 
-                  />
+               {[
+                 { key: "nocturnal", bg: "#09090f", accent: "#6C63FF" },
+                 { key: "pristine",  bg: "#f4f6fb", accent: "#6C63FF" },
+                 { key: "vivid",     bg: "#0f0c29", accent: "#FF6B6B" },
+               ].map(({ key, bg, accent }) => (
+                 <div key={key} onClick={() => setTheme(key)}
+                   role="button"
+                   aria-label={`Switch to ${key} theme`}
+                   title={key}
+                   style={{
+                     width: "16px", height: "16px", borderRadius: "50%", cursor: "pointer",
+                     background: bg, border: `2px solid ${themeName === key ? accent : "rgba(255,255,255,0.2)"}`
+                   }}
+                 />
                ))}
             </div>
+
             <div style={{ background: plan !== "free" ? "rgba(108,99,255,0.1)" : "rgba(67,217,162,0.1)", border: `1px solid ${plan !== "free" ? "rgba(108,99,255,0.2)" : "rgba(67,217,162,0.2)"}`, borderRadius: "100px", padding: "5px 14px", fontSize: "11px", color: plan !== "free" ? "#A29BFE" : "#43D9A2", fontWeight: "600", letterSpacing: "1px" }}>
               {planLabel.toUpperCase()} PLAN
             </div>

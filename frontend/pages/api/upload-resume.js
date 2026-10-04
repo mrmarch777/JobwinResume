@@ -4,7 +4,7 @@ import fs from 'fs';
 
 export const config = {
   api: {
-    bodyParser: false, // We handle multipart form data ourselves
+    bodyParser: false,
   },
 };
 
@@ -18,41 +18,32 @@ function parseForm(req) {
   });
 }
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ status: 'error', error: 'Method not allowed' });
+// Try models in order — fallback if one is overloaded (503)
+const MODELS_TO_TRY = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+
+async function generateWithFallback(genAI, prompt, inlineData) {
+  let lastError;
+  for (const modelName of MODELS_TO_TRY) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const parts = inlineData
+        ? [{ text: prompt }, { inlineData }]
+        : [{ text: prompt }];
+      const result = await model.generateContent(parts);
+      const response = await result.response;
+      return response.text().trim();
+    } catch (err) {
+      lastError = err;
+      const status = err?.status || err?.response?.status;
+      // Only retry on 503 (overloaded) or 429 (rate limit)
+      if (status !== 503 && status !== 429) throw err;
+      console.warn(`Model ${modelName} unavailable (${status}), trying next...`);
+    }
   }
+  throw lastError;
+}
 
-  try {
-    const { fields, files } = await parseForm(req);
-    
-    // formidable v3+ returns arrays for fields/files
-    const file = Array.isArray(files.file) ? files.file[0] : files.file;
-    if (!file) {
-      return res.status(400).json({ status: 'error', error: 'No file uploaded' });
-    }
-
-    const filePath = file.filepath || file.path;
-    const fileName = file.originalFilename || file.name || 'resume.pdf';
-    const mimeType = file.mimetype || 'application/pdf';
-
-    // Read file as base64 for Gemini
-    const fileBuffer = fs.readFileSync(filePath);
-    const base64Data = fileBuffer.toString('base64');
-
-    if (!process.env.GEMINI_API_KEY) {
-      // Clean up temp file
-      try { fs.unlinkSync(filePath); } catch(e) {}
-      return res.status(503).json({ 
-        status: 'error', 
-        error: 'GEMINI_API_KEY is required for resume parsing. Add it in Vercel Environment Variables.' 
-      });
-    }
-
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-    const prompt = `You are an expert resume parser. Analyze the uploaded resume document and extract ALL information into a structured JSON object.
+const PARSE_PROMPT = `You are an expert resume parser. Analyze the uploaded resume document and extract ALL information into a structured JSON object.
 
 IMPORTANT: Extract EVERYTHING from the document. Do not skip any sections. Be thorough.
 
@@ -117,21 +108,35 @@ Output ONLY valid JSON with this exact schema (no markdown, no explanation):
   ]
 }`;
 
-    const result = await model.generateContent([
-      { text: prompt },
-      {
-        inlineData: {
-          mimeType: mimeType,
-          data: base64Data,
-        },
-      },
-    ]);
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ status: 'error', error: 'Method not allowed' });
+  }
 
-    // Clean up temp file
-    try { fs.unlinkSync(filePath); } catch(e) {}
+  let filePath = null;
+  try {
+    const { fields, files } = await parseForm(req);
 
-    const response = await result.response;
-    const text = response.text().trim();
+    const file = Array.isArray(files.file) ? files.file[0] : files.file;
+    if (!file) {
+      return res.status(400).json({ status: 'error', error: 'No file uploaded' });
+    }
+
+    filePath = file.filepath || file.path;
+    const mimeType = file.mimetype || 'application/pdf';
+
+    const fileBuffer = fs.readFileSync(filePath);
+    const base64Data = fileBuffer.toString('base64');
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(503).json({
+        status: 'error',
+        error: 'GEMINI_API_KEY is required. Add it in your Vercel Environment Variables.',
+      });
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const text = await generateWithFallback(genAI, PARSE_PROMPT, { mimeType, data: base64Data });
 
     // Extract JSON from possible markdown wrapping
     let jsonStr = text;
@@ -142,10 +147,20 @@ Output ONLY valid JSON with this exact schema (no markdown, no explanation):
     }
 
     const parsedData = JSON.parse(jsonStr);
-
     res.status(200).json({ status: 'success', data: parsedData });
+
   } catch (error) {
     console.error('Upload parse error:', error);
-    res.status(500).json({ status: 'error', error: error.message || 'Failed to parse resume' });
+    const isOverloaded = error?.status === 503 || (error?.message || '').includes('503');
+    res.status(isOverloaded ? 503 : 500).json({
+      status: 'error',
+      error: isOverloaded
+        ? 'AI service is temporarily overloaded. Please wait 30 seconds and try again.'
+        : (error.message || 'Failed to parse resume'),
+    });
+  } finally {
+    if (filePath) {
+      try { fs.unlinkSync(filePath); } catch (e) {}
+    }
   }
 }

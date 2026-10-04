@@ -122,31 +122,37 @@ export default function Sidebar({ activeId, collapsed, setCollapsed, user }) {
           ))}
         </nav>
 
-        {/* Theme switcher */}
+        {/* ── Theme Switcher — 3 core themes only ── */}
         {!collapsed && (
-          <div style={{ padding: "12px 14px", borderTop: `1px solid ${t.border}` }}>
-            <div style={{ fontSize: "10px", color: t.muted, textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "8px" }}>Theme</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px" }}>
-              {Object.keys(THEMES).map(thm => (
-                <button key={thm} className="theme-btn" onClick={() => setTheme(thm)}
-                  style={{ 
-                    padding: "6px 8px", 
-                    background: themeName === thm ? "rgba(108,99,255,0.2)" : t.inputBg, 
-                    border: `1px solid ${themeName === thm ? "rgba(108,99,255,0.4)" : t.border}`, 
-                    borderRadius: "8px", 
-                    color: themeName === thm ? "#A29BFE" : t.text, 
-                    fontSize: "11px", 
-                    cursor: "pointer", 
-                    transition: "all 0.2s", 
-                    fontFamily: "'DM Sans', sans-serif", 
-                    textTransform: "capitalize" 
+          <div style={{ padding: "10px 14px 8px", borderTop: `1px solid ${t.border}` }}>
+            <div style={{ fontSize: "9px", color: t.muted, textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "7px" }}>Theme</div>
+            <div style={{ display: "flex", gap: "6px" }}>
+              {[
+                { key: "nocturnal", label: "Dark",      dot: "#6C63FF" },
+                { key: "pristine",  label: "Light",     dot: "#6C63FF" },
+                { key: "vivid",     label: "Colorful",  dot: "#FF6B6B" },
+              ].map(({ key, label, dot }) => (
+                <button key={key} onClick={() => setTheme(key)}
+                  style={{
+                    flex: 1,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                    padding: "6px 4px",
+                    background: themeName === key ? `${dot}22` : t.inputBg,
+                    border: `1.5px solid ${themeName === key ? dot : t.border}`,
+                    borderRadius: "8px",
+                    color: themeName === key ? dot : t.muted,
+                    fontSize: "10px", fontWeight: themeName === key ? "700" : "400",
+                    cursor: "pointer", transition: "all 0.2s",
+                    fontFamily: "'DM Sans', sans-serif",
                   }}>
-                  {thm}
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: dot, flexShrink: 0, display: "block" }} />
+                  {label}
                 </button>
               ))}
             </div>
           </div>
         )}
+
 
         {/* Logout */}
         <div style={{ padding: "8px 8px 16px", borderTop: `1px solid ${t.border}` }}>

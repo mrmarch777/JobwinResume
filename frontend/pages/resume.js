@@ -464,7 +464,8 @@ export default function Resume() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { router.push("/login"); return; }
       setUser(session.user);
-      const saved = localStorage.getItem("jobwin_resumes");
+      const RESUMES_KEY = `jobwin_resumes_${session.user.id}`;
+      const saved = localStorage.getItem(RESUMES_KEY);
       if (saved) setResumes(JSON.parse(saved));
     });
   }, []);
@@ -496,12 +497,14 @@ export default function Resume() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [aiMessages]);
 
+  const RESUMES_KEY = `jobwin_resumes_${user?.id || 'guest'}`;
+
   const saveCurrentResume = (showAlert = false) => {
     const id = activeResumeId || Date.now().toString();
     const data = { id, name: resumeName, resume, template: activeTemplate, updatedAt: new Date().toLocaleString() };
-    const existing = JSON.parse(localStorage.getItem("jobwin_resumes") || "[]");
+    const existing = JSON.parse(localStorage.getItem(RESUMES_KEY) || "[]");
     const updated = existing.find(r => r.id === id) ? existing.map(r => r.id === id ? data : r) : [data, ...existing];
-    localStorage.setItem("jobwin_resumes", JSON.stringify(updated));
+    localStorage.setItem(RESUMES_KEY, JSON.stringify(updated));
     setResumes(updated);
     setActiveResumeId(id);
     if (showAlert) alert("✅ Resume saved!");
@@ -536,7 +539,7 @@ export default function Resume() {
   const duplicateResume = (r) => {
     const copy = { ...r, id: Date.now().toString(), name: r.name + " (Copy)", updatedAt: new Date().toLocaleString() };
     const updated = [copy, ...resumes];
-    localStorage.setItem("jobwin_resumes", JSON.stringify(updated));
+    localStorage.setItem(RESUMES_KEY, JSON.stringify(updated));
     setResumes(updated);
   };
 
@@ -549,13 +552,13 @@ export default function Resume() {
   const confirmDelete = () => {
     if (deleteModal.bulk) {
       const updated = resumes.filter(r => !selectedResumes.has(r.id));
-      localStorage.setItem("jobwin_resumes", JSON.stringify(updated));
+      localStorage.setItem(RESUMES_KEY, JSON.stringify(updated));
       setResumes(updated);
       setSelectedResumes(new Set());
       setIsSelectMode(false);
     } else {
       const updated = resumes.filter(r => r.id !== deleteModal.id);
-      localStorage.setItem("jobwin_resumes", JSON.stringify(updated));
+      localStorage.setItem(RESUMES_KEY, JSON.stringify(updated));
       setResumes(updated);
     }
     setDeleteModal({ open: false, id: null, bulk: false, count: 0 });
@@ -1033,9 +1036,9 @@ export default function Resume() {
     const builtResume = { ...EMPTY_RESUME, ...normalized };
     const entryName = `${builtResume.name || "AI"}'s Resume`;
     const entry = { id: newId, name: entryName, resume: builtResume, template: "modernist", updatedAt: new Date().toLocaleString() };
-    const existing = JSON.parse(localStorage.getItem("jobwin_resumes") || "[]");
+    const existing = JSON.parse(localStorage.getItem(RESUMES_KEY) || "[]");
     const updated = [entry, ...existing];
-    localStorage.setItem("jobwin_resumes", JSON.stringify(updated));
+    localStorage.setItem(RESUMES_KEY, JSON.stringify(updated));
     setResumes(updated);
     setActiveResumeId(newId);
     setResume(builtResume);

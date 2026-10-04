@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import PageHead from "../components/PageHead";
+import { supabase } from "../lib/supabase";
+
 
 const THEMES = {
   nocturnal: { bg: "#09090f", card: "#13131a", border: "#2a2a3a", text: "#f0f0ff", sub: "#8888aa", accent: "#7c6ff7", accentB: "#ff6eb4" },
@@ -73,12 +75,18 @@ export default function ResumeAI() {
   const [tempEdu, setTempEdu]   = useState(null);
   const [tempProj, setTempProj] = useState(null);
   const [tempCert, setTempCert] = useState(null);
+  const [userId, setUserId]     = useState("guest");
   const chatRef = useRef(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("jobwin_theme");
     if (saved && THEMES[saved]) setTheme(saved);
+    // Resolve user for namespaced storage
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.id) setUserId(session.user.id);
+    });
   }, []);
+
 
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
@@ -584,10 +592,11 @@ export default function ResumeAI() {
         template: "modernist",
         updatedAt: new Date().toLocaleString(),
       };
-      const existing = JSON.parse(localStorage.getItem("jobwin_resumes") || "[]");
-      localStorage.setItem("jobwin_resumes", JSON.stringify([entry, ...existing]));
+      const existing = JSON.parse(localStorage.getItem(`jobwin_resumes_${userId}`) || "[]");
+      localStorage.setItem(`jobwin_resumes_${userId}`, JSON.stringify([entry, ...existing]));
       localStorage.setItem("jobwin_current_resume", JSON.stringify(entry));
     } catch (e) {}
+
 
     setLoading(false);
     setScreen("done");

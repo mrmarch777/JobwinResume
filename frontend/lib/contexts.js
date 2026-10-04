@@ -9,11 +9,18 @@ export const THEMES = {
     accentB: "#ff6eb4",
   },
   pristine: {
-    bg: "#f4f4ff", sidebar: "#ffffff", card: "rgba(0,0,0,0.02)",
+    bg: "#f4f6fb", sidebar: "#ffffff", card: "rgba(0,0,0,0.02)",
     border: "rgba(0,0,0,0.08)", text: "#1a1a2e", muted: "rgba(0,0,0,0.45)",
     accent: "#6C63FF", inputBg: "rgba(0,0,0,0.03)", sub: "#5555aa",
     accentB: "#e8559a",
   },
+  vivid: {
+    bg: "#0f0c29", sidebar: "#1a1744", card: "rgba(255,107,107,0.07)",
+    border: "rgba(255,120,80,0.18)", text: "#fff8f0", muted: "rgba(255,220,200,0.5)",
+    accent: "#FF6B6B", inputBg: "rgba(255,107,107,0.07)", sub: "#cc7060",
+    accentB: "#4ecdc4",
+  },
+  // ── Legacy themes — kept for future use, not shown in UI ─────────────────────
   midnight: {
     bg: "#010108", sidebar: "#05050f", card: "rgba(255,255,255,0.02)",
     border: "rgba(108,99,255,0.15)", text: "#c8c8ff", muted: "rgba(200,200,255,0.4)",
@@ -39,6 +46,7 @@ export const THEMES = {
     accentB: "#a0522d",
   },
 };
+
 
 // ── PLAN LIMITS ───────────────────────────────────────────────────────────────
 // 🚧 DEV MODE: All features unlocked for testing — switch back before launch

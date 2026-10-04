@@ -2,11 +2,30 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const config = {
   api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
+    bodyParser: { sizeLimit: '10mb' },
   },
 };
+
+// Try models in order — fallback if one is overloaded (503) or rate-limited (429)
+const MODELS_TO_TRY = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+
+async function callWithFallback(genAI, prompt) {
+  let lastError;
+  for (const modelName of MODELS_TO_TRY) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text().trim();
+    } catch (err) {
+      lastError = err;
+      const status = err?.status || err?.response?.status;
+      if (status !== 503 && status !== 429) throw err;
+      console.warn(`Model ${modelName} unavailable (${status}), trying next...`);
+    }
+  }
+  throw lastError;
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -18,18 +37,12 @@ export default async function handler(req, res) {
     return res.status(400).json({ status: 'error', error: 'Missing resume_text' });
   }
 
-  // If no API key, return a mock structured response or fail gracefully so it uses client-side regex
   if (!process.env.GEMINI_API_KEY) {
-    console.warn("GEMINI_API_KEY is missing. AI parser disabled, returning error to trigger client fallback.");
-    return res.status(503).json({ status: 'error', error: 'AI parsing requires GEMINI_API_KEY in .env.local' });
+    console.warn('GEMINI_API_KEY is missing. AI parser disabled.');
+    return res.status(503).json({ status: 'error', error: 'AI parsing requires GEMINI_API_KEY in environment variables.' });
   }
 
-  try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    // Use the pro model for complex structured extraction
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-    const prompt = `
+  const prompt = `
 You are an expert resume parser. Extract the following resume text into a highly structured JSON object.
 Do NOT output any markdown, HTML, or conversational text. Output ONLY valid JSON.
 
@@ -49,7 +62,7 @@ Schema requirements:
       "location": "Job Location",
       "from": "Start date (e.g., Aug 2021 or 2021-08)",
       "to": "End date (or Present)",
-      "current": boolean,
+      "current": false,
       "bullets": ["Responsibility 1", "Responsibility 2"]
     }
   ],
@@ -100,23 +113,29 @@ ${resume_text.substring(0, 20000)}
 """
 `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text().trim();
-    
+  try {
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const text = await callWithFallback(genAI, prompt);
+
     // Extract JSON block in case model wrapped it in markdown
     let jsonStr = text;
-    if (text.startsWith('```json')) {
-      jsonStr = text.replace(/^```json\n/, '').replace(/\n```$/, '');
-    } else if (text.startsWith('```')) {
-      jsonStr = text.replace(/^```\n/, '').replace(/\n```$/, '');
+    if (text.includes('```json')) {
+      jsonStr = text.split('```json')[1].split('```')[0].trim();
+    } else if (text.includes('```')) {
+      jsonStr = text.split('```')[1].split('```')[0].trim();
     }
 
     const parsedData = JSON.parse(jsonStr);
-
     res.status(200).json({ status: 'success', data: parsedData });
+
   } catch (error) {
-    console.error("AI Parsing Error:", error);
-    res.status(500).json({ status: 'error', error: error.message });
+    console.error('AI Parsing Error:', error);
+    const isOverloaded = error?.status === 503 || (error?.message || '').includes('503');
+    res.status(isOverloaded ? 503 : 500).json({
+      status: 'error',
+      error: isOverloaded
+        ? 'AI service is temporarily overloaded. Please wait 30 seconds and try again.'
+        : (error.message || 'Failed to parse resume'),
+    });
   }
 }
