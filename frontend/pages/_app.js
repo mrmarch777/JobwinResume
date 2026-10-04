@@ -1,10 +1,6 @@
-import { useState, useEffect } from "react";
-import Head from "next/head";
-import Layout from "../components/Layout";
-import { supabase } from "../lib/supabase";
-
 import { 
   THEMES, 
+  THEME_MIGRATION,
   PLAN_LIMITS, 
   FEATURES, 
   ThemeContext, 
@@ -16,10 +12,16 @@ export default function App({ Component, pageProps }) {
   const [plan, setPlan] = useState("free");
   const [loadingPlan, setLoadingPlan] = useState(true);
 
-  // Load saved theme on mount
+  // Load saved theme on mount — migrate old names to new 3-theme system
   useEffect(() => {
     const saved = localStorage.getItem("jobwin_theme");
-    if (saved && THEMES[saved]) setThemeName(saved);
+    if (saved) {
+      const migrated = THEME_MIGRATION[saved] || saved;
+      if (THEMES[migrated]) {
+        setThemeName(migrated);
+        if (migrated !== saved) localStorage.setItem("jobwin_theme", migrated);
+      }
+    }
   }, []);
 
 

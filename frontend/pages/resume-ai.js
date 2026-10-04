@@ -6,8 +6,8 @@ import { supabase } from "../lib/supabase";
 
 
 const THEMES = {
-  dark: { bg: "#09090f", card: "#13131a", border: "#2a2a3a", text: "#f0f0ff", sub: "#8888aa", accent: "#7c6ff7", accentB: "#ff6eb4" },
-  white: { bg: "#f4f4ff", card: "#ffffff", border: "#ddddf0", text: "#111122", sub: "#5555aa", accent: "#5c55e8", accentB: "#e8559a" },
+  dark:     { bg: "#09090f", card: "#13131a", border: "#2a2a3a", text: "#f0f0ff", sub: "#8888aa", accent: "#7c6ff7", accentB: "#ff6eb4" },
+  white:    { bg: "#f4f4ff", card: "#ffffff", border: "#ddddf0", text: "#111122", sub: "#5555aa", accent: "#5c55e8", accentB: "#e8559a" },
   colorful: { bg: "#0f0c29", card: "#1a1744", border: "#2a1e3a", text: "#fff8f0", sub: "#cc7060", accent: "#FF6B6B", accentB: "#4ecdc4" },
 };
 
@@ -79,7 +79,9 @@ export default function ResumeAI() {
 
   useEffect(() => {
     const saved = localStorage.getItem("jobwin_theme");
-    if (saved && THEMES[saved]) setTheme(saved);
+    const migration = { nocturnal: "dark", pristine: "white", vivid: "colorful", midnight: "dark", emerald: "colorful", ivory: "white" };
+    const migrated = migration[saved] || saved;
+    if (THEMES[migrated]) { setTheme(migrated); if (migrated !== saved) localStorage.setItem("jobwin_theme", migrated); }
     // Resolve user for namespaced storage
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user?.id) setUserId(session.user.id);

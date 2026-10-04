@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabase";
-import { useTheme, THEMES, usePlan, PLAN_LIMITS } from "../lib/contexts";
+import { useTheme, ACTIVE_THEMES, usePlan, PLAN_LIMITS } from "../lib/contexts";
 
 export default function Sidebar({ activeId, collapsed, setCollapsed, user }) {
   const router = useRouter();
