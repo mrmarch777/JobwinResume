@@ -14,6 +14,11 @@ export default function AIResumeBuilder() {
   const [experience, setExperience] = useState([{ company: '', title: '', startDate: '', endDate: '', current: false, description: '' }]);
   const [education, setEducation] = useState([{ institution: '', degree: '', field: '', year: '', grade: '' }]);
   const [skills, setSkills] = useState('');
+  const [toast, setToast] = useState(null);
+  const showToast = (msg, type='error') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const handleNext = () => setStep(s => s + 1);
   const handlePrev = () => setStep(s => s - 1);
@@ -31,11 +36,11 @@ export default function AIResumeBuilder() {
         localStorage.setItem('jobwin_wizard_resume', JSON.stringify(data.resume));
         router.push('/resume-io?from=wizard');
       } else {
-        alert('Failed to generate resume.');
+        showToast('Failed to generate resume.');
       }
     } catch (err) {
       console.error(err);
-      alert('Error generating resume.');
+      showToast('Error generating resume.');
     }
     setLoading(false);
   };
@@ -75,6 +80,11 @@ export default function AIResumeBuilder() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: t.bg }}>
+      {toast && (
+        <div style={{ position: 'fixed', bottom: '24px', right: '24px', padding: '14px 20px', background: toast.type === 'error' ? '#DC2626' : '#059669', color: 'white', borderRadius: '10px', fontWeight: '600', fontSize: '14px', zIndex: 9999, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+          {toast.msg}
+        </div>
+      )}
       <Sidebar />
       <main style={{ flex: 1, padding: '40px', marginLeft: '240px', overflowY: 'auto' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', background: t.sidebar, padding: '32px', borderRadius: '16px', border: `1px solid ${t.border}` }}>

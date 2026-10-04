@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 
 const serializeResume = (r) => {
   let text = `${r.personal?.name || ''}\n${r.personal?.title || ''}\n${r.personal?.email || ''} | ${r.personal?.phone || ''} | ${r.personal?.location || ''}\n\n`;
@@ -36,10 +37,15 @@ export default function ATSChecker({ resume, onClose }) {
   const [result, setResult] = useState(null);
 
   useEffect(() => {
-    try {
-      const local = JSON.parse(localStorage.getItem('jobwin_local_resumes') || '[]');
-      setSavedResumes(local);
-    } catch(e) {}
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const uid = session?.user?.id || 'guest';
+      try {
+        const saved = JSON.parse(localStorage.getItem(`jobwin_local_resumes_${uid}`) || '[]');
+        setSavedResumes(saved);
+      } catch { setSavedResumes([]); }
+    };
+    load();
   }, []);
 
   const getSelectedResumeText = () => {

@@ -21,6 +21,11 @@ export default function CoverLetter() {
     tone: "professional"
   });
   const [generatedLetter, setGeneratedLetter] = useState("");
+  const [toast, setToast] = useState(null);
+  const showToast = (msg, type='error') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -43,7 +48,7 @@ export default function CoverLetter() {
 
   const generateLetter = async () => {
     if (!formData.jobTitle || !formData.company || !formData.jd) {
-      alert("Please fill out job title, company, and description.");
+      showToast("Please fill out job title, company, and description.");
       return;
     }
     
@@ -58,11 +63,11 @@ export default function CoverLetter() {
       if (data.coverLetter) {
         setGeneratedLetter(data.coverLetter);
       } else {
-        alert("Failed to generate cover letter.");
+        showToast("Failed to generate cover letter.");
       }
     } catch (err) {
       console.error(err);
-      alert("Error generating cover letter.");
+      showToast("Error generating cover letter.");
     } finally {
       setLoading(false);
     }
@@ -80,7 +85,7 @@ export default function CoverLetter() {
 
   const handleCopy = () => {
     navigator.clipboard.writeText(generatedLetter);
-    alert("Copied to clipboard!");
+    showToast("Copied to clipboard!", "success");
   };
 
   if (!user) return (
@@ -95,6 +100,11 @@ export default function CoverLetter() {
       <Sidebar activeId="cover" collapsed={collapsed} setCollapsed={setCollapsed} user={user} />
       
       <main style={{ flex: 1, marginLeft: collapsed ? "72px" : "240px", padding: "40px", transition: "margin-left 0.3s ease", display: 'flex', flexDirection: 'column' }}>
+        {toast && (
+          <div style={{ position: 'fixed', bottom: '24px', right: '24px', padding: '14px 20px', background: toast.type === 'error' ? '#DC2626' : '#059669', color: 'white', borderRadius: '10px', fontWeight: '600', fontSize: '14px', zIndex: 9999, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+            {toast.msg}
+          </div>
+        )}
         <h1 style={{ fontFamily: "'Noto Serif', serif", fontSize: "32px", marginBottom: "8px" }}>Cover Letter Builder</h1>
         <p style={{ color: t.muted, marginBottom: "32px" }}>Generate tailored cover letters instantly with AI.</p>
         

@@ -254,7 +254,7 @@ export default function useResumeState() {
         updated_at: new Date().toISOString(),
       };
       if (resumeId) {
-        const { error } = await supabase.from('resumes').update(payload).eq('id', resumeId);
+        const { error } = await supabase.from('resumes').update(payload).eq('id', resumeId).eq('user_id', session.user.id);
         if (error) throw error;
       } else {
         const { data, error } = await supabase.from('resumes').insert(payload).select().single();

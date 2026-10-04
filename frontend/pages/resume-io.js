@@ -253,8 +253,17 @@ export default function ResumeIO() {
       // Get the resume content (includes user edits from contentEditable)
       const resumeHtml = source.innerHTML;
 
+      const sanitizeHtml = (html) => {
+        return html
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+          .replace(/javascript:/gi, '')
+          .replace(/on\w+\s*=/gi, '');
+      };
+
+      const safeHtml = sanitizeHtml(resumeHtml);
+
       // Remove page-spacer divs (browser/Puppeteer handles page breaks via CSS)
-      const cleanHtml = resumeHtml.replace(/<div data-page-spacer="true"[^>]*><\/div>/g, '');
+      const cleanHtml = safeHtml.replace(/<div data-page-spacer="true"[^>]*><\/div>/g, '');
 
       // Build the outermost container from the source (preserves template styles)
       const wrapper = source.cloneNode(false);

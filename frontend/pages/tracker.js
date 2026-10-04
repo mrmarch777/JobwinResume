@@ -28,31 +28,40 @@ export default function Tracker() {
   const [filterStatus, setFilterStatus] = useState("ALL");
 
 
+  const [currentUserId, setCurrentUserId] = useState('guest');
+  const TRACKER_KEY = `jobwin_tracker_${currentUserId}`;
+
   const loadApplications = async (userId) => {
     // Load from localStorage first for speed
-    const saved = localStorage.getItem("jobwin_tracker");
+    const saved = localStorage.getItem(TRACKER_KEY);
     if (saved) setApplications(JSON.parse(saved));
     // Then try Supabase
     try {
       const { data } = await supabase.from("applications").select("*").eq("user_id", userId).order("created_at", { ascending: false });
       if (data && data.length > 0) {
         setApplications(data);
-        localStorage.setItem("jobwin_tracker", JSON.stringify(data));
+        localStorage.setItem(TRACKER_KEY, JSON.stringify(data));
       }
     } catch (err) {}
   };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUserId(session?.user?.id || 'guest');
       if (!session) { router.push("/login"); return; }
       setUser(session.user);
-      loadApplications(session.user.id);
     });
   }, []);
 
+  useEffect(() => {
+    if (currentUserId !== 'guest' && user) {
+      loadApplications(user.id);
+    }
+  }, [currentUserId, user]);
+
   const saveApplications = (apps) => {
     setApplications(apps);
-    localStorage.setItem("jobwin_tracker", JSON.stringify(apps));
+    localStorage.setItem(TRACKER_KEY, JSON.stringify(apps));
     if (user) {
       (async () => { try { await supabase.from("applications").upsert(apps.map(a => ({ ...a, user_id: user.id }))); } catch (_) {} })();
     }

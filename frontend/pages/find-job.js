@@ -37,8 +37,14 @@ export default function FindJob() {
   const [savedJobs, setSavedJobs] = useState([]);
 
   const [currentUserId, setCurrentUserId] = useState('guest');
+  const [alertsSet, setAlertsSet] = useState(false);
+  const [showAlertModal, setShowAlertModal] = useState(false);
 
-  // Resolve user ID for namespaced localStorage keys
+  // On mount, check if alerts already set
+  useEffect(() => {
+    const set = localStorage.getItem(`jobwin_career_alerts_${currentUserId}`);
+    if (set) setAlertsSet(true);
+  }, [currentUserId]);  // Resolve user ID for namespaced localStorage keys
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setCurrentUserId(session?.user?.id || 'guest');
@@ -503,8 +509,12 @@ export default function FindJob() {
                       </div>
                     ))}
                   </div>
-                  <button style={{ padding: "12px 24px", background: "white", color: "#0a0a1a", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: "700", cursor: "pointer", letterSpacing: "0.5px" }}>
-                    GET CAREER ALERTS
+                  <button onClick={() => {
+                    localStorage.setItem(`jobwin_career_alerts_${currentUserId}`, JSON.stringify({ role: searchRole, locations, set_at: new Date().toISOString() }));
+                    setAlertsSet(true);
+                    alert("✅ Career alerts set! We'll notify you of new matching jobs.");
+                  }} style={{ padding: "12px 24px", background: "white", color: "#0a0a1a", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: "700", cursor: "pointer", letterSpacing: "0.5px" }}>
+                    {alertsSet ? "✅ Alerts Set" : "GET CAREER ALERTS"}
                   </button>
                 </div>
               )}

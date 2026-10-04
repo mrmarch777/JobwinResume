@@ -48,16 +48,6 @@ ${job_description || 'General professional role'}
     res.status(200).json(data);
   } catch (err) {
     console.error('AI Review Error:', err);
-    // Fallback mock data
-    res.status(200).json({
-      score: 65,
-      matched_keywords: ['Communication', 'Leadership', 'Problem Solving'],
-      missing_keywords: ['Specific tools', 'Agile methodology', 'Cloud technologies'],
-      suggestions: [
-        'Add more quantified achievements with specific metrics (e.g., "increased revenue by 30%")',
-        'Include relevant technical skills and tools mentioned in job descriptions',
-        'Strengthen your professional summary with industry-specific keywords'
-      ]
-    });
+    res.status(500).json({ error: 'AI service temporarily unavailable. Please try again.' });
   }
 }
