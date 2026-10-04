@@ -6,10 +6,9 @@ import { supabase } from "../lib/supabase";
 
 
 const THEMES = {
-  nocturnal: { bg: "#09090f", card: "#13131a", border: "#2a2a3a", text: "#f0f0ff", sub: "#8888aa", accent: "#7c6ff7", accentB: "#ff6eb4" },
-  pristine:  { bg: "#f4f4ff", card: "#ffffff", border: "#ddddf0", text: "#111122", sub: "#5555aa", accent: "#5c55e8", accentB: "#e8559a" },
-  midnight:  { bg: "#010108", card: "#0d0d18", border: "#1e1e30", text: "#e8e8ff", sub: "#7070a0", accent: "#6358f5", accentB: "#f558b0" },
-  emerald:   { bg: "#030f0a", card: "#081a10", border: "#0f3020", text: "#e0fff0", sub: "#60a080", accent: "#2ecc8a", accentB: "#cc2e8a" },
+  dark: { bg: "#09090f", card: "#13131a", border: "#2a2a3a", text: "#f0f0ff", sub: "#8888aa", accent: "#7c6ff7", accentB: "#ff6eb4" },
+  white: { bg: "#f4f4ff", card: "#ffffff", border: "#ddddf0", text: "#111122", sub: "#5555aa", accent: "#5c55e8", accentB: "#e8559a" },
+  colorful: { bg: "#0f0c29", card: "#1a1744", border: "#2a1e3a", text: "#fff8f0", sub: "#cc7060", accent: "#FF6B6B", accentB: "#4ecdc4" },
 };
 
 const STEPS = [
@@ -60,7 +59,7 @@ const mkAch  = (text) => ({ id: mkId(), text });
 
 export default function ResumeAI() {
   const router = useRouter();
-  const [theme, setTheme] = useState("nocturnal");
+  const [theme, setTheme] = useState("dark");
   const T = THEMES[theme];
 
   const [screen, setScreen]     = useState("intro");

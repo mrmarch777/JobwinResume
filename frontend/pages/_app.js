@@ -12,7 +12,7 @@ import {
 } from "../lib/contexts";
 
 export default function App({ Component, pageProps }) {
-  const [themeName, setThemeName] = useState("nocturnal");
+  const [themeName, setThemeName] = useState("dark");
   const [plan, setPlan] = useState("free");
   const [loadingPlan, setLoadingPlan] = useState(true);
 

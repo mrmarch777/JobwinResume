@@ -240,9 +240,9 @@ export default function Dashboard() {
             {/* Mobile Theme Switcher — 3 themes only */}
             <div className="desktop-hide" style={{ display: "flex", gap: "6px", alignItems: "center", marginRight: "4px" }}>
                {[
-                 { key: "nocturnal", bg: "#09090f", accent: "#6C63FF" },
-                 { key: "pristine",  bg: "#f4f6fb", accent: "#6C63FF" },
-                 { key: "vivid",     bg: "#0f0c29", accent: "#FF6B6B" },
+                 { key: "dark", bg: "#09090f", accent: "#6C63FF" },
+                 { key: "white",  bg: "#f4f6fb", accent: "#e0e0e0" },
+                 { key: "colorful",     bg: "#0f0c29", accent: "#FF6B6B" },
                ].map(({ key, bg, accent }) => (
                  <div key={key} onClick={() => setTheme(key)}
                    role="button"

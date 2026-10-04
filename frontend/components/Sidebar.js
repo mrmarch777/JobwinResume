@@ -128,9 +128,9 @@ export default function Sidebar({ activeId, collapsed, setCollapsed, user }) {
             <div style={{ fontSize: "9px", color: t.muted, textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "7px" }}>Theme</div>
             <div style={{ display: "flex", gap: "6px" }}>
               {[
-                { key: "nocturnal", label: "Dark",      dot: "#6C63FF" },
-                { key: "pristine",  label: "Light",     dot: "#6C63FF" },
-                { key: "vivid",     label: "Colorful",  dot: "#FF6B6B" },
+                { key: "dark", label: "Dark",      dot: "#6C63FF" },
+                { key: "white",  label: "Light",     dot: "#e0e0e0" },
+                { key: "colorful",     label: "Colorful",  dot: "#FF6B6B" },
               ].map(({ key, label, dot }) => (
                 <button key={key} onClick={() => setTheme(key)}
                   style={{

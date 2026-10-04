@@ -2,14 +2,13 @@ import { useState } from "react";
 import { useTheme, THEMES } from "../lib/contexts";
 
 export default function ThemeSwitcher() {
-  const { themeName, setThemeName } = useTheme();
+  const { themeName, setTheme } = useTheme(); // wait, earlier it was setThemeName, now it's setTheme from context
   const [hoveredTheme, setHoveredTheme] = useState(null);
 
   const themeList = [
     { key: "dark",     color: "#6C63FF", label: "🌙 Dark",     dotColor: "#6C63FF" },
-    { key: "light",    color: "#4A90D9", label: "☀️ Light",    dotColor: "#4A90D9" },
-    { key: "colorful", color: "#FF6584", label: "🌈 Colorful", dotColor: "#FF6584" },
-    { key: "ocean",    color: "#00B4FF", label: "🌊 Ocean",    dotColor: "#00B4FF" },
+    { key: "white",    color: "#6C63FF", label: "☀️ Light",    dotColor: "#e0e0e0" },
+    { key: "colorful", color: "#FF6B6B", label: "🌈 Colorful", dotColor: "#FF6B6B" },
   ];
 
   return (
@@ -51,7 +50,7 @@ export default function ThemeSwitcher() {
 
           {/* Dot */}
           <div
-            onClick={() => setThemeName(t.key)}
+            onClick={() => setTheme(t.key)}
             onMouseEnter={() => setHoveredTheme(t.key)}
             onMouseLeave={() => setHoveredTheme(null)}
             style={{
