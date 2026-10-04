@@ -45,9 +45,9 @@ export default function MyResumes({ resumes, onSelect, onCreateNew, onUploadResu
     setActiveMenu(null);
     if (!window.confirm('Delete this resume? This cannot be undone.')) return;
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       if (resume.source === 'local') {
         // Delete from localStorage — find the user-scoped key
-        const { data: { session } } = await supabase.auth.getSession();
         const uid = session?.user?.id || 'guest';
         const key = `jobwin_local_resumes_${uid}`;
         const existing = JSON.parse(localStorage.getItem(key) || '[]');
@@ -55,7 +55,8 @@ export default function MyResumes({ resumes, onSelect, onCreateNew, onUploadResu
         localStorage.setItem(key, JSON.stringify(updated));
       } else {
         // Delete from Supabase
-        const { error } = await supabase.from('resumes').delete().eq('id', resume.id);
+        if (!session?.user) throw new Error('Not authenticated');
+        const { error } = await supabase.from('resumes').delete().eq('id', resume.id).eq('user_id', session.user.id);
         if (error) throw error;
       }
       onRefresh?.();
