@@ -123,8 +123,13 @@ export default function FindJob() {
   }, []);
 
   useEffect(() => {
-    const saved = localStorage.getItem("jobwin_theme");
-    if (saved && themes[saved]) setTheme(saved);
+    const saved = localStorage.getItem('jobwin_theme');
+    if (saved) {
+      const migration = { nocturnal: 'dark', pristine: 'white', vivid: 'colorful', midnight: 'dark', emerald: 'colorful', ivory: 'white', parchment: 'white', ocean: 'dark' };
+      const resolved = migration[saved] || saved;
+      if (resolved !== saved) localStorage.setItem('jobwin_theme', resolved);
+      setTheme(resolved);
+    }
   }, []);
 
   useEffect(() => {
@@ -208,7 +213,8 @@ export default function FindJob() {
   const isSelected = (job) => !!selectedJobs.find(j => j.company + j.title === job.company + job.title);
 
   const handleApply = () => {
-    localStorage.setItem("jobwin_selected_jobs", JSON.stringify(selectedJobs));
+    const uid = user?.id || 'guest';
+    localStorage.setItem(`jobwin_selected_jobs_${uid}`, JSON.stringify(selectedJobs));
     router.push("/apply");
   };
 

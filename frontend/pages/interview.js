@@ -72,20 +72,20 @@ export default function Interview() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { router.push("/login"); return; }
       setUser(session.user);
+      loadContribs(session.user?.id || 'guest');
     });
     // Load contributions from Supabase, fall back to localStorage
-    const loadContribs = async () => {
-      const saved = localStorage.getItem("jobwin_contributions");
+    const loadContribs = async (uid) => {
+      const saved = localStorage.getItem(`jobwin_contributions_${uid}`) || localStorage.getItem("jobwin_contributions");
       if (saved) setContributions(JSON.parse(saved));
       try {
         const { data } = await supabase.from("interview_contributions").select("*").order("submitted_at", { ascending: false }).limit(100);
         if (data && data.length > 0) {
           setContributions(data);
-          localStorage.setItem("jobwin_contributions", JSON.stringify(data));
+          localStorage.setItem(`jobwin_contributions_${uid}`, JSON.stringify(data));
         }
       } catch (e) {}
     };
-    loadContribs();
   }, []);
 
   const handleTheme = (name) => setTheme(name);
@@ -162,7 +162,8 @@ export default function Interview() {
     };
     const updated = [contrib, ...contributions];
     setContributions(updated);
-    localStorage.setItem("jobwin_contributions", JSON.stringify(updated));
+    const uid = user?.id || 'guest';
+    localStorage.setItem(`jobwin_contributions_${uid}`, JSON.stringify(updated));
     // Try to save to Supabase
     try {
       await supabase.from("interview_contributions").insert([contrib]);

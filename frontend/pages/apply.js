@@ -40,24 +40,26 @@ export default function Apply() {
       setUser(session.user);
       const name = session.user.user_metadata?.full_name?.split(" ")[0] || session.user.email.split("@")[0];
       setYourName(name);
-    });
-    // Load selected jobs from localStorage
-    const saved = localStorage.getItem("jobwin_selected_jobs");
-    if (saved) {
-      const jobs = JSON.parse(saved);
-      setSelectedJobs(jobs);
-      if (jobs.length > 0) setActiveJob(0);
-    }
-    // Load resume data for AI context
-    try {
-      const resumes = JSON.parse(localStorage.getItem("jobwin_resumes") || "[]");
-      if (resumes.length > 0) {
-        const r = resumes[0];
-        setResumeData(r);
-        if (r.name) setYourName(r.name);
-        if (r.title) setYourRole(r.title);
+
+      const uid = session.user?.id || 'guest';
+      // Load selected jobs from localStorage
+      const saved = localStorage.getItem(`jobwin_selected_jobs_${uid}`) || localStorage.getItem("jobwin_selected_jobs");
+      if (saved) {
+        const jobs = JSON.parse(saved);
+        setSelectedJobs(jobs);
+        if (jobs.length > 0) setActiveJob(0);
       }
-    } catch (e) {}
+      // Load resume data for AI context
+      try {
+        const resumes = JSON.parse(localStorage.getItem(`jobwin_local_resumes_${uid}`) || localStorage.getItem("jobwin_resumes") || "[]");
+        if (resumes.length > 0) {
+          const r = resumes[0];
+          setResumeData(r);
+          if (r.name) setYourName(r.name);
+          if (r.title) setYourRole(r.title);
+        }
+      } catch (e) {}
+    });
   }, []);
 
   const handleTheme = (name) => setTheme(name);
@@ -68,7 +70,8 @@ export default function Apply() {
   const removeJob = (i) => {
     const updated = selectedJobs.filter((_, idx) => idx !== i);
     setSelectedJobs(updated);
-    localStorage.setItem("jobwin_selected_jobs", JSON.stringify(updated));
+    const uid = user?.id || 'guest';
+    localStorage.setItem(`jobwin_selected_jobs_${uid}`, JSON.stringify(updated));
     if (activeJob >= updated.length) setActiveJob(Math.max(0, updated.length - 1));
   };
 

@@ -89,11 +89,16 @@ export default function ResumeIO() {
 
   useEffect(() => {
     if (router.query.from === 'wizard') {
-      try {
-        const data = JSON.parse(localStorage.getItem('jobwin_wizard_resume') || '{}');
-        if (data.personal) { setResume({ ...defaultResume, ...data }); setView('editor'); }
-        localStorage.removeItem('jobwin_wizard_resume');
-      } catch (err) {}
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        const uid = session?.user?.id || 'guest';
+        try {
+          const raw = localStorage.getItem(`jobwin_wizard_resume_${uid}`) || localStorage.getItem('jobwin_wizard_resume');
+          const data = JSON.parse(raw || '{}');
+          if (data.personal) { setResume({ ...defaultResume, ...data }); setView('editor'); }
+          localStorage.removeItem(`jobwin_wizard_resume_${uid}`);
+          localStorage.removeItem('jobwin_wizard_resume');
+        } catch (err) {}
+      });
     }
   }, [router.query.from]);
   const [activeTab, setActiveTab] = useState('edit');
@@ -115,6 +120,7 @@ export default function ResumeIO() {
       setCurrentUserId(uid);
       // Reload resumes for the new user on login/logout
       setSavedResumes([]);
+      setView('gallery'); // go back to gallery on user switch
     });
     return () => subscription?.unsubscribe();
   }, []);

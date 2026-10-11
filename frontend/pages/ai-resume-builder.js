@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Sidebar from '../components/Sidebar';
 import { useTheme } from '../lib/contexts';
+import { supabase } from '../lib/supabase';
 
 export default function AIResumeBuilder() {
   const router = useRouter();
@@ -33,7 +34,9 @@ export default function AIResumeBuilder() {
       });
       const data = await res.json();
       if (data.resume) {
-        localStorage.setItem('jobwin_wizard_resume', JSON.stringify(data.resume));
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id || 'guest';
+        localStorage.setItem(`jobwin_wizard_resume_${uid}`, JSON.stringify(data.resume));
         router.push('/resume-io?from=wizard');
       } else {
         showToast('Failed to generate resume.');

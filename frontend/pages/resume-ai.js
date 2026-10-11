@@ -79,7 +79,7 @@ export default function ResumeAI() {
 
   useEffect(() => {
     const saved = localStorage.getItem("jobwin_theme");
-    const migration = { nocturnal: "dark", pristine: "white", vivid: "colorful", midnight: "dark", emerald: "colorful", ivory: "white" };
+    const migration = { nocturnal: "dark", pristine: "white", vivid: "colorful", midnight: "dark", emerald: "colorful", ivory: "white", parchment: "white", ocean: "dark" };
     const migrated = migration[saved] || saved;
     if (THEMES[migrated]) { setTheme(migrated); if (migrated !== saved) localStorage.setItem("jobwin_theme", migrated); }
     // Resolve user for namespaced storage
@@ -595,7 +595,7 @@ export default function ResumeAI() {
       };
       const existing = JSON.parse(localStorage.getItem(`jobwin_resumes_${userId}`) || "[]");
       localStorage.setItem(`jobwin_resumes_${userId}`, JSON.stringify([entry, ...existing]));
-      localStorage.setItem("jobwin_current_resume", JSON.stringify(entry));
+      localStorage.setItem(`jobwin_current_resume_${userId}`, JSON.stringify(entry));
     } catch (e) {}
 
 

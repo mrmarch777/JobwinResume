@@ -1,3 +1,7 @@
+import { useState, useEffect } from "react";
+import Head from "next/head";
+import Layout from "../components/Layout";
+import { supabase } from "../lib/supabase";
 import { 
   THEMES, 
   THEME_MIGRATION,
@@ -81,9 +85,12 @@ export default function App({ Component, pageProps }) {
   }, []);
 
   const setTheme = (name) => {
-    if (!THEMES[name]) return;
-    setThemeName(name);
-    localStorage.setItem("jobwin_theme", name);
+    // Map legacy names to new names
+    const MIGRATION = { nocturnal: 'dark', pristine: 'white', vivid: 'colorful', midnight: 'dark', emerald: 'colorful', ivory: 'white', parchment: 'white', ocean: 'dark' };
+    const resolvedName = MIGRATION[name] || name;
+    if (!THEMES[resolvedName]) return;
+    setThemeName(resolvedName);
+    localStorage.setItem('jobwin_theme', resolvedName);
   };
 
   const theme = THEMES[themeName];

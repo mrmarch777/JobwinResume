@@ -90,8 +90,13 @@ export default function Pricing() {
   ];
 
   useEffect(() => {
-    const saved = localStorage.getItem("jobwin_theme");
-    if (saved && themes[saved]) setTheme(saved);
+    const saved = localStorage.getItem('jobwin_theme');
+    if (saved) {
+      const migration = { nocturnal: 'dark', pristine: 'white', vivid: 'colorful', midnight: 'dark', emerald: 'colorful', ivory: 'white', parchment: 'white', ocean: 'dark' };
+      const resolved = migration[saved] || saved;
+      if (resolved !== saved) localStorage.setItem('jobwin_theme', resolved);
+      setTheme(resolved);
+    }
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });

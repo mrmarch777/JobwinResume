@@ -261,6 +261,49 @@ export default function Dashboard() {
             </div>
 
 
+            <div style={{ background: plan !== "free" ? "rgba(108,99,255,0.1)" : "rgba(67,217,162,0.1)", border: `1px solid ${plan !== "free" ? "rgba(108,99,255,0.2)" : "rgba(67,217,162,0.2)"}`, borderRadius: "100px", padding: "5px 14px", fontSize: "11px", color: plan !== "free" ? "#A29BFE" : "#43D9A2", fontWeight: "600", letterSpacing: "1px" }}>
+              {planLabel.toUpperCase()} PLAN
+            </div>
+            <div style={{ position: "relative", cursor: "pointer" }}>
+              <div role="button" aria-label="Notifications" style={{ width: "36px", height: "36px", background: "rgba(255,255,255,0.05)", border: `1px solid ${t.border}`, borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>🔔</div>
+              {notifications > 0 && <div style={{ position: "absolute", top: "-4px", right: "-4px", width: "16px", height: "16px", background: "#FF6584", borderRadius: "50%", fontSize: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "700" }}>{notifications}</div>}
+            </div>
+            <div role="button" aria-label="Settings" style={{ width: "36px", height: "36px", background: "rgba(255,255,255,0.05)", border: `1px solid ${t.border}`, borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", cursor: "pointer" }}>⚙️</div>
+            <button className="action-btn" onClick={() => router.push("/pricing")}
+              style={{ padding: "9px 20px", background: "linear-gradient(135deg, #6C63FF, #FF6584)", color: "white", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", transition: "all 0.3s" }}>
+              ⚡ Upgrade
+            </button>
+          </div>
+        </header>
+
+        {/* Content */}
+        <div className="mobile-pad" style={{ padding: "32px", flex: 1 }}>
+
+          {/* Glow effect */}
+          <div style={{ position: "fixed", top: "20%", left: "40%", width: "500px", height: "400px", background: "radial-gradient(circle, rgba(108,99,255,0.06) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none", zIndex: 0, animation: "glow 4s ease-in-out infinite" }} />
+
+          {/* Hero heading */}
+          <div style={{ position: "relative", zIndex: 1, marginBottom: "32px" }}>
+            <h1 className="mobile-text-lg" style={{ fontFamily: "'Noto Serif', serif", fontSize: "clamp(28px, 3.5vw, 48px)", fontWeight: "700", color: t.text, marginBottom: "8px", lineHeight: "1.2" }}>
+              Welcome back, <span style={{ fontStyle: "italic", color: "#6C63FF" }}>{firstName}.</span>
+            </h1>
+            <p style={{ color: t.muted, fontSize: "15px", marginBottom: "20px" }}>Your career trajectory is looking great — let&apos;s keep the momentum going! 🚀</p>
+            
+            {/* Stats Row */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px", marginBottom: "32px" }}>
+              {[
+                { label: "Total Resumes", value: resumesCount, color: "#6C63FF" },
+                { label: "Jobs Applied", value: stats.applied, color: "#FFB347" },
+                { label: "Avg ATS Score", value: "85%", color: "#43D9A2" },
+                { label: "Profile Completion", value: "92%", color: "#FF6584" }
+              ].map((stat, idx) => (
+                <div key={idx} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${t.border}`, borderRadius: "16px", padding: "20px", textAlign: "center" }}>
+                  <div style={{ fontSize: "28px", fontWeight: "700", color: stat.color, marginBottom: "8px" }}>{stat.value}</div>
+                  <div style={{ fontSize: "13px", color: t.muted, fontWeight: "500" }}>{stat.label}</div>
+                </div>
+              ))}
+            </div>
+
             {/* Quick Actions */}
             <h2 style={{ fontSize: "20px", fontWeight: "700", color: t.text, marginBottom: "16px" }}>Quick Actions</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "32px" }}>
@@ -279,7 +322,6 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-
           </div>
 
           {plan === 'free' && (
